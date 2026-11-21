@@ -31,8 +31,9 @@ func main() {
 	rb := rendobar.New() // reads RENDOBAR_API_KEY
 
 	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
-		Type:   "ffmpeg",
-		Params: map[string]any{"command": "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4"},
+		Params: rendobar.FfmpegParams{
+			Command: "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4",
+		},
 	}, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -43,18 +44,47 @@ func main() {
 
 `Jobs.Run` submits the job and waits until it completes, fails or is cancelled. A failed or cancelled job returns `*rendobar.JobFailedError` with the job attached.
 
-An ffmpeg job writes files, so `Output.File` is the file it wrote and `Output.Files` lists all of them. A data job such as ffprobe writes no file. Its result is in `Output.Data` and `Output.File` is nil:
+An ffmpeg job writes files, so `Output.File` is the file it wrote and `Output.Files` lists all of them. A data job such as ffprobe writes no file, and `Output.File` is nil. `JobComplete.Ffprobe` reads its result:
 
 ```go
 job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
-	Type:   "ffprobe",
-	Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
+	Params: rendobar.FfprobeParams{Command: "https://cdn.rendobar.com/assets/examples/sample.mp4"},
 }, nil)
 if err != nil {
 	log.Fatal(err)
 }
-fmt.Println(job.Complete.Output.Data)
+probe, err := job.Complete.Ffprobe()
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println(probe.Summary.Duration, probe.Summary.Video.Width, probe.Summary.Video.Height)
 ```
+
+## Job params
+
+Each job type has its own params struct, generated from the API's published schema: `FfmpegParams`, `FfprobeParams`, `CompressTargetParams`, `CaptionBurnParams`, `CaptionsAnimateParams`, `ImageUpscaleParams`, and one struct per model for image generation and editing, such as `ImageGenerateFlux2DevParams`. The struct sets the job type, so a misspelt param or a wrong value type fails to compile.
+
+- A field with a fixed set of values has its own type and constants, such as `FfmpegComputeGPU`.
+- A field that takes one of several shapes is an interface. Set it to one of the types its godoc lists, such as `ImageUpscaleSizingFactor{Factor: 2}` or `CompressTargetTargetPresetBalanced`.
+- An optional number or boolean is a pointer. `rendobar.Ptr` makes one: `Timeout: rendobar.Ptr[int64](600)`.
+
+```go
+rendobar.CreateParams{
+	Params: rendobar.ImageUpscaleParams{
+		Model:  rendobar.ImageUpscaleModelSeedvr27b,
+		Sizing: rendobar.ImageUpscaleSizingHeight{Height: 2160},
+	},
+	Inputs: map[string]string{"image": "https://example.com/photo.jpg"},
+}
+```
+
+`Jobs.Create` checks the params against the schema before it sends anything, and refuses them with an `*rendobar.Error` whose code is `INVALID_ARGUMENT`, one `Problem` per mistake. `Params.Validate()` runs the same check on its own.
+
+`Inputs` maps an input name to the URL of a file the API can fetch. `Jobs.Schema` lists the names a type takes. ffmpeg and ffprobe accept any name, and the command refers to the file by it.
+
+For a job type this SDK predates, use `rendobar.CustomParams{Type: "new.type", Fields: map[string]any{...}}`. It is the only untyped path, and it refuses a type that already has a struct.
+
+`CreateParams.Callback` asks the API to POST the job's result to your URL when the job ends. It carries the same envelope as a webhook, so `webhooks.Parse` reads it.
 
 ## Jobs
 
@@ -69,11 +99,26 @@ for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: rendobar.Stat
 }
 ```
 
-`job.Info()` returns the rest of the shared fields, such as `Label`, `Cost` and `WebURL`. The statuses are `StatusWaiting`, `StatusDispatched`, `StatusRunning`, `StatusComplete`, `StatusFailed` and `StatusCancelled`. A status newer than this SDK leaves all six fields nil, and the methods still answer.
+`job.Info()` returns the rest of the shared fields, such as `Label`, `Cost` and `WebURL`. A status newer than this SDK leaves all six fields nil, and the methods still answer. `JobStatus.IsTerminal` reports whether a job has finished.
 
-`Jobs.List` returns one page. `ListParams.Limit` goes up to 100, and the API treats a larger value as 100. `Jobs.All` fetches every page for you, 100 jobs at a time. A negative `Limit` or `Offset` returns an `*rendobar.Error` with code `INVALID_ARGUMENT` before any request, and so does a job ID that is not letters, digits, `.`, `_` and `-`.
+`Jobs.List` returns one page. `ListParams.Limit` goes up to 100, and the API treats a larger value as 100. `Jobs.All` fetches every page for you, 100 jobs at a time. A negative `Limit` or `Offset` returns an `INVALID_ARGUMENT` error before any request, and so does a job ID that is not letters, digits, `.`, `_` and `-`.
 
 `Jobs.Types` lists every live job type, and `Jobs.Schema` returns one type's params.
+
+### Downloads
+
+`Jobs.Download` streams a job's output file. Close the body when you are done:
+
+```go
+d, err := rb.Jobs.Download(ctx, jobID)
+if err != nil {
+	log.Fatal(err)
+}
+defer d.Body.Close()
+_, err = io.Copy(file, d.Body)
+```
+
+`WithTimeout` bounds only the wait for the response headers. Your `ctx` bounds the body, so a large file takes as long as it needs. `Download.Size` is the length in bytes, or -1 when the API does not say. The file's SHA-256 is `OutputFile.SHA256` on the complete job.
 
 ### Waiting
 
@@ -92,31 +137,35 @@ fmt.Println(job.Complete.Output.File.URL)
 
 `Jobs.Wait` gives up after 5 minutes until the job reports its own time limit from your plan. It then waits that limit plus 2 minutes from the moment the job reported it. On a timeout it returns `*rendobar.WaitTimeoutError` with the job ID, the last status and the last job read. The job may still finish. `WaitOptions` sets your own `Timeout`, the poll interval and an `OnProgress` callback.
 
-When your `ctx` ends after the submit, `Jobs.Run` and `Jobs.Wait` return `*rendobar.ContextError` with the job ID. See [Errors](#errors) for what to do with it.
-
 ### Idempotency
 
-A retried submit never creates a second job. Each `Jobs.Create` call sends one idempotency key on every retry. Pass `IdempotencyKey` yourself, or one from `rendobar.GenerateIdempotencyKey`, to make separate calls safe to repeat. Repeating a key with the same params returns the job it created, with `Created.Replayed` set. Reusing a key with different params returns a 409 `*rendobar.Error` with code `CONFLICT`.
+A retried submit never creates a second job. Each `Jobs.Create` call sends one idempotency key on every retry. Pass `IdempotencyKey` yourself, or one from `rendobar.GenerateIdempotencyKey`, to make separate calls safe to repeat. Repeating a key with the same params returns the job it created, with `Created.Replayed` set. Reusing a key with different params returns a 409 error with code `CONFLICT`.
 
 ## Errors
+
+Check an error with `errors.As` and compare its `Code` with the `rendobar.Code...` constants:
 
 ```go
 var apiErr *rendobar.Error
 if errors.As(err, &apiErr) {
-	log.Println(apiErr.Code, apiErr.StatusCode, apiErr.RequestID) // quote RequestID to support
-}
-if rendobar.IsNotFound(err) {
-	// the job does not exist
+	switch apiErr.Code {
+	case rendobar.CodeNotFound:
+		// the job does not exist
+	case rendobar.CodeRateLimited:
+		time.Sleep(apiErr.RetryAfter)
+	default:
+		log.Println(apiErr.Code, apiErr.StatusCode, apiErr.RequestID) // quote RequestID to support
+	}
 }
 ```
 
-`rendobar.IsNotFound`, `IsUnauthorized`, `IsConflict` and `IsRateLimited` test for a 404, 401, 409 and 429. A `VALIDATION_ERROR`, `PLAN_LIMIT` or `FEATURE_NOT_ENABLED` refusal lists what was wrong in `Error.Problems`, each with a `Path`, a `Message` and, for a plan limit, the `UpgradeTo` plan.
+The API may add codes. An unknown one arrives as its own string, so keep a default branch. When a refusal lists what was wrong, `Error.Problems` has each one, with a `Path`, a `Message` and, for a plan limit, the `UpgradeTo` plan. `Error.Details` is the raw detail as JSON.
 
-Some calls fail before anything is sent, with an `*rendobar.Error` whose `StatusCode` is 0:
+Some calls fail before anything is sent, with `StatusCode` 0:
 
-- `MISSING_API_KEY`: the client has no key. Set `RENDOBAR_API_KEY` or pass `rendobar.WithAPIKey`. `Jobs.Types` and `Jobs.Schema` need no key.
-- `INVALID_API_KEY`: the key does not start with `rb_`.
-- `INVALID_ARGUMENT`: a malformed job ID, or a negative `Limit` or `Offset`.
+- `CodeMissingAPIKey`: the client has no key. Set `RENDOBAR_API_KEY` or pass `rendobar.WithAPIKey`. `Jobs.Types` and `Jobs.Schema` need no key.
+- `CodeInvalidAPIKey`: the key does not start with `rb_`.
+- `CodeInvalidArgument`: params that fail their schema, a malformed job ID or job type, or a negative `Limit` or `Offset`.
 
 ### Failed submits
 
@@ -135,35 +184,46 @@ if errors.As(err, &cutOff) {
 
 When your `ctx` is cancelled or its deadline passes after the submit, `Jobs.Run` and `Jobs.Wait` return `*rendobar.ContextError`. The job keeps running. `JobID` names it and `Job` is the last state read, so you can call `Jobs.Get`, `Jobs.Wait` or `Jobs.Cancel` later. `errors.Is(err, context.DeadlineExceeded)` and `errors.Is(err, context.Canceled)` work on it.
 
-```go
-var stopped *rendobar.ContextError
-if errors.As(err, &stopped) {
-	log.Println("job", stopped.JobID, "is still running")
-}
-```
-
 ### Retries
 
-429, 500, 502, 503 and 504 responses and connection errors are retried twice, with backoff from half a second and a `Retry-After` of up to 60 seconds honoured. Nothing else is retried. A 408, a 409, a 501 or any other 4xx fails at once, and so does an attempt that ran out its timeout. When `Retry-After` is longer than 60 seconds, or the wait would outlast your `ctx` deadline, the client returns the error at once with `Error.RetryAfter` set, so `rendobar.IsRateLimited(err)` is true for a 429. `rendobar.WithMaxRetries(0)` sends each request once.
+429, 500, 502, 503 and 504 responses and connection errors are retried twice, with backoff from half a second and a `Retry-After` of up to 60 seconds honoured. Nothing else is retried. A 408, a 409, a 501 or any other 4xx fails at once, and so does an attempt that ran out its timeout. When `Retry-After` is longer than 60 seconds, or the wait would outlast your `ctx` deadline, the client returns the error at once with `Error.RetryAfter` set. `rendobar.WithMaxRetries(0)` sends each request once.
 
 ## Webhooks
 
-Import `github.com/rendobar/rendobar-go/webhooks` and verify each delivery against the raw body:
+Import `github.com/rendobar/rendobar-go/webhooks`. `webhooks.Parse` verifies a delivery against the raw body and reads it:
 
 ```go
 body, _ := io.ReadAll(r.Body) // the exact bytes the signature covers
-if !webhooks.Verify(body, r.Header, secret) {
-	w.WriteHeader(http.StatusUnauthorized)
+event, err := webhooks.Parse(body, r.Header, secret)
+if err != nil {
+	w.WriteHeader(http.StatusUnauthorized) // errors.Is(err, webhooks.ErrSignature) and the like name why
 	return
 }
+switch event.Type {
+case webhooks.JobCompleted:
+	job, err := event.Job()
+	if err == nil {
+		log.Println(job.JobID, job.Output.File.URL)
+	}
+default:
+	// an event this handler ignores, or one newer than this SDK
+}
 ```
+
+Every delivery is a JSON envelope:
+
+```json
+{"version": "1", "event": "job.completed", "deliveryId": "whd_...", "timestamp": 1763700000000, "orgId": "org_...", "data": {}}
+```
+
+`Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. Read `Data` with `event.Job()` for `job.created`, `job.started`, `job.completed`, `job.failed` and `job.cancelled`. Use `event.Delivery()` for `job.delivery_succeeded`, `job.delivery_failed` and `job.deliveries_settled`, and `event.Balance()` for `balance.low` and `balance.depleted`. An event or version newer than this SDK still parses, with its own `Type`.
 
 Each delivery carries two headers:
 
 - `X-Rendobar-Timestamp` is the send time in Unix seconds.
-- `X-Rendobar-Signature` is `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<raw body>`, keyed with your endpoint's signing secret. `Verify` rejects a signature without the `sha256=` prefix.
+- `X-Rendobar-Signature` is `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<raw body>`, keyed with your endpoint's signing secret. A signature without the `sha256=` prefix is refused.
 
-While you rotate the secret, deliveries also carry `X-Rendobar-Signature-Previous`, signed with the old secret. `Verify` accepts either header, so your handler keeps working until you switch secrets. It rejects deliveries more than 5 minutes old or ahead, and returns false for an empty or whitespace-only secret and for a signature that is not hex. `webhooks.VerifyWith` takes your own tolerance and clock.
+While you rotate the secret, deliveries also carry `X-Rendobar-Signature-Previous`, signed with the old secret. Parse accepts either header, so your handler keeps working until you switch secrets. It refuses deliveries more than 5 minutes old or ahead (`ErrTimestamp`), a signature that does not match (`ErrSignature`), an empty or whitespace-only secret (`ErrNoSecret`) and a body that is not an event (`ErrPayload`). `webhooks.Verify` runs only the check and returns a bool. `ParseWith` and `VerifyWith` take your own tolerance and clock.
 
 ## Options
 
@@ -175,9 +235,9 @@ rb := rendobar.New(
 )
 ```
 
-- `WithAPIKey` sets the key. Without it the client reads `RENDOBAR_API_KEY`. With neither, calls that need a key fail with code `MISSING_API_KEY`.
+- `WithAPIKey` sets the key. Without it the client reads `RENDOBAR_API_KEY`. With neither, calls that need a key fail with `CodeMissingAPIKey`.
 - `WithBaseURL` sends every request to another API host, such as a test server or another Rendobar environment. The default is `https://api.rendobar.com`.
-- `WithTimeout` bounds each attempt, 30 seconds by default, including reading the body, so it bounds a whole `Jobs.Download`. It wins over the `Timeout` of a `WithHTTPClient` client in either order.
+- `WithTimeout` bounds each attempt, 30 seconds by default, including reading the body. For `Jobs.Download` it bounds only the wait for the response headers. It wins over the `Timeout` of a `WithHTTPClient` client in either order.
 - `WithHTTPClient` sets the HTTP client. The client you pass is copied and never changed.
 - `WithMaxRetries` sets how many times a 429, 500, 502, 503, 504 or a connection error is retried. The default is 2.
 - `WithApp` names your application in requests.
