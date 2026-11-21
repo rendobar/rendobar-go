@@ -448,29 +448,29 @@ var (
 )
 
 type GetAccountCapabilitiesResponseDataLimits struct {
-	ConcurrentJobs       float64 `json:"concurrentJobs" url:"concurrentJobs"`
-	MaxQueuedJobs        float64 `json:"maxQueuedJobs" url:"maxQueuedJobs"`
-	APIRequestsPerMinute float64 `json:"apiRequestsPerMinute" url:"apiRequestsPerMinute"`
+	ConcurrentJobs       int `json:"concurrentJobs" url:"concurrentJobs"`
+	MaxQueuedJobs        int `json:"maxQueuedJobs" url:"maxQueuedJobs"`
+	APIRequestsPerMinute int `json:"apiRequestsPerMinute" url:"apiRequestsPerMinute"`
 	// Seconds
-	MaxJobTimeout float64 `json:"maxJobTimeout" url:"maxJobTimeout"`
+	MaxJobTimeout int `json:"maxJobTimeout" url:"maxJobTimeout"`
 	// Bytes, per input file, uploaded or fetched by URL
-	MaxInputFileSize float64 `json:"maxInputFileSize" url:"maxInputFileSize"`
+	MaxInputFileSize int `json:"maxInputFileSize" url:"maxInputFileSize"`
 	// Deprecated: always equal to maxInputFileSize. Read maxInputFileSize.
-	MaxJobInputSize float64 `json:"maxJobInputSize" url:"maxJobInputSize"`
+	MaxJobInputSize int `json:"maxJobInputSize" url:"maxJobInputSize"`
 	// Bytes
-	StorageQuota          float64 `json:"storageQuota" url:"storageQuota"`
-	OutputRetentionDays   float64 `json:"outputRetentionDays" url:"outputRetentionDays"`
-	MaxUploadSessionFiles float64 `json:"maxUploadSessionFiles" url:"maxUploadSessionFiles"`
+	StorageQuota          int `json:"storageQuota" url:"storageQuota"`
+	OutputRetentionDays   int `json:"outputRetentionDays" url:"outputRetentionDays"`
+	MaxUploadSessionFiles int `json:"maxUploadSessionFiles" url:"maxUploadSessionFiles"`
 	// Members the organization may hold, pending invitations included
-	TeamMembers float64 `json:"teamMembers" url:"teamMembers"`
+	TeamMembers int `json:"teamMembers" url:"teamMembers"`
 	// Largest compose frame, in pixels (width times height)
-	ComposeMaxPixels float64 `json:"composeMaxPixels" url:"composeMaxPixels"`
+	ComposeMaxPixels int `json:"composeMaxPixels" url:"composeMaxPixels"`
 	// Highest compose frame rate
-	ComposeMaxFps float64 `json:"composeMaxFps" url:"composeMaxFps"`
+	ComposeMaxFps int `json:"composeMaxFps" url:"composeMaxFps"`
 	// Largest compose frame with animated graphics, in pixels
-	ComposeAnimatedMaxPixels float64 `json:"composeAnimatedMaxPixels" url:"composeAnimatedMaxPixels"`
+	ComposeAnimatedMaxPixels int `json:"composeAnimatedMaxPixels" url:"composeAnimatedMaxPixels"`
 	// Highest compose frame rate with animated graphics
-	ComposeAnimatedMaxFps float64 `json:"composeAnimatedMaxFps" url:"composeAnimatedMaxFps"`
+	ComposeAnimatedMaxFps int `json:"composeAnimatedMaxFps" url:"composeAnimatedMaxFps"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -479,98 +479,98 @@ type GetAccountCapabilitiesResponseDataLimits struct {
 	rawJSON         json.RawMessage
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetConcurrentJobs() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetConcurrentJobs() int {
 	if g == nil {
 		return 0
 	}
 	return g.ConcurrentJobs
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxQueuedJobs() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxQueuedJobs() int {
 	if g == nil {
 		return 0
 	}
 	return g.MaxQueuedJobs
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetAPIRequestsPerMinute() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetAPIRequestsPerMinute() int {
 	if g == nil {
 		return 0
 	}
 	return g.APIRequestsPerMinute
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxJobTimeout() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxJobTimeout() int {
 	if g == nil {
 		return 0
 	}
 	return g.MaxJobTimeout
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxInputFileSize() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxInputFileSize() int {
 	if g == nil {
 		return 0
 	}
 	return g.MaxInputFileSize
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxJobInputSize() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxJobInputSize() int {
 	if g == nil {
 		return 0
 	}
 	return g.MaxJobInputSize
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetStorageQuota() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetStorageQuota() int {
 	if g == nil {
 		return 0
 	}
 	return g.StorageQuota
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetOutputRetentionDays() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetOutputRetentionDays() int {
 	if g == nil {
 		return 0
 	}
 	return g.OutputRetentionDays
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxUploadSessionFiles() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetMaxUploadSessionFiles() int {
 	if g == nil {
 		return 0
 	}
 	return g.MaxUploadSessionFiles
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetTeamMembers() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetTeamMembers() int {
 	if g == nil {
 		return 0
 	}
 	return g.TeamMembers
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeMaxPixels() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeMaxPixels() int {
 	if g == nil {
 		return 0
 	}
 	return g.ComposeMaxPixels
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeMaxFps() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeMaxFps() int {
 	if g == nil {
 		return 0
 	}
 	return g.ComposeMaxFps
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeAnimatedMaxPixels() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeAnimatedMaxPixels() int {
 	if g == nil {
 		return 0
 	}
 	return g.ComposeAnimatedMaxPixels
 }
 
-func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeAnimatedMaxFps() float64 {
+func (g *GetAccountCapabilitiesResponseDataLimits) GetComposeAnimatedMaxFps() int {
 	if g == nil {
 		return 0
 	}
@@ -595,98 +595,98 @@ func (g *GetAccountCapabilitiesResponseDataLimits) require(field *big.Int) {
 
 // SetConcurrentJobs sets the ConcurrentJobs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetConcurrentJobs(concurrentJobs float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetConcurrentJobs(concurrentJobs int) {
 	g.ConcurrentJobs = concurrentJobs
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldConcurrentJobs)
 }
 
 // SetMaxQueuedJobs sets the MaxQueuedJobs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxQueuedJobs(maxQueuedJobs float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxQueuedJobs(maxQueuedJobs int) {
 	g.MaxQueuedJobs = maxQueuedJobs
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldMaxQueuedJobs)
 }
 
 // SetAPIRequestsPerMinute sets the APIRequestsPerMinute field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetAPIRequestsPerMinute(apiRequestsPerMinute float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetAPIRequestsPerMinute(apiRequestsPerMinute int) {
 	g.APIRequestsPerMinute = apiRequestsPerMinute
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldAPIRequestsPerMinute)
 }
 
 // SetMaxJobTimeout sets the MaxJobTimeout field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxJobTimeout(maxJobTimeout float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxJobTimeout(maxJobTimeout int) {
 	g.MaxJobTimeout = maxJobTimeout
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldMaxJobTimeout)
 }
 
 // SetMaxInputFileSize sets the MaxInputFileSize field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxInputFileSize(maxInputFileSize float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxInputFileSize(maxInputFileSize int) {
 	g.MaxInputFileSize = maxInputFileSize
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldMaxInputFileSize)
 }
 
 // SetMaxJobInputSize sets the MaxJobInputSize field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxJobInputSize(maxJobInputSize float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxJobInputSize(maxJobInputSize int) {
 	g.MaxJobInputSize = maxJobInputSize
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldMaxJobInputSize)
 }
 
 // SetStorageQuota sets the StorageQuota field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetStorageQuota(storageQuota float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetStorageQuota(storageQuota int) {
 	g.StorageQuota = storageQuota
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldStorageQuota)
 }
 
 // SetOutputRetentionDays sets the OutputRetentionDays field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetOutputRetentionDays(outputRetentionDays float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetOutputRetentionDays(outputRetentionDays int) {
 	g.OutputRetentionDays = outputRetentionDays
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldOutputRetentionDays)
 }
 
 // SetMaxUploadSessionFiles sets the MaxUploadSessionFiles field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxUploadSessionFiles(maxUploadSessionFiles float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetMaxUploadSessionFiles(maxUploadSessionFiles int) {
 	g.MaxUploadSessionFiles = maxUploadSessionFiles
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldMaxUploadSessionFiles)
 }
 
 // SetTeamMembers sets the TeamMembers field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetTeamMembers(teamMembers float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetTeamMembers(teamMembers int) {
 	g.TeamMembers = teamMembers
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldTeamMembers)
 }
 
 // SetComposeMaxPixels sets the ComposeMaxPixels field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeMaxPixels(composeMaxPixels float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeMaxPixels(composeMaxPixels int) {
 	g.ComposeMaxPixels = composeMaxPixels
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldComposeMaxPixels)
 }
 
 // SetComposeMaxFps sets the ComposeMaxFps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeMaxFps(composeMaxFps float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeMaxFps(composeMaxFps int) {
 	g.ComposeMaxFps = composeMaxFps
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldComposeMaxFps)
 }
 
 // SetComposeAnimatedMaxPixels sets the ComposeAnimatedMaxPixels field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeAnimatedMaxPixels(composeAnimatedMaxPixels float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeAnimatedMaxPixels(composeAnimatedMaxPixels int) {
 	g.ComposeAnimatedMaxPixels = composeAnimatedMaxPixels
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldComposeAnimatedMaxPixels)
 }
 
 // SetComposeAnimatedMaxFps sets the ComposeAnimatedMaxFps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeAnimatedMaxFps(composeAnimatedMaxFps float64) {
+func (g *GetAccountCapabilitiesResponseDataLimits) SetComposeAnimatedMaxFps(composeAnimatedMaxFps int) {
 	g.ComposeAnimatedMaxFps = composeAnimatedMaxFps
 	g.require(getAccountCapabilitiesResponseDataLimitsFieldComposeAnimatedMaxFps)
 }

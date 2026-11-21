@@ -560,6 +560,652 @@ func (a *APIKeyDisabledBy) String() string {
 }
 
 var (
+	balanceDepletedDataFieldBalance            = big.NewInt(1 << 0)
+	balanceDepletedDataFieldBalanceFormatted   = big.NewInt(1 << 1)
+	balanceDepletedDataFieldTriggeredByJobID   = big.NewInt(1 << 2)
+	balanceDepletedDataFieldTriggeredByJobType = big.NewInt(1 << 3)
+)
+
+type BalanceDepletedData struct {
+	Balance            int    `json:"balance" url:"balance"`
+	BalanceFormatted   string `json:"balanceFormatted" url:"balanceFormatted"`
+	TriggeredByJobID   string `json:"triggeredByJobId" url:"triggeredByJobId"`
+	TriggeredByJobType string `json:"triggeredByJobType" url:"triggeredByJobType"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BalanceDepletedData) GetBalance() int {
+	if b == nil {
+		return 0
+	}
+	return b.Balance
+}
+
+func (b *BalanceDepletedData) GetBalanceFormatted() string {
+	if b == nil {
+		return ""
+	}
+	return b.BalanceFormatted
+}
+
+func (b *BalanceDepletedData) GetTriggeredByJobID() string {
+	if b == nil {
+		return ""
+	}
+	return b.TriggeredByJobID
+}
+
+func (b *BalanceDepletedData) GetTriggeredByJobType() string {
+	if b == nil {
+		return ""
+	}
+	return b.TriggeredByJobType
+}
+
+func (b *BalanceDepletedData) GetExtraProperties() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.extraProperties
+}
+
+func (b *BalanceDepletedData) require(field *big.Int) {
+	next := new(big.Int)
+	if b.explicitFields != nil {
+		next.Set(b.explicitFields)
+	}
+	next.Or(next, field)
+	b.explicitFields = next
+}
+
+// SetBalance sets the Balance field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedData) SetBalance(balance int) {
+	b.Balance = balance
+	b.require(balanceDepletedDataFieldBalance)
+}
+
+// SetBalanceFormatted sets the BalanceFormatted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedData) SetBalanceFormatted(balanceFormatted string) {
+	b.BalanceFormatted = balanceFormatted
+	b.require(balanceDepletedDataFieldBalanceFormatted)
+}
+
+// SetTriggeredByJobID sets the TriggeredByJobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedData) SetTriggeredByJobID(triggeredByJobID string) {
+	b.TriggeredByJobID = triggeredByJobID
+	b.require(balanceDepletedDataFieldTriggeredByJobID)
+}
+
+// SetTriggeredByJobType sets the TriggeredByJobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedData) SetTriggeredByJobType(triggeredByJobType string) {
+	b.TriggeredByJobType = triggeredByJobType
+	b.require(balanceDepletedDataFieldTriggeredByJobType)
+}
+
+func (b *BalanceDepletedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler BalanceDepletedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BalanceDepletedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BalanceDepletedData) MarshalJSON() ([]byte, error) {
+	type embed BalanceDepletedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BalanceDepletedData) String() string {
+	if b == nil {
+		return "<nil>"
+	}
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+var (
+	balanceDepletedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	balanceDepletedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	balanceDepletedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	balanceDepletedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	balanceDepletedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type BalanceDepletedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version BalanceDepletedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int                  `json:"timestamp" url:"timestamp"`
+	OrgID     string               `json:"orgId" url:"orgId"`
+	Data      *BalanceDepletedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BalanceDepletedWebhookEvent) GetVersion() BalanceDepletedWebhookEventVersion {
+	if b == nil {
+		return ""
+	}
+	return b.Version
+}
+
+func (b *BalanceDepletedWebhookEvent) GetDeliveryID() string {
+	if b == nil {
+		return ""
+	}
+	return b.DeliveryID
+}
+
+func (b *BalanceDepletedWebhookEvent) GetTimestamp() int {
+	if b == nil {
+		return 0
+	}
+	return b.Timestamp
+}
+
+func (b *BalanceDepletedWebhookEvent) GetOrgID() string {
+	if b == nil {
+		return ""
+	}
+	return b.OrgID
+}
+
+func (b *BalanceDepletedWebhookEvent) GetData() *BalanceDepletedData {
+	if b == nil {
+		return nil
+	}
+	return b.Data
+}
+
+func (b *BalanceDepletedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.extraProperties
+}
+
+func (b *BalanceDepletedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if b.explicitFields != nil {
+		next.Set(b.explicitFields)
+	}
+	next.Or(next, field)
+	b.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedWebhookEvent) SetVersion(version BalanceDepletedWebhookEventVersion) {
+	b.Version = version
+	b.require(balanceDepletedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedWebhookEvent) SetDeliveryID(deliveryID string) {
+	b.DeliveryID = deliveryID
+	b.require(balanceDepletedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedWebhookEvent) SetTimestamp(timestamp int) {
+	b.Timestamp = timestamp
+	b.require(balanceDepletedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedWebhookEvent) SetOrgID(orgID string) {
+	b.OrgID = orgID
+	b.require(balanceDepletedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceDepletedWebhookEvent) SetData(data *BalanceDepletedData) {
+	b.Data = data
+	b.require(balanceDepletedWebhookEventFieldData)
+}
+
+func (b *BalanceDepletedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler BalanceDepletedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BalanceDepletedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BalanceDepletedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed BalanceDepletedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BalanceDepletedWebhookEvent) String() string {
+	if b == nil {
+		return "<nil>"
+	}
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// Envelope version. A new version is a new shape
+type BalanceDepletedWebhookEventVersion string
+
+const (
+	BalanceDepletedWebhookEventVersionV1 BalanceDepletedWebhookEventVersion = "1"
+)
+
+func NewBalanceDepletedWebhookEventVersionFromString(s string) (BalanceDepletedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return BalanceDepletedWebhookEventVersionV1, nil
+	}
+	var t BalanceDepletedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceDepletedWebhookEventVersion) Ptr() *BalanceDepletedWebhookEventVersion {
+	return &b
+}
+
+var (
+	balanceLowDataFieldBalance            = big.NewInt(1 << 0)
+	balanceLowDataFieldBalanceFormatted   = big.NewInt(1 << 1)
+	balanceLowDataFieldThreshold          = big.NewInt(1 << 2)
+	balanceLowDataFieldThresholdFormatted = big.NewInt(1 << 3)
+	balanceLowDataFieldTriggeredByJobID   = big.NewInt(1 << 4)
+	balanceLowDataFieldTriggeredByJobType = big.NewInt(1 << 5)
+)
+
+type BalanceLowData struct {
+	Balance            int    `json:"balance" url:"balance"`
+	BalanceFormatted   string `json:"balanceFormatted" url:"balanceFormatted"`
+	Threshold          int    `json:"threshold" url:"threshold"`
+	ThresholdFormatted string `json:"thresholdFormatted" url:"thresholdFormatted"`
+	TriggeredByJobID   string `json:"triggeredByJobId" url:"triggeredByJobId"`
+	TriggeredByJobType string `json:"triggeredByJobType" url:"triggeredByJobType"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BalanceLowData) GetBalance() int {
+	if b == nil {
+		return 0
+	}
+	return b.Balance
+}
+
+func (b *BalanceLowData) GetBalanceFormatted() string {
+	if b == nil {
+		return ""
+	}
+	return b.BalanceFormatted
+}
+
+func (b *BalanceLowData) GetThreshold() int {
+	if b == nil {
+		return 0
+	}
+	return b.Threshold
+}
+
+func (b *BalanceLowData) GetThresholdFormatted() string {
+	if b == nil {
+		return ""
+	}
+	return b.ThresholdFormatted
+}
+
+func (b *BalanceLowData) GetTriggeredByJobID() string {
+	if b == nil {
+		return ""
+	}
+	return b.TriggeredByJobID
+}
+
+func (b *BalanceLowData) GetTriggeredByJobType() string {
+	if b == nil {
+		return ""
+	}
+	return b.TriggeredByJobType
+}
+
+func (b *BalanceLowData) GetExtraProperties() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.extraProperties
+}
+
+func (b *BalanceLowData) require(field *big.Int) {
+	next := new(big.Int)
+	if b.explicitFields != nil {
+		next.Set(b.explicitFields)
+	}
+	next.Or(next, field)
+	b.explicitFields = next
+}
+
+// SetBalance sets the Balance field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetBalance(balance int) {
+	b.Balance = balance
+	b.require(balanceLowDataFieldBalance)
+}
+
+// SetBalanceFormatted sets the BalanceFormatted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetBalanceFormatted(balanceFormatted string) {
+	b.BalanceFormatted = balanceFormatted
+	b.require(balanceLowDataFieldBalanceFormatted)
+}
+
+// SetThreshold sets the Threshold field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetThreshold(threshold int) {
+	b.Threshold = threshold
+	b.require(balanceLowDataFieldThreshold)
+}
+
+// SetThresholdFormatted sets the ThresholdFormatted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetThresholdFormatted(thresholdFormatted string) {
+	b.ThresholdFormatted = thresholdFormatted
+	b.require(balanceLowDataFieldThresholdFormatted)
+}
+
+// SetTriggeredByJobID sets the TriggeredByJobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetTriggeredByJobID(triggeredByJobID string) {
+	b.TriggeredByJobID = triggeredByJobID
+	b.require(balanceLowDataFieldTriggeredByJobID)
+}
+
+// SetTriggeredByJobType sets the TriggeredByJobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowData) SetTriggeredByJobType(triggeredByJobType string) {
+	b.TriggeredByJobType = triggeredByJobType
+	b.require(balanceLowDataFieldTriggeredByJobType)
+}
+
+func (b *BalanceLowData) UnmarshalJSON(data []byte) error {
+	type unmarshaler BalanceLowData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BalanceLowData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BalanceLowData) MarshalJSON() ([]byte, error) {
+	type embed BalanceLowData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BalanceLowData) String() string {
+	if b == nil {
+		return "<nil>"
+	}
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+var (
+	balanceLowWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	balanceLowWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	balanceLowWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	balanceLowWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	balanceLowWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type BalanceLowWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version BalanceLowWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int             `json:"timestamp" url:"timestamp"`
+	OrgID     string          `json:"orgId" url:"orgId"`
+	Data      *BalanceLowData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (b *BalanceLowWebhookEvent) GetVersion() BalanceLowWebhookEventVersion {
+	if b == nil {
+		return ""
+	}
+	return b.Version
+}
+
+func (b *BalanceLowWebhookEvent) GetDeliveryID() string {
+	if b == nil {
+		return ""
+	}
+	return b.DeliveryID
+}
+
+func (b *BalanceLowWebhookEvent) GetTimestamp() int {
+	if b == nil {
+		return 0
+	}
+	return b.Timestamp
+}
+
+func (b *BalanceLowWebhookEvent) GetOrgID() string {
+	if b == nil {
+		return ""
+	}
+	return b.OrgID
+}
+
+func (b *BalanceLowWebhookEvent) GetData() *BalanceLowData {
+	if b == nil {
+		return nil
+	}
+	return b.Data
+}
+
+func (b *BalanceLowWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if b == nil {
+		return nil
+	}
+	return b.extraProperties
+}
+
+func (b *BalanceLowWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if b.explicitFields != nil {
+		next.Set(b.explicitFields)
+	}
+	next.Or(next, field)
+	b.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowWebhookEvent) SetVersion(version BalanceLowWebhookEventVersion) {
+	b.Version = version
+	b.require(balanceLowWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowWebhookEvent) SetDeliveryID(deliveryID string) {
+	b.DeliveryID = deliveryID
+	b.require(balanceLowWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowWebhookEvent) SetTimestamp(timestamp int) {
+	b.Timestamp = timestamp
+	b.require(balanceLowWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowWebhookEvent) SetOrgID(orgID string) {
+	b.OrgID = orgID
+	b.require(balanceLowWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceLowWebhookEvent) SetData(data *BalanceLowData) {
+	b.Data = data
+	b.require(balanceLowWebhookEventFieldData)
+}
+
+func (b *BalanceLowWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler BalanceLowWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*b = BalanceLowWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
+	if err != nil {
+		return err
+	}
+	b.extraProperties = extraProperties
+	b.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (b *BalanceLowWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed BalanceLowWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*b),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (b *BalanceLowWebhookEvent) String() string {
+	if b == nil {
+		return "<nil>"
+	}
+	if len(b.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(b); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", b)
+}
+
+// Envelope version. A new version is a new shape
+type BalanceLowWebhookEventVersion string
+
+const (
+	BalanceLowWebhookEventVersionV1 BalanceLowWebhookEventVersion = "1"
+)
+
+func NewBalanceLowWebhookEventVersionFromString(s string) (BalanceLowWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return BalanceLowWebhookEventVersionV1, nil
+	}
+	var t BalanceLowWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceLowWebhookEventVersion) Ptr() *BalanceLowWebhookEventVersion {
+	return &b
+}
+
+var (
 	errorResponseFieldError = big.NewInt(1 << 0)
 )
 
@@ -764,6 +1410,3686 @@ func (e *ErrorResponseError) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", e)
+}
+
+var (
+	ffprobeAudioStreamFieldCodec         = big.NewInt(1 << 0)
+	ffprobeAudioStreamFieldProfile       = big.NewInt(1 << 1)
+	ffprobeAudioStreamFieldChannels      = big.NewInt(1 << 2)
+	ffprobeAudioStreamFieldChannelLayout = big.NewInt(1 << 3)
+	ffprobeAudioStreamFieldSampleRate    = big.NewInt(1 << 4)
+	ffprobeAudioStreamFieldBitrateBps    = big.NewInt(1 << 5)
+	ffprobeAudioStreamFieldLanguage      = big.NewInt(1 << 6)
+)
+
+// ffprobeAudioStreamNullableFields maps the wire names of FfprobeAudioStream's nullable fields (required or optional) to their field bits.
+var ffprobeAudioStreamNullableFields = map[string]*big.Int{
+	"codec":         ffprobeAudioStreamFieldCodec,
+	"profile":       ffprobeAudioStreamFieldProfile,
+	"channels":      ffprobeAudioStreamFieldChannels,
+	"channelLayout": ffprobeAudioStreamFieldChannelLayout,
+	"sampleRate":    ffprobeAudioStreamFieldSampleRate,
+	"bitrateBps":    ffprobeAudioStreamFieldBitrateBps,
+	"language":      ffprobeAudioStreamFieldLanguage,
+}
+
+type FfprobeAudioStream struct {
+	Codec    *string `json:"codec,omitempty" url:"codec,omitempty"`
+	Profile  *string `json:"profile,omitempty" url:"profile,omitempty"`
+	Channels *int    `json:"channels,omitempty" url:"channels,omitempty"`
+	// Null even when channels is set: some containers (wav) never store it
+	ChannelLayout *string `json:"channelLayout,omitempty" url:"channelLayout,omitempty"`
+	SampleRate    *int    `json:"sampleRate,omitempty" url:"sampleRate,omitempty"`
+	BitrateBps    *int    `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	Language      *string `json:"language,omitempty" url:"language,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeAudioStream) GetCodec() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Codec
+}
+
+func (f *FfprobeAudioStream) GetProfile() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Profile
+}
+
+func (f *FfprobeAudioStream) GetChannels() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Channels
+}
+
+func (f *FfprobeAudioStream) GetChannelLayout() *string {
+	if f == nil {
+		return nil
+	}
+	return f.ChannelLayout
+}
+
+func (f *FfprobeAudioStream) GetSampleRate() *int {
+	if f == nil {
+		return nil
+	}
+	return f.SampleRate
+}
+
+func (f *FfprobeAudioStream) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeAudioStream) GetLanguage() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Language
+}
+
+func (f *FfprobeAudioStream) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeAudioStream) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetCodec sets the Codec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetCodec(codec *string) {
+	f.Codec = codec
+	f.require(ffprobeAudioStreamFieldCodec)
+}
+
+// SetProfile sets the Profile field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetProfile(profile *string) {
+	f.Profile = profile
+	f.require(ffprobeAudioStreamFieldProfile)
+}
+
+// SetChannels sets the Channels field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetChannels(channels *int) {
+	f.Channels = channels
+	f.require(ffprobeAudioStreamFieldChannels)
+}
+
+// SetChannelLayout sets the ChannelLayout field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetChannelLayout(channelLayout *string) {
+	f.ChannelLayout = channelLayout
+	f.require(ffprobeAudioStreamFieldChannelLayout)
+}
+
+// SetSampleRate sets the SampleRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetSampleRate(sampleRate *int) {
+	f.SampleRate = sampleRate
+	f.require(ffprobeAudioStreamFieldSampleRate)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeAudioStreamFieldBitrateBps)
+}
+
+// SetLanguage sets the Language field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioStream) SetLanguage(language *string) {
+	f.Language = language
+	f.require(ffprobeAudioStreamFieldLanguage)
+}
+
+func (f *FfprobeAudioStream) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeAudioStream
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeAudioStream(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeAudioStreamNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeAudioStream) MarshalJSON() ([]byte, error) {
+	type embed FfprobeAudioStream
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeAudioStream) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeAudioSummaryFieldContainer      = big.NewInt(1 << 0)
+	ffprobeAudioSummaryFieldFormatLongName = big.NewInt(1 << 1)
+	ffprobeAudioSummaryFieldDurationSec    = big.NewInt(1 << 2)
+	ffprobeAudioSummaryFieldSizeBytes      = big.NewInt(1 << 3)
+	ffprobeAudioSummaryFieldBitrateBps     = big.NewInt(1 << 4)
+	ffprobeAudioSummaryFieldStartTimeSec   = big.NewInt(1 << 5)
+	ffprobeAudioSummaryFieldStreamCounts   = big.NewInt(1 << 6)
+	ffprobeAudioSummaryFieldTags           = big.NewInt(1 << 7)
+	ffprobeAudioSummaryFieldAudio          = big.NewInt(1 << 8)
+)
+
+// ffprobeAudioSummaryNullableFields maps the wire names of FfprobeAudioSummary's nullable fields (required or optional) to their field bits.
+var ffprobeAudioSummaryNullableFields = map[string]*big.Int{
+	"container":      ffprobeAudioSummaryFieldContainer,
+	"formatLongName": ffprobeAudioSummaryFieldFormatLongName,
+	"durationSec":    ffprobeAudioSummaryFieldDurationSec,
+	"sizeBytes":      ffprobeAudioSummaryFieldSizeBytes,
+	"bitrateBps":     ffprobeAudioSummaryFieldBitrateBps,
+	"startTimeSec":   ffprobeAudioSummaryFieldStartTimeSec,
+}
+
+type FfprobeAudioSummary struct {
+	// format_name, e.g. "mov,mp4,m4a,3gp,3g2,mj2"
+	Container      *string `json:"container,omitempty" url:"container,omitempty"`
+	FormatLongName *string `json:"formatLongName,omitempty" url:"formatLongName,omitempty"`
+	// Duration in seconds
+	DurationSec *float64 `json:"durationSec,omitempty" url:"durationSec,omitempty"`
+	SizeBytes   *int     `json:"sizeBytes,omitempty" url:"sizeBytes,omitempty"`
+	// Container bitrate; null when the container omits it
+	BitrateBps   *int                 `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	StartTimeSec *float64             `json:"startTimeSec,omitempty" url:"startTimeSec,omitempty"`
+	StreamCounts *FfprobeStreamCounts `json:"streamCounts" url:"streamCounts"`
+	// Container-level tags, {} when none
+	Tags  map[string]string   `json:"tags" url:"tags"`
+	Audio *FfprobeAudioStream `json:"audio" url:"audio"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeAudioSummary) GetContainer() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Container
+}
+
+func (f *FfprobeAudioSummary) GetFormatLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatLongName
+}
+
+func (f *FfprobeAudioSummary) GetDurationSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.DurationSec
+}
+
+func (f *FfprobeAudioSummary) GetSizeBytes() *int {
+	if f == nil {
+		return nil
+	}
+	return f.SizeBytes
+}
+
+func (f *FfprobeAudioSummary) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeAudioSummary) GetStartTimeSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.StartTimeSec
+}
+
+func (f *FfprobeAudioSummary) GetStreamCounts() *FfprobeStreamCounts {
+	if f == nil {
+		return nil
+	}
+	return f.StreamCounts
+}
+
+func (f *FfprobeAudioSummary) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeAudioSummary) GetAudio() *FfprobeAudioStream {
+	if f == nil {
+		return nil
+	}
+	return f.Audio
+}
+
+func (f *FfprobeAudioSummary) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeAudioSummary) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetContainer sets the Container field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetContainer(container *string) {
+	f.Container = container
+	f.require(ffprobeAudioSummaryFieldContainer)
+}
+
+// SetFormatLongName sets the FormatLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetFormatLongName(formatLongName *string) {
+	f.FormatLongName = formatLongName
+	f.require(ffprobeAudioSummaryFieldFormatLongName)
+}
+
+// SetDurationSec sets the DurationSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetDurationSec(durationSec *float64) {
+	f.DurationSec = durationSec
+	f.require(ffprobeAudioSummaryFieldDurationSec)
+}
+
+// SetSizeBytes sets the SizeBytes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetSizeBytes(sizeBytes *int) {
+	f.SizeBytes = sizeBytes
+	f.require(ffprobeAudioSummaryFieldSizeBytes)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeAudioSummaryFieldBitrateBps)
+}
+
+// SetStartTimeSec sets the StartTimeSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetStartTimeSec(startTimeSec *float64) {
+	f.StartTimeSec = startTimeSec
+	f.require(ffprobeAudioSummaryFieldStartTimeSec)
+}
+
+// SetStreamCounts sets the StreamCounts field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetStreamCounts(streamCounts *FfprobeStreamCounts) {
+	f.StreamCounts = streamCounts
+	f.require(ffprobeAudioSummaryFieldStreamCounts)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeAudioSummaryFieldTags)
+}
+
+// SetAudio sets the Audio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeAudioSummary) SetAudio(audio *FfprobeAudioStream) {
+	f.Audio = audio
+	f.require(ffprobeAudioSummaryFieldAudio)
+}
+
+func (f *FfprobeAudioSummary) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeAudioSummary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeAudioSummary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeAudioSummaryNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeAudioSummary) MarshalJSON() ([]byte, error) {
+	type embed FfprobeAudioSummary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeAudioSummary) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeChapterFieldID        = big.NewInt(1 << 0)
+	ffprobeChapterFieldStartTime = big.NewInt(1 << 1)
+	ffprobeChapterFieldEndTime   = big.NewInt(1 << 2)
+	ffprobeChapterFieldTags      = big.NewInt(1 << 3)
+)
+
+type FfprobeChapter struct {
+	ID        *int              `json:"id,omitempty" url:"id,omitempty"`
+	StartTime *string           `json:"start_time,omitempty" url:"start_time,omitempty"`
+	EndTime   *string           `json:"end_time,omitempty" url:"end_time,omitempty"`
+	Tags      map[string]string `json:"tags,omitempty" url:"tags,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeChapter) GetID() *int {
+	if f == nil {
+		return nil
+	}
+	return f.ID
+}
+
+func (f *FfprobeChapter) GetStartTime() *string {
+	if f == nil {
+		return nil
+	}
+	return f.StartTime
+}
+
+func (f *FfprobeChapter) GetEndTime() *string {
+	if f == nil {
+		return nil
+	}
+	return f.EndTime
+}
+
+func (f *FfprobeChapter) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeChapter) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeChapter) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeChapter) SetID(id *int) {
+	f.ID = id
+	f.require(ffprobeChapterFieldID)
+}
+
+// SetStartTime sets the StartTime field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeChapter) SetStartTime(startTime *string) {
+	f.StartTime = startTime
+	f.require(ffprobeChapterFieldStartTime)
+}
+
+// SetEndTime sets the EndTime field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeChapter) SetEndTime(endTime *string) {
+	f.EndTime = endTime
+	f.require(ffprobeChapterFieldEndTime)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeChapter) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeChapterFieldTags)
+}
+
+func (f *FfprobeChapter) UnmarshalJSON(data []byte) error {
+	type embed FfprobeChapter
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeChapter(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeChapter) MarshalJSON() ([]byte, error) {
+	type embed FfprobeChapter
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeChapter) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeFormatFieldFilename       = big.NewInt(1 << 0)
+	ffprobeFormatFieldFormatName     = big.NewInt(1 << 1)
+	ffprobeFormatFieldFormatLongName = big.NewInt(1 << 2)
+	ffprobeFormatFieldNbStreams      = big.NewInt(1 << 3)
+	ffprobeFormatFieldNbPrograms     = big.NewInt(1 << 4)
+	ffprobeFormatFieldStartTime      = big.NewInt(1 << 5)
+	ffprobeFormatFieldDuration       = big.NewInt(1 << 6)
+	ffprobeFormatFieldSize           = big.NewInt(1 << 7)
+	ffprobeFormatFieldBitRate        = big.NewInt(1 << 8)
+	ffprobeFormatFieldProbeScore     = big.NewInt(1 << 9)
+	ffprobeFormatFieldTags           = big.NewInt(1 << 10)
+)
+
+type FfprobeFormat struct {
+	// The probed source URL
+	Filename       *string           `json:"filename,omitempty" url:"filename,omitempty"`
+	FormatName     *string           `json:"format_name,omitempty" url:"format_name,omitempty"`
+	FormatLongName *string           `json:"format_long_name,omitempty" url:"format_long_name,omitempty"`
+	NbStreams      *int              `json:"nb_streams,omitempty" url:"nb_streams,omitempty"`
+	NbPrograms     *int              `json:"nb_programs,omitempty" url:"nb_programs,omitempty"`
+	StartTime      *string           `json:"start_time,omitempty" url:"start_time,omitempty"`
+	Duration       *string           `json:"duration,omitempty" url:"duration,omitempty"`
+	Size           *string           `json:"size,omitempty" url:"size,omitempty"`
+	BitRate        *string           `json:"bit_rate,omitempty" url:"bit_rate,omitempty"`
+	ProbeScore     *int              `json:"probe_score,omitempty" url:"probe_score,omitempty"`
+	Tags           map[string]string `json:"tags,omitempty" url:"tags,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeFormat) GetFilename() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Filename
+}
+
+func (f *FfprobeFormat) GetFormatName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatName
+}
+
+func (f *FfprobeFormat) GetFormatLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatLongName
+}
+
+func (f *FfprobeFormat) GetNbStreams() *int {
+	if f == nil {
+		return nil
+	}
+	return f.NbStreams
+}
+
+func (f *FfprobeFormat) GetNbPrograms() *int {
+	if f == nil {
+		return nil
+	}
+	return f.NbPrograms
+}
+
+func (f *FfprobeFormat) GetStartTime() *string {
+	if f == nil {
+		return nil
+	}
+	return f.StartTime
+}
+
+func (f *FfprobeFormat) GetDuration() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Duration
+}
+
+func (f *FfprobeFormat) GetSize() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Size
+}
+
+func (f *FfprobeFormat) GetBitRate() *string {
+	if f == nil {
+		return nil
+	}
+	return f.BitRate
+}
+
+func (f *FfprobeFormat) GetProbeScore() *int {
+	if f == nil {
+		return nil
+	}
+	return f.ProbeScore
+}
+
+func (f *FfprobeFormat) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeFormat) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeFormat) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetFilename sets the Filename field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetFilename(filename *string) {
+	f.Filename = filename
+	f.require(ffprobeFormatFieldFilename)
+}
+
+// SetFormatName sets the FormatName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetFormatName(formatName *string) {
+	f.FormatName = formatName
+	f.require(ffprobeFormatFieldFormatName)
+}
+
+// SetFormatLongName sets the FormatLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetFormatLongName(formatLongName *string) {
+	f.FormatLongName = formatLongName
+	f.require(ffprobeFormatFieldFormatLongName)
+}
+
+// SetNbStreams sets the NbStreams field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetNbStreams(nbStreams *int) {
+	f.NbStreams = nbStreams
+	f.require(ffprobeFormatFieldNbStreams)
+}
+
+// SetNbPrograms sets the NbPrograms field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetNbPrograms(nbPrograms *int) {
+	f.NbPrograms = nbPrograms
+	f.require(ffprobeFormatFieldNbPrograms)
+}
+
+// SetStartTime sets the StartTime field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetStartTime(startTime *string) {
+	f.StartTime = startTime
+	f.require(ffprobeFormatFieldStartTime)
+}
+
+// SetDuration sets the Duration field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetDuration(duration *string) {
+	f.Duration = duration
+	f.require(ffprobeFormatFieldDuration)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetSize(size *string) {
+	f.Size = size
+	f.require(ffprobeFormatFieldSize)
+}
+
+// SetBitRate sets the BitRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetBitRate(bitRate *string) {
+	f.BitRate = bitRate
+	f.require(ffprobeFormatFieldBitRate)
+}
+
+// SetProbeScore sets the ProbeScore field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetProbeScore(probeScore *int) {
+	f.ProbeScore = probeScore
+	f.require(ffprobeFormatFieldProbeScore)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFormat) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeFormatFieldTags)
+}
+
+func (f *FfprobeFormat) UnmarshalJSON(data []byte) error {
+	type embed FfprobeFormat
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeFormat(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeFormat) MarshalJSON() ([]byte, error) {
+	type embed FfprobeFormat
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeFormat) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeFrameFieldMediaType   = big.NewInt(1 << 0)
+	ffprobeFrameFieldStreamIndex = big.NewInt(1 << 1)
+)
+
+type FfprobeFrame struct {
+	MediaType   *string `json:"media_type,omitempty" url:"media_type,omitempty"`
+	StreamIndex *int    `json:"stream_index,omitempty" url:"stream_index,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeFrame) GetMediaType() *string {
+	if f == nil {
+		return nil
+	}
+	return f.MediaType
+}
+
+func (f *FfprobeFrame) GetStreamIndex() *int {
+	if f == nil {
+		return nil
+	}
+	return f.StreamIndex
+}
+
+func (f *FfprobeFrame) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeFrame) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetMediaType sets the MediaType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFrame) SetMediaType(mediaType *string) {
+	f.MediaType = mediaType
+	f.require(ffprobeFrameFieldMediaType)
+}
+
+// SetStreamIndex sets the StreamIndex field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeFrame) SetStreamIndex(streamIndex *int) {
+	f.StreamIndex = streamIndex
+	f.require(ffprobeFrameFieldStreamIndex)
+}
+
+func (f *FfprobeFrame) UnmarshalJSON(data []byte) error {
+	type embed FfprobeFrame
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeFrame(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeFrame) MarshalJSON() ([]byte, error) {
+	type embed FfprobeFrame
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeFrame) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeImageStreamFieldCodec       = big.NewInt(1 << 0)
+	ffprobeImageStreamFieldWidth       = big.NewInt(1 << 1)
+	ffprobeImageStreamFieldHeight      = big.NewInt(1 << 2)
+	ffprobeImageStreamFieldPixelFormat = big.NewInt(1 << 3)
+	ffprobeImageStreamFieldBitDepth    = big.NewInt(1 << 4)
+)
+
+// ffprobeImageStreamNullableFields maps the wire names of FfprobeImageStream's nullable fields (required or optional) to their field bits.
+var ffprobeImageStreamNullableFields = map[string]*big.Int{
+	"codec":       ffprobeImageStreamFieldCodec,
+	"width":       ffprobeImageStreamFieldWidth,
+	"height":      ffprobeImageStreamFieldHeight,
+	"pixelFormat": ffprobeImageStreamFieldPixelFormat,
+	"bitDepth":    ffprobeImageStreamFieldBitDepth,
+}
+
+type FfprobeImageStream struct {
+	Codec       *string `json:"codec,omitempty" url:"codec,omitempty"`
+	Width       *int    `json:"width,omitempty" url:"width,omitempty"`
+	Height      *int    `json:"height,omitempty" url:"height,omitempty"`
+	PixelFormat *string `json:"pixelFormat,omitempty" url:"pixelFormat,omitempty"`
+	BitDepth    *int    `json:"bitDepth,omitempty" url:"bitDepth,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeImageStream) GetCodec() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Codec
+}
+
+func (f *FfprobeImageStream) GetWidth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Width
+}
+
+func (f *FfprobeImageStream) GetHeight() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Height
+}
+
+func (f *FfprobeImageStream) GetPixelFormat() *string {
+	if f == nil {
+		return nil
+	}
+	return f.PixelFormat
+}
+
+func (f *FfprobeImageStream) GetBitDepth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitDepth
+}
+
+func (f *FfprobeImageStream) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeImageStream) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetCodec sets the Codec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageStream) SetCodec(codec *string) {
+	f.Codec = codec
+	f.require(ffprobeImageStreamFieldCodec)
+}
+
+// SetWidth sets the Width field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageStream) SetWidth(width *int) {
+	f.Width = width
+	f.require(ffprobeImageStreamFieldWidth)
+}
+
+// SetHeight sets the Height field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageStream) SetHeight(height *int) {
+	f.Height = height
+	f.require(ffprobeImageStreamFieldHeight)
+}
+
+// SetPixelFormat sets the PixelFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageStream) SetPixelFormat(pixelFormat *string) {
+	f.PixelFormat = pixelFormat
+	f.require(ffprobeImageStreamFieldPixelFormat)
+}
+
+// SetBitDepth sets the BitDepth field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageStream) SetBitDepth(bitDepth *int) {
+	f.BitDepth = bitDepth
+	f.require(ffprobeImageStreamFieldBitDepth)
+}
+
+func (f *FfprobeImageStream) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeImageStream
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeImageStream(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeImageStreamNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeImageStream) MarshalJSON() ([]byte, error) {
+	type embed FfprobeImageStream
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeImageStream) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeImageSummaryFieldContainer      = big.NewInt(1 << 0)
+	ffprobeImageSummaryFieldFormatLongName = big.NewInt(1 << 1)
+	ffprobeImageSummaryFieldDurationSec    = big.NewInt(1 << 2)
+	ffprobeImageSummaryFieldSizeBytes      = big.NewInt(1 << 3)
+	ffprobeImageSummaryFieldBitrateBps     = big.NewInt(1 << 4)
+	ffprobeImageSummaryFieldStartTimeSec   = big.NewInt(1 << 5)
+	ffprobeImageSummaryFieldStreamCounts   = big.NewInt(1 << 6)
+	ffprobeImageSummaryFieldTags           = big.NewInt(1 << 7)
+	ffprobeImageSummaryFieldImage          = big.NewInt(1 << 8)
+)
+
+// ffprobeImageSummaryNullableFields maps the wire names of FfprobeImageSummary's nullable fields (required or optional) to their field bits.
+var ffprobeImageSummaryNullableFields = map[string]*big.Int{
+	"container":      ffprobeImageSummaryFieldContainer,
+	"formatLongName": ffprobeImageSummaryFieldFormatLongName,
+	"durationSec":    ffprobeImageSummaryFieldDurationSec,
+	"sizeBytes":      ffprobeImageSummaryFieldSizeBytes,
+	"bitrateBps":     ffprobeImageSummaryFieldBitrateBps,
+	"startTimeSec":   ffprobeImageSummaryFieldStartTimeSec,
+}
+
+type FfprobeImageSummary struct {
+	// format_name, e.g. "mov,mp4,m4a,3gp,3g2,mj2"
+	Container      *string `json:"container,omitempty" url:"container,omitempty"`
+	FormatLongName *string `json:"formatLongName,omitempty" url:"formatLongName,omitempty"`
+	// Duration in seconds
+	DurationSec *float64 `json:"durationSec,omitempty" url:"durationSec,omitempty"`
+	SizeBytes   *int     `json:"sizeBytes,omitempty" url:"sizeBytes,omitempty"`
+	// Container bitrate; null when the container omits it
+	BitrateBps   *int                 `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	StartTimeSec *float64             `json:"startTimeSec,omitempty" url:"startTimeSec,omitempty"`
+	StreamCounts *FfprobeStreamCounts `json:"streamCounts" url:"streamCounts"`
+	// Container-level tags, {} when none
+	Tags  map[string]string   `json:"tags" url:"tags"`
+	Image *FfprobeImageStream `json:"image" url:"image"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeImageSummary) GetContainer() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Container
+}
+
+func (f *FfprobeImageSummary) GetFormatLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatLongName
+}
+
+func (f *FfprobeImageSummary) GetDurationSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.DurationSec
+}
+
+func (f *FfprobeImageSummary) GetSizeBytes() *int {
+	if f == nil {
+		return nil
+	}
+	return f.SizeBytes
+}
+
+func (f *FfprobeImageSummary) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeImageSummary) GetStartTimeSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.StartTimeSec
+}
+
+func (f *FfprobeImageSummary) GetStreamCounts() *FfprobeStreamCounts {
+	if f == nil {
+		return nil
+	}
+	return f.StreamCounts
+}
+
+func (f *FfprobeImageSummary) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeImageSummary) GetImage() *FfprobeImageStream {
+	if f == nil {
+		return nil
+	}
+	return f.Image
+}
+
+func (f *FfprobeImageSummary) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeImageSummary) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetContainer sets the Container field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetContainer(container *string) {
+	f.Container = container
+	f.require(ffprobeImageSummaryFieldContainer)
+}
+
+// SetFormatLongName sets the FormatLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetFormatLongName(formatLongName *string) {
+	f.FormatLongName = formatLongName
+	f.require(ffprobeImageSummaryFieldFormatLongName)
+}
+
+// SetDurationSec sets the DurationSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetDurationSec(durationSec *float64) {
+	f.DurationSec = durationSec
+	f.require(ffprobeImageSummaryFieldDurationSec)
+}
+
+// SetSizeBytes sets the SizeBytes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetSizeBytes(sizeBytes *int) {
+	f.SizeBytes = sizeBytes
+	f.require(ffprobeImageSummaryFieldSizeBytes)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeImageSummaryFieldBitrateBps)
+}
+
+// SetStartTimeSec sets the StartTimeSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetStartTimeSec(startTimeSec *float64) {
+	f.StartTimeSec = startTimeSec
+	f.require(ffprobeImageSummaryFieldStartTimeSec)
+}
+
+// SetStreamCounts sets the StreamCounts field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetStreamCounts(streamCounts *FfprobeStreamCounts) {
+	f.StreamCounts = streamCounts
+	f.require(ffprobeImageSummaryFieldStreamCounts)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeImageSummaryFieldTags)
+}
+
+// SetImage sets the Image field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeImageSummary) SetImage(image *FfprobeImageStream) {
+	f.Image = image
+	f.require(ffprobeImageSummaryFieldImage)
+}
+
+func (f *FfprobeImageSummary) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeImageSummary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeImageSummary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeImageSummaryNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeImageSummary) MarshalJSON() ([]byte, error) {
+	type embed FfprobeImageSummary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeImageSummary) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeOtherSummaryFieldContainer      = big.NewInt(1 << 0)
+	ffprobeOtherSummaryFieldFormatLongName = big.NewInt(1 << 1)
+	ffprobeOtherSummaryFieldDurationSec    = big.NewInt(1 << 2)
+	ffprobeOtherSummaryFieldSizeBytes      = big.NewInt(1 << 3)
+	ffprobeOtherSummaryFieldBitrateBps     = big.NewInt(1 << 4)
+	ffprobeOtherSummaryFieldStartTimeSec   = big.NewInt(1 << 5)
+	ffprobeOtherSummaryFieldStreamCounts   = big.NewInt(1 << 6)
+	ffprobeOtherSummaryFieldTags           = big.NewInt(1 << 7)
+)
+
+// ffprobeOtherSummaryNullableFields maps the wire names of FfprobeOtherSummary's nullable fields (required or optional) to their field bits.
+var ffprobeOtherSummaryNullableFields = map[string]*big.Int{
+	"container":      ffprobeOtherSummaryFieldContainer,
+	"formatLongName": ffprobeOtherSummaryFieldFormatLongName,
+	"durationSec":    ffprobeOtherSummaryFieldDurationSec,
+	"sizeBytes":      ffprobeOtherSummaryFieldSizeBytes,
+	"bitrateBps":     ffprobeOtherSummaryFieldBitrateBps,
+	"startTimeSec":   ffprobeOtherSummaryFieldStartTimeSec,
+}
+
+type FfprobeOtherSummary struct {
+	// format_name, e.g. "mov,mp4,m4a,3gp,3g2,mj2"
+	Container      *string `json:"container,omitempty" url:"container,omitempty"`
+	FormatLongName *string `json:"formatLongName,omitempty" url:"formatLongName,omitempty"`
+	// Duration in seconds
+	DurationSec *float64 `json:"durationSec,omitempty" url:"durationSec,omitempty"`
+	SizeBytes   *int     `json:"sizeBytes,omitempty" url:"sizeBytes,omitempty"`
+	// Container bitrate; null when the container omits it
+	BitrateBps   *int                 `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	StartTimeSec *float64             `json:"startTimeSec,omitempty" url:"startTimeSec,omitempty"`
+	StreamCounts *FfprobeStreamCounts `json:"streamCounts" url:"streamCounts"`
+	// Container-level tags, {} when none
+	Tags map[string]string `json:"tags" url:"tags"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeOtherSummary) GetContainer() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Container
+}
+
+func (f *FfprobeOtherSummary) GetFormatLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatLongName
+}
+
+func (f *FfprobeOtherSummary) GetDurationSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.DurationSec
+}
+
+func (f *FfprobeOtherSummary) GetSizeBytes() *int {
+	if f == nil {
+		return nil
+	}
+	return f.SizeBytes
+}
+
+func (f *FfprobeOtherSummary) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeOtherSummary) GetStartTimeSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.StartTimeSec
+}
+
+func (f *FfprobeOtherSummary) GetStreamCounts() *FfprobeStreamCounts {
+	if f == nil {
+		return nil
+	}
+	return f.StreamCounts
+}
+
+func (f *FfprobeOtherSummary) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeOtherSummary) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeOtherSummary) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetContainer sets the Container field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetContainer(container *string) {
+	f.Container = container
+	f.require(ffprobeOtherSummaryFieldContainer)
+}
+
+// SetFormatLongName sets the FormatLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetFormatLongName(formatLongName *string) {
+	f.FormatLongName = formatLongName
+	f.require(ffprobeOtherSummaryFieldFormatLongName)
+}
+
+// SetDurationSec sets the DurationSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetDurationSec(durationSec *float64) {
+	f.DurationSec = durationSec
+	f.require(ffprobeOtherSummaryFieldDurationSec)
+}
+
+// SetSizeBytes sets the SizeBytes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetSizeBytes(sizeBytes *int) {
+	f.SizeBytes = sizeBytes
+	f.require(ffprobeOtherSummaryFieldSizeBytes)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeOtherSummaryFieldBitrateBps)
+}
+
+// SetStartTimeSec sets the StartTimeSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetStartTimeSec(startTimeSec *float64) {
+	f.StartTimeSec = startTimeSec
+	f.require(ffprobeOtherSummaryFieldStartTimeSec)
+}
+
+// SetStreamCounts sets the StreamCounts field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetStreamCounts(streamCounts *FfprobeStreamCounts) {
+	f.StreamCounts = streamCounts
+	f.require(ffprobeOtherSummaryFieldStreamCounts)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeOtherSummary) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeOtherSummaryFieldTags)
+}
+
+func (f *FfprobeOtherSummary) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeOtherSummary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeOtherSummary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeOtherSummaryNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeOtherSummary) MarshalJSON() ([]byte, error) {
+	type embed FfprobeOtherSummary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeOtherSummary) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobePacketFieldCodecType   = big.NewInt(1 << 0)
+	ffprobePacketFieldStreamIndex = big.NewInt(1 << 1)
+)
+
+type FfprobePacket struct {
+	CodecType   *string `json:"codec_type,omitempty" url:"codec_type,omitempty"`
+	StreamIndex *int    `json:"stream_index,omitempty" url:"stream_index,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobePacket) GetCodecType() *string {
+	if f == nil {
+		return nil
+	}
+	return f.CodecType
+}
+
+func (f *FfprobePacket) GetStreamIndex() *int {
+	if f == nil {
+		return nil
+	}
+	return f.StreamIndex
+}
+
+func (f *FfprobePacket) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobePacket) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetCodecType sets the CodecType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobePacket) SetCodecType(codecType *string) {
+	f.CodecType = codecType
+	f.require(ffprobePacketFieldCodecType)
+}
+
+// SetStreamIndex sets the StreamIndex field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobePacket) SetStreamIndex(streamIndex *int) {
+	f.StreamIndex = streamIndex
+	f.require(ffprobePacketFieldStreamIndex)
+}
+
+func (f *FfprobePacket) UnmarshalJSON(data []byte) error {
+	type embed FfprobePacket
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobePacket(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobePacket) MarshalJSON() ([]byte, error) {
+	type embed FfprobePacket
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobePacket) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeProgramFieldProgramID = big.NewInt(1 << 0)
+	ffprobeProgramFieldNbStreams = big.NewInt(1 << 1)
+	ffprobeProgramFieldStreams   = big.NewInt(1 << 2)
+	ffprobeProgramFieldTags      = big.NewInt(1 << 3)
+)
+
+type FfprobeProgram struct {
+	ProgramID *int              `json:"program_id,omitempty" url:"program_id,omitempty"`
+	NbStreams *int              `json:"nb_streams,omitempty" url:"nb_streams,omitempty"`
+	Streams   []*FfprobeStream  `json:"streams,omitempty" url:"streams,omitempty"`
+	Tags      map[string]string `json:"tags,omitempty" url:"tags,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeProgram) GetProgramID() *int {
+	if f == nil {
+		return nil
+	}
+	return f.ProgramID
+}
+
+func (f *FfprobeProgram) GetNbStreams() *int {
+	if f == nil {
+		return nil
+	}
+	return f.NbStreams
+}
+
+func (f *FfprobeProgram) GetStreams() []*FfprobeStream {
+	if f == nil {
+		return nil
+	}
+	return f.Streams
+}
+
+func (f *FfprobeProgram) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeProgram) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeProgram) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetProgramID sets the ProgramID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeProgram) SetProgramID(programID *int) {
+	f.ProgramID = programID
+	f.require(ffprobeProgramFieldProgramID)
+}
+
+// SetNbStreams sets the NbStreams field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeProgram) SetNbStreams(nbStreams *int) {
+	f.NbStreams = nbStreams
+	f.require(ffprobeProgramFieldNbStreams)
+}
+
+// SetStreams sets the Streams field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeProgram) SetStreams(streams []*FfprobeStream) {
+	f.Streams = streams
+	f.require(ffprobeProgramFieldStreams)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeProgram) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeProgramFieldTags)
+}
+
+func (f *FfprobeProgram) UnmarshalJSON(data []byte) error {
+	type embed FfprobeProgram
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeProgram(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeProgram) MarshalJSON() ([]byte, error) {
+	type embed FfprobeProgram
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeProgram) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeResultFieldSummary      = big.NewInt(1 << 0)
+	ffprobeResultFieldFormat       = big.NewInt(1 << 1)
+	ffprobeResultFieldStreams      = big.NewInt(1 << 2)
+	ffprobeResultFieldChapters     = big.NewInt(1 << 3)
+	ffprobeResultFieldPrograms     = big.NewInt(1 << 4)
+	ffprobeResultFieldStreamGroups = big.NewInt(1 << 5)
+	ffprobeResultFieldFrames       = big.NewInt(1 << 6)
+	ffprobeResultFieldPackets      = big.NewInt(1 << 7)
+	ffprobeResultFieldStdout       = big.NewInt(1 << 8)
+	ffprobeResultFieldWarnings     = big.NewInt(1 << 9)
+	ffprobeResultFieldStderr       = big.NewInt(1 << 10)
+	ffprobeResultFieldReportURL    = big.NewInt(1 << 11)
+)
+
+// `output.data` of a complete ffprobe job. Every section is present only when the run produced it.
+type FfprobeResult struct {
+	Summary  *FfprobeSummary   `json:"summary,omitempty" url:"summary,omitempty"`
+	Format   *FfprobeFormat    `json:"format,omitempty" url:"format,omitempty"`
+	Streams  []*FfprobeStream  `json:"streams,omitempty" url:"streams,omitempty"`
+	Chapters []*FfprobeChapter `json:"chapters,omitempty" url:"chapters,omitempty"`
+	// -show_programs (MPEG-TS)
+	Programs []*FfprobeProgram `json:"programs,omitempty" url:"programs,omitempty"`
+	// -show_stream_groups
+	StreamGroups []*FfprobeStreamGroup `json:"stream_groups,omitempty" url:"stream_groups,omitempty"`
+	// -show_frames, inline when small
+	Frames []*FfprobeFrame `json:"frames,omitempty" url:"frames,omitempty"`
+	// -show_packets, inline when small
+	Packets []*FfprobePacket `json:"packets,omitempty" url:"packets,omitempty"`
+	// ffprobe's text output, verbatim, when the command chose a writer other than JSON
+	Stdout   *string           `json:"stdout,omitempty" url:"stdout,omitempty"`
+	Warnings []*FfprobeWarning `json:"warnings,omitempty" url:"warnings,omitempty"`
+	// ffprobe diagnostics, when non-empty
+	Stderr *string `json:"stderr,omitempty" url:"stderr,omitempty"`
+	// The complete report, when a frame or packet dump was too big to inline
+	ReportURL *string `json:"reportUrl,omitempty" url:"reportUrl,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeResult) GetSummary() *FfprobeSummary {
+	if f == nil {
+		return nil
+	}
+	return f.Summary
+}
+
+func (f *FfprobeResult) GetFormat() *FfprobeFormat {
+	if f == nil {
+		return nil
+	}
+	return f.Format
+}
+
+func (f *FfprobeResult) GetStreams() []*FfprobeStream {
+	if f == nil {
+		return nil
+	}
+	return f.Streams
+}
+
+func (f *FfprobeResult) GetChapters() []*FfprobeChapter {
+	if f == nil {
+		return nil
+	}
+	return f.Chapters
+}
+
+func (f *FfprobeResult) GetPrograms() []*FfprobeProgram {
+	if f == nil {
+		return nil
+	}
+	return f.Programs
+}
+
+func (f *FfprobeResult) GetStreamGroups() []*FfprobeStreamGroup {
+	if f == nil {
+		return nil
+	}
+	return f.StreamGroups
+}
+
+func (f *FfprobeResult) GetFrames() []*FfprobeFrame {
+	if f == nil {
+		return nil
+	}
+	return f.Frames
+}
+
+func (f *FfprobeResult) GetPackets() []*FfprobePacket {
+	if f == nil {
+		return nil
+	}
+	return f.Packets
+}
+
+func (f *FfprobeResult) GetStdout() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Stdout
+}
+
+func (f *FfprobeResult) GetWarnings() []*FfprobeWarning {
+	if f == nil {
+		return nil
+	}
+	return f.Warnings
+}
+
+func (f *FfprobeResult) GetStderr() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Stderr
+}
+
+func (f *FfprobeResult) GetReportURL() *string {
+	if f == nil {
+		return nil
+	}
+	return f.ReportURL
+}
+
+func (f *FfprobeResult) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeResult) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetSummary sets the Summary field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetSummary(summary *FfprobeSummary) {
+	f.Summary = summary
+	f.require(ffprobeResultFieldSummary)
+}
+
+// SetFormat sets the Format field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetFormat(format *FfprobeFormat) {
+	f.Format = format
+	f.require(ffprobeResultFieldFormat)
+}
+
+// SetStreams sets the Streams field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetStreams(streams []*FfprobeStream) {
+	f.Streams = streams
+	f.require(ffprobeResultFieldStreams)
+}
+
+// SetChapters sets the Chapters field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetChapters(chapters []*FfprobeChapter) {
+	f.Chapters = chapters
+	f.require(ffprobeResultFieldChapters)
+}
+
+// SetPrograms sets the Programs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetPrograms(programs []*FfprobeProgram) {
+	f.Programs = programs
+	f.require(ffprobeResultFieldPrograms)
+}
+
+// SetStreamGroups sets the StreamGroups field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetStreamGroups(streamGroups []*FfprobeStreamGroup) {
+	f.StreamGroups = streamGroups
+	f.require(ffprobeResultFieldStreamGroups)
+}
+
+// SetFrames sets the Frames field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetFrames(frames []*FfprobeFrame) {
+	f.Frames = frames
+	f.require(ffprobeResultFieldFrames)
+}
+
+// SetPackets sets the Packets field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetPackets(packets []*FfprobePacket) {
+	f.Packets = packets
+	f.require(ffprobeResultFieldPackets)
+}
+
+// SetStdout sets the Stdout field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetStdout(stdout *string) {
+	f.Stdout = stdout
+	f.require(ffprobeResultFieldStdout)
+}
+
+// SetWarnings sets the Warnings field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetWarnings(warnings []*FfprobeWarning) {
+	f.Warnings = warnings
+	f.require(ffprobeResultFieldWarnings)
+}
+
+// SetStderr sets the Stderr field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetStderr(stderr *string) {
+	f.Stderr = stderr
+	f.require(ffprobeResultFieldStderr)
+}
+
+// SetReportURL sets the ReportURL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeResult) SetReportURL(reportURL *string) {
+	f.ReportURL = reportURL
+	f.require(ffprobeResultFieldReportURL)
+}
+
+func (f *FfprobeResult) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeResult
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeResult(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeResult) MarshalJSON() ([]byte, error) {
+	type embed FfprobeResult
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeResult) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeStreamFieldIndex              = big.NewInt(1 << 0)
+	ffprobeStreamFieldCodecType          = big.NewInt(1 << 1)
+	ffprobeStreamFieldCodecName          = big.NewInt(1 << 2)
+	ffprobeStreamFieldCodecLongName      = big.NewInt(1 << 3)
+	ffprobeStreamFieldProfile            = big.NewInt(1 << 4)
+	ffprobeStreamFieldWidth              = big.NewInt(1 << 5)
+	ffprobeStreamFieldHeight             = big.NewInt(1 << 6)
+	ffprobeStreamFieldCodedWidth         = big.NewInt(1 << 7)
+	ffprobeStreamFieldCodedHeight        = big.NewInt(1 << 8)
+	ffprobeStreamFieldSampleAspectRatio  = big.NewInt(1 << 9)
+	ffprobeStreamFieldDisplayAspectRatio = big.NewInt(1 << 10)
+	ffprobeStreamFieldPixFmt             = big.NewInt(1 << 11)
+	ffprobeStreamFieldFieldOrder         = big.NewInt(1 << 12)
+	ffprobeStreamFieldRFrameRate         = big.NewInt(1 << 13)
+	ffprobeStreamFieldAvgFrameRate       = big.NewInt(1 << 14)
+	ffprobeStreamFieldSampleFmt          = big.NewInt(1 << 15)
+	ffprobeStreamFieldSampleRate         = big.NewInt(1 << 16)
+	ffprobeStreamFieldChannels           = big.NewInt(1 << 17)
+	ffprobeStreamFieldChannelLayout      = big.NewInt(1 << 18)
+	ffprobeStreamFieldBitRate            = big.NewInt(1 << 19)
+	ffprobeStreamFieldDuration           = big.NewInt(1 << 20)
+	ffprobeStreamFieldNbFrames           = big.NewInt(1 << 21)
+	ffprobeStreamFieldNbReadFrames       = big.NewInt(1 << 22)
+	ffprobeStreamFieldDisposition        = big.NewInt(1 << 23)
+	ffprobeStreamFieldTags               = big.NewInt(1 << 24)
+)
+
+type FfprobeStream struct {
+	Index              int                     `json:"index" url:"index"`
+	CodecType          *FfprobeStreamCodecType `json:"codec_type,omitempty" url:"codec_type,omitempty"`
+	CodecName          *string                 `json:"codec_name,omitempty" url:"codec_name,omitempty"`
+	CodecLongName      *string                 `json:"codec_long_name,omitempty" url:"codec_long_name,omitempty"`
+	Profile            *string                 `json:"profile,omitempty" url:"profile,omitempty"`
+	Width              *int                    `json:"width,omitempty" url:"width,omitempty"`
+	Height             *int                    `json:"height,omitempty" url:"height,omitempty"`
+	CodedWidth         *int                    `json:"coded_width,omitempty" url:"coded_width,omitempty"`
+	CodedHeight        *int                    `json:"coded_height,omitempty" url:"coded_height,omitempty"`
+	SampleAspectRatio  *string                 `json:"sample_aspect_ratio,omitempty" url:"sample_aspect_ratio,omitempty"`
+	DisplayAspectRatio *string                 `json:"display_aspect_ratio,omitempty" url:"display_aspect_ratio,omitempty"`
+	PixFmt             *string                 `json:"pix_fmt,omitempty" url:"pix_fmt,omitempty"`
+	FieldOrder         *string                 `json:"field_order,omitempty" url:"field_order,omitempty"`
+	RFrameRate         *string                 `json:"r_frame_rate,omitempty" url:"r_frame_rate,omitempty"`
+	AvgFrameRate       *string                 `json:"avg_frame_rate,omitempty" url:"avg_frame_rate,omitempty"`
+	SampleFmt          *string                 `json:"sample_fmt,omitempty" url:"sample_fmt,omitempty"`
+	SampleRate         *string                 `json:"sample_rate,omitempty" url:"sample_rate,omitempty"`
+	Channels           *int                    `json:"channels,omitempty" url:"channels,omitempty"`
+	ChannelLayout      *string                 `json:"channel_layout,omitempty" url:"channel_layout,omitempty"`
+	BitRate            *string                 `json:"bit_rate,omitempty" url:"bit_rate,omitempty"`
+	Duration           *string                 `json:"duration,omitempty" url:"duration,omitempty"`
+	NbFrames           *string                 `json:"nb_frames,omitempty" url:"nb_frames,omitempty"`
+	NbReadFrames       *string                 `json:"nb_read_frames,omitempty" url:"nb_read_frames,omitempty"`
+	Disposition        map[string]float64      `json:"disposition,omitempty" url:"disposition,omitempty"`
+	Tags               map[string]string       `json:"tags,omitempty" url:"tags,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeStream) GetIndex() int {
+	if f == nil {
+		return 0
+	}
+	return f.Index
+}
+
+func (f *FfprobeStream) GetCodecType() *FfprobeStreamCodecType {
+	if f == nil {
+		return nil
+	}
+	return f.CodecType
+}
+
+func (f *FfprobeStream) GetCodecName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.CodecName
+}
+
+func (f *FfprobeStream) GetCodecLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.CodecLongName
+}
+
+func (f *FfprobeStream) GetProfile() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Profile
+}
+
+func (f *FfprobeStream) GetWidth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Width
+}
+
+func (f *FfprobeStream) GetHeight() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Height
+}
+
+func (f *FfprobeStream) GetCodedWidth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.CodedWidth
+}
+
+func (f *FfprobeStream) GetCodedHeight() *int {
+	if f == nil {
+		return nil
+	}
+	return f.CodedHeight
+}
+
+func (f *FfprobeStream) GetSampleAspectRatio() *string {
+	if f == nil {
+		return nil
+	}
+	return f.SampleAspectRatio
+}
+
+func (f *FfprobeStream) GetDisplayAspectRatio() *string {
+	if f == nil {
+		return nil
+	}
+	return f.DisplayAspectRatio
+}
+
+func (f *FfprobeStream) GetPixFmt() *string {
+	if f == nil {
+		return nil
+	}
+	return f.PixFmt
+}
+
+func (f *FfprobeStream) GetFieldOrder() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FieldOrder
+}
+
+func (f *FfprobeStream) GetRFrameRate() *string {
+	if f == nil {
+		return nil
+	}
+	return f.RFrameRate
+}
+
+func (f *FfprobeStream) GetAvgFrameRate() *string {
+	if f == nil {
+		return nil
+	}
+	return f.AvgFrameRate
+}
+
+func (f *FfprobeStream) GetSampleFmt() *string {
+	if f == nil {
+		return nil
+	}
+	return f.SampleFmt
+}
+
+func (f *FfprobeStream) GetSampleRate() *string {
+	if f == nil {
+		return nil
+	}
+	return f.SampleRate
+}
+
+func (f *FfprobeStream) GetChannels() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Channels
+}
+
+func (f *FfprobeStream) GetChannelLayout() *string {
+	if f == nil {
+		return nil
+	}
+	return f.ChannelLayout
+}
+
+func (f *FfprobeStream) GetBitRate() *string {
+	if f == nil {
+		return nil
+	}
+	return f.BitRate
+}
+
+func (f *FfprobeStream) GetDuration() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Duration
+}
+
+func (f *FfprobeStream) GetNbFrames() *string {
+	if f == nil {
+		return nil
+	}
+	return f.NbFrames
+}
+
+func (f *FfprobeStream) GetNbReadFrames() *string {
+	if f == nil {
+		return nil
+	}
+	return f.NbReadFrames
+}
+
+func (f *FfprobeStream) GetDisposition() map[string]float64 {
+	if f == nil {
+		return nil
+	}
+	return f.Disposition
+}
+
+func (f *FfprobeStream) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeStream) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeStream) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetIndex sets the Index field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetIndex(index int) {
+	f.Index = index
+	f.require(ffprobeStreamFieldIndex)
+}
+
+// SetCodecType sets the CodecType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetCodecType(codecType *FfprobeStreamCodecType) {
+	f.CodecType = codecType
+	f.require(ffprobeStreamFieldCodecType)
+}
+
+// SetCodecName sets the CodecName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetCodecName(codecName *string) {
+	f.CodecName = codecName
+	f.require(ffprobeStreamFieldCodecName)
+}
+
+// SetCodecLongName sets the CodecLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetCodecLongName(codecLongName *string) {
+	f.CodecLongName = codecLongName
+	f.require(ffprobeStreamFieldCodecLongName)
+}
+
+// SetProfile sets the Profile field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetProfile(profile *string) {
+	f.Profile = profile
+	f.require(ffprobeStreamFieldProfile)
+}
+
+// SetWidth sets the Width field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetWidth(width *int) {
+	f.Width = width
+	f.require(ffprobeStreamFieldWidth)
+}
+
+// SetHeight sets the Height field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetHeight(height *int) {
+	f.Height = height
+	f.require(ffprobeStreamFieldHeight)
+}
+
+// SetCodedWidth sets the CodedWidth field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetCodedWidth(codedWidth *int) {
+	f.CodedWidth = codedWidth
+	f.require(ffprobeStreamFieldCodedWidth)
+}
+
+// SetCodedHeight sets the CodedHeight field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetCodedHeight(codedHeight *int) {
+	f.CodedHeight = codedHeight
+	f.require(ffprobeStreamFieldCodedHeight)
+}
+
+// SetSampleAspectRatio sets the SampleAspectRatio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetSampleAspectRatio(sampleAspectRatio *string) {
+	f.SampleAspectRatio = sampleAspectRatio
+	f.require(ffprobeStreamFieldSampleAspectRatio)
+}
+
+// SetDisplayAspectRatio sets the DisplayAspectRatio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetDisplayAspectRatio(displayAspectRatio *string) {
+	f.DisplayAspectRatio = displayAspectRatio
+	f.require(ffprobeStreamFieldDisplayAspectRatio)
+}
+
+// SetPixFmt sets the PixFmt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetPixFmt(pixFmt *string) {
+	f.PixFmt = pixFmt
+	f.require(ffprobeStreamFieldPixFmt)
+}
+
+// SetFieldOrder sets the FieldOrder field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetFieldOrder(fieldOrder *string) {
+	f.FieldOrder = fieldOrder
+	f.require(ffprobeStreamFieldFieldOrder)
+}
+
+// SetRFrameRate sets the RFrameRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetRFrameRate(rFrameRate *string) {
+	f.RFrameRate = rFrameRate
+	f.require(ffprobeStreamFieldRFrameRate)
+}
+
+// SetAvgFrameRate sets the AvgFrameRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetAvgFrameRate(avgFrameRate *string) {
+	f.AvgFrameRate = avgFrameRate
+	f.require(ffprobeStreamFieldAvgFrameRate)
+}
+
+// SetSampleFmt sets the SampleFmt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetSampleFmt(sampleFmt *string) {
+	f.SampleFmt = sampleFmt
+	f.require(ffprobeStreamFieldSampleFmt)
+}
+
+// SetSampleRate sets the SampleRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetSampleRate(sampleRate *string) {
+	f.SampleRate = sampleRate
+	f.require(ffprobeStreamFieldSampleRate)
+}
+
+// SetChannels sets the Channels field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetChannels(channels *int) {
+	f.Channels = channels
+	f.require(ffprobeStreamFieldChannels)
+}
+
+// SetChannelLayout sets the ChannelLayout field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetChannelLayout(channelLayout *string) {
+	f.ChannelLayout = channelLayout
+	f.require(ffprobeStreamFieldChannelLayout)
+}
+
+// SetBitRate sets the BitRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetBitRate(bitRate *string) {
+	f.BitRate = bitRate
+	f.require(ffprobeStreamFieldBitRate)
+}
+
+// SetDuration sets the Duration field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetDuration(duration *string) {
+	f.Duration = duration
+	f.require(ffprobeStreamFieldDuration)
+}
+
+// SetNbFrames sets the NbFrames field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetNbFrames(nbFrames *string) {
+	f.NbFrames = nbFrames
+	f.require(ffprobeStreamFieldNbFrames)
+}
+
+// SetNbReadFrames sets the NbReadFrames field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetNbReadFrames(nbReadFrames *string) {
+	f.NbReadFrames = nbReadFrames
+	f.require(ffprobeStreamFieldNbReadFrames)
+}
+
+// SetDisposition sets the Disposition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetDisposition(disposition map[string]float64) {
+	f.Disposition = disposition
+	f.require(ffprobeStreamFieldDisposition)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStream) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeStreamFieldTags)
+}
+
+func (f *FfprobeStream) UnmarshalJSON(data []byte) error {
+	type embed FfprobeStream
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeStream(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeStream) MarshalJSON() ([]byte, error) {
+	type embed FfprobeStream
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeStream) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+type FfprobeStreamCodecType string
+
+const (
+	FfprobeStreamCodecTypeVideo      FfprobeStreamCodecType = "video"
+	FfprobeStreamCodecTypeAudio      FfprobeStreamCodecType = "audio"
+	FfprobeStreamCodecTypeSubtitle   FfprobeStreamCodecType = "subtitle"
+	FfprobeStreamCodecTypeData       FfprobeStreamCodecType = "data"
+	FfprobeStreamCodecTypeAttachment FfprobeStreamCodecType = "attachment"
+)
+
+func NewFfprobeStreamCodecTypeFromString(s string) (FfprobeStreamCodecType, error) {
+	switch s {
+	case "video":
+		return FfprobeStreamCodecTypeVideo, nil
+	case "audio":
+		return FfprobeStreamCodecTypeAudio, nil
+	case "subtitle":
+		return FfprobeStreamCodecTypeSubtitle, nil
+	case "data":
+		return FfprobeStreamCodecTypeData, nil
+	case "attachment":
+		return FfprobeStreamCodecTypeAttachment, nil
+	}
+	var t FfprobeStreamCodecType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (f FfprobeStreamCodecType) Ptr() *FfprobeStreamCodecType {
+	return &f
+}
+
+var (
+	ffprobeStreamCountsFieldVideo      = big.NewInt(1 << 0)
+	ffprobeStreamCountsFieldAudio      = big.NewInt(1 << 1)
+	ffprobeStreamCountsFieldSubtitle   = big.NewInt(1 << 2)
+	ffprobeStreamCountsFieldData       = big.NewInt(1 << 3)
+	ffprobeStreamCountsFieldAttachment = big.NewInt(1 << 4)
+)
+
+type FfprobeStreamCounts struct {
+	Video      int `json:"video" url:"video"`
+	Audio      int `json:"audio" url:"audio"`
+	Subtitle   int `json:"subtitle" url:"subtitle"`
+	Data       int `json:"data" url:"data"`
+	Attachment int `json:"attachment" url:"attachment"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeStreamCounts) GetVideo() int {
+	if f == nil {
+		return 0
+	}
+	return f.Video
+}
+
+func (f *FfprobeStreamCounts) GetAudio() int {
+	if f == nil {
+		return 0
+	}
+	return f.Audio
+}
+
+func (f *FfprobeStreamCounts) GetSubtitle() int {
+	if f == nil {
+		return 0
+	}
+	return f.Subtitle
+}
+
+func (f *FfprobeStreamCounts) GetData() int {
+	if f == nil {
+		return 0
+	}
+	return f.Data
+}
+
+func (f *FfprobeStreamCounts) GetAttachment() int {
+	if f == nil {
+		return 0
+	}
+	return f.Attachment
+}
+
+func (f *FfprobeStreamCounts) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeStreamCounts) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetVideo sets the Video field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamCounts) SetVideo(video int) {
+	f.Video = video
+	f.require(ffprobeStreamCountsFieldVideo)
+}
+
+// SetAudio sets the Audio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamCounts) SetAudio(audio int) {
+	f.Audio = audio
+	f.require(ffprobeStreamCountsFieldAudio)
+}
+
+// SetSubtitle sets the Subtitle field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamCounts) SetSubtitle(subtitle int) {
+	f.Subtitle = subtitle
+	f.require(ffprobeStreamCountsFieldSubtitle)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamCounts) SetData(data int) {
+	f.Data = data
+	f.require(ffprobeStreamCountsFieldData)
+}
+
+// SetAttachment sets the Attachment field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamCounts) SetAttachment(attachment int) {
+	f.Attachment = attachment
+	f.require(ffprobeStreamCountsFieldAttachment)
+}
+
+func (f *FfprobeStreamCounts) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeStreamCounts
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeStreamCounts(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeStreamCounts) MarshalJSON() ([]byte, error) {
+	type embed FfprobeStreamCounts
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeStreamCounts) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeStreamGroupFieldIndex     = big.NewInt(1 << 0)
+	ffprobeStreamGroupFieldType      = big.NewInt(1 << 1)
+	ffprobeStreamGroupFieldNbStreams = big.NewInt(1 << 2)
+)
+
+type FfprobeStreamGroup struct {
+	Index     *int    `json:"index,omitempty" url:"index,omitempty"`
+	Type      *string `json:"type,omitempty" url:"type,omitempty"`
+	NbStreams *int    `json:"nb_streams,omitempty" url:"nb_streams,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	ExtraProperties map[string]interface{} `json:"-" url:"-"`
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeStreamGroup) GetIndex() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Index
+}
+
+func (f *FfprobeStreamGroup) GetType() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Type
+}
+
+func (f *FfprobeStreamGroup) GetNbStreams() *int {
+	if f == nil {
+		return nil
+	}
+	return f.NbStreams
+}
+
+func (f *FfprobeStreamGroup) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.ExtraProperties
+}
+
+func (f *FfprobeStreamGroup) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetIndex sets the Index field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamGroup) SetIndex(index *int) {
+	f.Index = index
+	f.require(ffprobeStreamGroupFieldIndex)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamGroup) SetType(type_ *string) {
+	f.Type = type_
+	f.require(ffprobeStreamGroupFieldType)
+}
+
+// SetNbStreams sets the NbStreams field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeStreamGroup) SetNbStreams(nbStreams *int) {
+	f.NbStreams = nbStreams
+	f.require(ffprobeStreamGroupFieldNbStreams)
+}
+
+func (f *FfprobeStreamGroup) UnmarshalJSON(data []byte) error {
+	type embed FfprobeStreamGroup
+	var unmarshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	*f = FfprobeStreamGroup(unmarshaler.embed)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.ExtraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeStreamGroup) MarshalJSON() ([]byte, error) {
+	type embed FfprobeStreamGroup
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return internal.MarshalJSONWithExtraProperties(explicitMarshaler, f.ExtraProperties)
+}
+
+func (f *FfprobeStreamGroup) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+// Normalized summary, present when the report is JSON with format and streams. Narrow on `kind` before reading `video`, `audio` or `image`.
+type FfprobeSummary struct {
+	Kind  string
+	Video *FfprobeVideoSummary
+	Audio *FfprobeAudioSummary
+	Image *FfprobeImageSummary
+	Other *FfprobeOtherSummary
+
+	rawJSON json.RawMessage
+}
+
+func (f *FfprobeSummary) GetKind() string {
+	if f == nil {
+		return ""
+	}
+	return f.Kind
+}
+
+func (f *FfprobeSummary) GetVideo() *FfprobeVideoSummary {
+	if f == nil {
+		return nil
+	}
+	return f.Video
+}
+
+func (f *FfprobeSummary) GetAudio() *FfprobeAudioSummary {
+	if f == nil {
+		return nil
+	}
+	return f.Audio
+}
+
+func (f *FfprobeSummary) GetImage() *FfprobeImageSummary {
+	if f == nil {
+		return nil
+	}
+	return f.Image
+}
+
+func (f *FfprobeSummary) GetOther() *FfprobeOtherSummary {
+	if f == nil {
+		return nil
+	}
+	return f.Other
+}
+
+func (f *FfprobeSummary) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Kind string `json:"kind"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	f.Kind = unmarshaler.Kind
+	if unmarshaler.Kind == "" {
+		return fmt.Errorf("%T did not include discriminant kind", f)
+	}
+	switch unmarshaler.Kind {
+	case "video":
+		value := new(FfprobeVideoSummary)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		f.Video = value
+	case "audio":
+		value := new(FfprobeAudioSummary)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		f.Audio = value
+	case "image":
+		value := new(FfprobeImageSummary)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		f.Image = value
+	case "other":
+		value := new(FfprobeOtherSummary)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		f.Other = value
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f FfprobeSummary) MarshalJSON() ([]byte, error) {
+	if err := f.validate(); err != nil {
+		return nil, err
+	}
+	if f.Video != nil {
+		return internal.MarshalJSONWithExtraProperty(f.Video, "kind", "video")
+	}
+	if f.Audio != nil {
+		return internal.MarshalJSONWithExtraProperty(f.Audio, "kind", "audio")
+	}
+	if f.Image != nil {
+		return internal.MarshalJSONWithExtraProperty(f.Image, "kind", "image")
+	}
+	if f.Other != nil {
+		return internal.MarshalJSONWithExtraProperty(f.Other, "kind", "other")
+	}
+	if len(f.rawJSON) > 0 {
+		return f.rawJSON, nil
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", f)
+}
+
+type FfprobeSummaryVisitor interface {
+	VisitVideo(*FfprobeVideoSummary) error
+	VisitAudio(*FfprobeAudioSummary) error
+	VisitImage(*FfprobeImageSummary) error
+	VisitOther(*FfprobeOtherSummary) error
+}
+
+func (f *FfprobeSummary) Accept(visitor FfprobeSummaryVisitor) error {
+	if f.Video != nil {
+		return visitor.VisitVideo(f.Video)
+	}
+	if f.Audio != nil {
+		return visitor.VisitAudio(f.Audio)
+	}
+	if f.Image != nil {
+		return visitor.VisitImage(f.Image)
+	}
+	if f.Other != nil {
+		return visitor.VisitOther(f.Other)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", f)
+}
+
+func (f *FfprobeSummary) validate() error {
+	if f == nil {
+		return fmt.Errorf("type %T is nil", f)
+	}
+	var fields []string
+	if f.Video != nil {
+		fields = append(fields, "video")
+	}
+	if f.Audio != nil {
+		fields = append(fields, "audio")
+	}
+	if f.Image != nil {
+		fields = append(fields, "image")
+	}
+	if f.Other != nil {
+		fields = append(fields, "other")
+	}
+	if len(fields) == 0 {
+		if f.Kind != "" {
+			if len(f.rawJSON) > 0 {
+				return nil
+			}
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", f, f.Kind)
+		}
+		return fmt.Errorf("type %T is empty", f)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", f, fields)
+	}
+	if f.Kind != "" {
+		field := fields[0]
+		if f.Kind != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				f,
+				f.Kind,
+				f,
+			)
+		}
+	}
+	return nil
+}
+
+var (
+	ffprobeVideoStreamFieldCodec               = big.NewInt(1 << 0)
+	ffprobeVideoStreamFieldProfile             = big.NewInt(1 << 1)
+	ffprobeVideoStreamFieldWidth               = big.NewInt(1 << 2)
+	ffprobeVideoStreamFieldHeight              = big.NewInt(1 << 3)
+	ffprobeVideoStreamFieldDisplayAspectRatio  = big.NewInt(1 << 4)
+	ffprobeVideoStreamFieldPixelFormat         = big.NewInt(1 << 5)
+	ffprobeVideoStreamFieldBitDepth            = big.NewInt(1 << 6)
+	ffprobeVideoStreamFieldFps                 = big.NewInt(1 << 7)
+	ffprobeVideoStreamFieldIsVariableFrameRate = big.NewInt(1 << 8)
+	ffprobeVideoStreamFieldRotation            = big.NewInt(1 << 9)
+	ffprobeVideoStreamFieldIsHdr               = big.NewInt(1 << 10)
+	ffprobeVideoStreamFieldBitrateBps          = big.NewInt(1 << 11)
+	ffprobeVideoStreamFieldLanguage            = big.NewInt(1 << 12)
+)
+
+// ffprobeVideoStreamNullableFields maps the wire names of FfprobeVideoStream's nullable fields (required or optional) to their field bits.
+var ffprobeVideoStreamNullableFields = map[string]*big.Int{
+	"codec":              ffprobeVideoStreamFieldCodec,
+	"profile":            ffprobeVideoStreamFieldProfile,
+	"width":              ffprobeVideoStreamFieldWidth,
+	"height":             ffprobeVideoStreamFieldHeight,
+	"displayAspectRatio": ffprobeVideoStreamFieldDisplayAspectRatio,
+	"pixelFormat":        ffprobeVideoStreamFieldPixelFormat,
+	"bitDepth":           ffprobeVideoStreamFieldBitDepth,
+	"fps":                ffprobeVideoStreamFieldFps,
+	"bitrateBps":         ffprobeVideoStreamFieldBitrateBps,
+	"language":           ffprobeVideoStreamFieldLanguage,
+}
+
+type FfprobeVideoStream struct {
+	Codec              *string `json:"codec,omitempty" url:"codec,omitempty"`
+	Profile            *string `json:"profile,omitempty" url:"profile,omitempty"`
+	Width              *int    `json:"width,omitempty" url:"width,omitempty"`
+	Height             *int    `json:"height,omitempty" url:"height,omitempty"`
+	DisplayAspectRatio *string `json:"displayAspectRatio,omitempty" url:"displayAspectRatio,omitempty"`
+	PixelFormat        *string `json:"pixelFormat,omitempty" url:"pixelFormat,omitempty"`
+	BitDepth           *int    `json:"bitDepth,omitempty" url:"bitDepth,omitempty"`
+	// avg_frame_rate as a number; null for a 0/0 rate
+	Fps                 *float64 `json:"fps,omitempty" url:"fps,omitempty"`
+	IsVariableFrameRate bool     `json:"isVariableFrameRate" url:"isVariableFrameRate"`
+	Rotation            float64  `json:"rotation" url:"rotation"`
+	// True for a PQ (smpte2084) or HLG (arib-std-b67) transfer
+	IsHdr bool `json:"isHdr" url:"isHdr"`
+	// Per-stream bitrate; null when the container omits it
+	BitrateBps *int    `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	Language   *string `json:"language,omitempty" url:"language,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeVideoStream) GetCodec() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Codec
+}
+
+func (f *FfprobeVideoStream) GetProfile() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Profile
+}
+
+func (f *FfprobeVideoStream) GetWidth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Width
+}
+
+func (f *FfprobeVideoStream) GetHeight() *int {
+	if f == nil {
+		return nil
+	}
+	return f.Height
+}
+
+func (f *FfprobeVideoStream) GetDisplayAspectRatio() *string {
+	if f == nil {
+		return nil
+	}
+	return f.DisplayAspectRatio
+}
+
+func (f *FfprobeVideoStream) GetPixelFormat() *string {
+	if f == nil {
+		return nil
+	}
+	return f.PixelFormat
+}
+
+func (f *FfprobeVideoStream) GetBitDepth() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitDepth
+}
+
+func (f *FfprobeVideoStream) GetFps() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.Fps
+}
+
+func (f *FfprobeVideoStream) GetIsVariableFrameRate() bool {
+	if f == nil {
+		return false
+	}
+	return f.IsVariableFrameRate
+}
+
+func (f *FfprobeVideoStream) GetRotation() float64 {
+	if f == nil {
+		return 0
+	}
+	return f.Rotation
+}
+
+func (f *FfprobeVideoStream) GetIsHdr() bool {
+	if f == nil {
+		return false
+	}
+	return f.IsHdr
+}
+
+func (f *FfprobeVideoStream) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeVideoStream) GetLanguage() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Language
+}
+
+func (f *FfprobeVideoStream) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeVideoStream) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetCodec sets the Codec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetCodec(codec *string) {
+	f.Codec = codec
+	f.require(ffprobeVideoStreamFieldCodec)
+}
+
+// SetProfile sets the Profile field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetProfile(profile *string) {
+	f.Profile = profile
+	f.require(ffprobeVideoStreamFieldProfile)
+}
+
+// SetWidth sets the Width field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetWidth(width *int) {
+	f.Width = width
+	f.require(ffprobeVideoStreamFieldWidth)
+}
+
+// SetHeight sets the Height field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetHeight(height *int) {
+	f.Height = height
+	f.require(ffprobeVideoStreamFieldHeight)
+}
+
+// SetDisplayAspectRatio sets the DisplayAspectRatio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetDisplayAspectRatio(displayAspectRatio *string) {
+	f.DisplayAspectRatio = displayAspectRatio
+	f.require(ffprobeVideoStreamFieldDisplayAspectRatio)
+}
+
+// SetPixelFormat sets the PixelFormat field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetPixelFormat(pixelFormat *string) {
+	f.PixelFormat = pixelFormat
+	f.require(ffprobeVideoStreamFieldPixelFormat)
+}
+
+// SetBitDepth sets the BitDepth field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetBitDepth(bitDepth *int) {
+	f.BitDepth = bitDepth
+	f.require(ffprobeVideoStreamFieldBitDepth)
+}
+
+// SetFps sets the Fps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetFps(fps *float64) {
+	f.Fps = fps
+	f.require(ffprobeVideoStreamFieldFps)
+}
+
+// SetIsVariableFrameRate sets the IsVariableFrameRate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetIsVariableFrameRate(isVariableFrameRate bool) {
+	f.IsVariableFrameRate = isVariableFrameRate
+	f.require(ffprobeVideoStreamFieldIsVariableFrameRate)
+}
+
+// SetRotation sets the Rotation field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetRotation(rotation float64) {
+	f.Rotation = rotation
+	f.require(ffprobeVideoStreamFieldRotation)
+}
+
+// SetIsHdr sets the IsHdr field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetIsHdr(isHdr bool) {
+	f.IsHdr = isHdr
+	f.require(ffprobeVideoStreamFieldIsHdr)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeVideoStreamFieldBitrateBps)
+}
+
+// SetLanguage sets the Language field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoStream) SetLanguage(language *string) {
+	f.Language = language
+	f.require(ffprobeVideoStreamFieldLanguage)
+}
+
+func (f *FfprobeVideoStream) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeVideoStream
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeVideoStream(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeVideoStreamNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeVideoStream) MarshalJSON() ([]byte, error) {
+	type embed FfprobeVideoStream
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeVideoStream) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeVideoSummaryFieldContainer      = big.NewInt(1 << 0)
+	ffprobeVideoSummaryFieldFormatLongName = big.NewInt(1 << 1)
+	ffprobeVideoSummaryFieldDurationSec    = big.NewInt(1 << 2)
+	ffprobeVideoSummaryFieldSizeBytes      = big.NewInt(1 << 3)
+	ffprobeVideoSummaryFieldBitrateBps     = big.NewInt(1 << 4)
+	ffprobeVideoSummaryFieldStartTimeSec   = big.NewInt(1 << 5)
+	ffprobeVideoSummaryFieldStreamCounts   = big.NewInt(1 << 6)
+	ffprobeVideoSummaryFieldTags           = big.NewInt(1 << 7)
+	ffprobeVideoSummaryFieldVideo          = big.NewInt(1 << 8)
+	ffprobeVideoSummaryFieldAudio          = big.NewInt(1 << 9)
+)
+
+// ffprobeVideoSummaryNullableFields maps the wire names of FfprobeVideoSummary's nullable fields (required or optional) to their field bits.
+var ffprobeVideoSummaryNullableFields = map[string]*big.Int{
+	"container":      ffprobeVideoSummaryFieldContainer,
+	"formatLongName": ffprobeVideoSummaryFieldFormatLongName,
+	"durationSec":    ffprobeVideoSummaryFieldDurationSec,
+	"sizeBytes":      ffprobeVideoSummaryFieldSizeBytes,
+	"bitrateBps":     ffprobeVideoSummaryFieldBitrateBps,
+	"startTimeSec":   ffprobeVideoSummaryFieldStartTimeSec,
+	"audio":          ffprobeVideoSummaryFieldAudio,
+}
+
+type FfprobeVideoSummary struct {
+	// format_name, e.g. "mov,mp4,m4a,3gp,3g2,mj2"
+	Container      *string `json:"container,omitempty" url:"container,omitempty"`
+	FormatLongName *string `json:"formatLongName,omitempty" url:"formatLongName,omitempty"`
+	// Duration in seconds
+	DurationSec *float64 `json:"durationSec,omitempty" url:"durationSec,omitempty"`
+	SizeBytes   *int     `json:"sizeBytes,omitempty" url:"sizeBytes,omitempty"`
+	// Container bitrate; null when the container omits it
+	BitrateBps   *int                 `json:"bitrateBps,omitempty" url:"bitrateBps,omitempty"`
+	StartTimeSec *float64             `json:"startTimeSec,omitempty" url:"startTimeSec,omitempty"`
+	StreamCounts *FfprobeStreamCounts `json:"streamCounts" url:"streamCounts"`
+	// Container-level tags, {} when none
+	Tags  map[string]string   `json:"tags" url:"tags"`
+	Video *FfprobeVideoStream `json:"video" url:"video"`
+	Audio *FfprobeAudioStream `json:"audio,omitempty" url:"audio,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeVideoSummary) GetContainer() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Container
+}
+
+func (f *FfprobeVideoSummary) GetFormatLongName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.FormatLongName
+}
+
+func (f *FfprobeVideoSummary) GetDurationSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.DurationSec
+}
+
+func (f *FfprobeVideoSummary) GetSizeBytes() *int {
+	if f == nil {
+		return nil
+	}
+	return f.SizeBytes
+}
+
+func (f *FfprobeVideoSummary) GetBitrateBps() *int {
+	if f == nil {
+		return nil
+	}
+	return f.BitrateBps
+}
+
+func (f *FfprobeVideoSummary) GetStartTimeSec() *float64 {
+	if f == nil {
+		return nil
+	}
+	return f.StartTimeSec
+}
+
+func (f *FfprobeVideoSummary) GetStreamCounts() *FfprobeStreamCounts {
+	if f == nil {
+		return nil
+	}
+	return f.StreamCounts
+}
+
+func (f *FfprobeVideoSummary) GetTags() map[string]string {
+	if f == nil {
+		return nil
+	}
+	return f.Tags
+}
+
+func (f *FfprobeVideoSummary) GetVideo() *FfprobeVideoStream {
+	if f == nil {
+		return nil
+	}
+	return f.Video
+}
+
+func (f *FfprobeVideoSummary) GetAudio() *FfprobeAudioStream {
+	if f == nil {
+		return nil
+	}
+	return f.Audio
+}
+
+func (f *FfprobeVideoSummary) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeVideoSummary) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetContainer sets the Container field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetContainer(container *string) {
+	f.Container = container
+	f.require(ffprobeVideoSummaryFieldContainer)
+}
+
+// SetFormatLongName sets the FormatLongName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetFormatLongName(formatLongName *string) {
+	f.FormatLongName = formatLongName
+	f.require(ffprobeVideoSummaryFieldFormatLongName)
+}
+
+// SetDurationSec sets the DurationSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetDurationSec(durationSec *float64) {
+	f.DurationSec = durationSec
+	f.require(ffprobeVideoSummaryFieldDurationSec)
+}
+
+// SetSizeBytes sets the SizeBytes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetSizeBytes(sizeBytes *int) {
+	f.SizeBytes = sizeBytes
+	f.require(ffprobeVideoSummaryFieldSizeBytes)
+}
+
+// SetBitrateBps sets the BitrateBps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetBitrateBps(bitrateBps *int) {
+	f.BitrateBps = bitrateBps
+	f.require(ffprobeVideoSummaryFieldBitrateBps)
+}
+
+// SetStartTimeSec sets the StartTimeSec field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetStartTimeSec(startTimeSec *float64) {
+	f.StartTimeSec = startTimeSec
+	f.require(ffprobeVideoSummaryFieldStartTimeSec)
+}
+
+// SetStreamCounts sets the StreamCounts field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetStreamCounts(streamCounts *FfprobeStreamCounts) {
+	f.StreamCounts = streamCounts
+	f.require(ffprobeVideoSummaryFieldStreamCounts)
+}
+
+// SetTags sets the Tags field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetTags(tags map[string]string) {
+	f.Tags = tags
+	f.require(ffprobeVideoSummaryFieldTags)
+}
+
+// SetVideo sets the Video field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetVideo(video *FfprobeVideoStream) {
+	f.Video = video
+	f.require(ffprobeVideoSummaryFieldVideo)
+}
+
+// SetAudio sets the Audio field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeVideoSummary) SetAudio(audio *FfprobeAudioStream) {
+	f.Audio = audio
+	f.require(ffprobeVideoSummaryFieldAudio)
+}
+
+func (f *FfprobeVideoSummary) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeVideoSummary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeVideoSummary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, ffprobeVideoSummaryNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		f.require(presentFields)
+	}
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeVideoSummary) MarshalJSON() ([]byte, error) {
+	type embed FfprobeVideoSummary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeVideoSummary) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+var (
+	ffprobeWarningFieldCode    = big.NewInt(1 << 0)
+	ffprobeWarningFieldMessage = big.NewInt(1 << 1)
+)
+
+type FfprobeWarning struct {
+	Code    string `json:"code" url:"code"`
+	Message string `json:"message" url:"message"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FfprobeWarning) GetCode() string {
+	if f == nil {
+		return ""
+	}
+	return f.Code
+}
+
+func (f *FfprobeWarning) GetMessage() string {
+	if f == nil {
+		return ""
+	}
+	return f.Message
+}
+
+func (f *FfprobeWarning) GetExtraProperties() map[string]interface{} {
+	if f == nil {
+		return nil
+	}
+	return f.extraProperties
+}
+
+func (f *FfprobeWarning) require(field *big.Int) {
+	next := new(big.Int)
+	if f.explicitFields != nil {
+		next.Set(f.explicitFields)
+	}
+	next.Or(next, field)
+	f.explicitFields = next
+}
+
+// SetCode sets the Code field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeWarning) SetCode(code string) {
+	f.Code = code
+	f.require(ffprobeWarningFieldCode)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FfprobeWarning) SetMessage(message string) {
+	f.Message = message
+	f.require(ffprobeWarningFieldMessage)
+}
+
+func (f *FfprobeWarning) UnmarshalJSON(data []byte) error {
+	type unmarshaler FfprobeWarning
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FfprobeWarning(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FfprobeWarning) MarshalJSON() ([]byte, error) {
+	type embed FfprobeWarning
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FfprobeWarning) String() string {
+	if f == nil {
+		return "<nil>"
+	}
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
 }
 
 var (
@@ -1314,6 +5640,3389 @@ func (g GenModelTier) Ptr() *GenModelTier {
 	return &g
 }
 
+var (
+	jobCancelledDataFieldJobID   = big.NewInt(1 << 0)
+	jobCancelledDataFieldJobType = big.NewInt(1 << 1)
+	jobCancelledDataFieldStatus  = big.NewInt(1 << 2)
+	jobCancelledDataFieldTiming  = big.NewInt(1 << 3)
+)
+
+type JobCancelledData struct {
+	JobID   string                  `json:"jobId" url:"jobId"`
+	JobType string                  `json:"jobType" url:"jobType"`
+	Status  JobCancelledDataStatus  `json:"status" url:"status"`
+	Timing  *JobCancelledDataTiming `json:"timing" url:"timing"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCancelledData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobCancelledData) GetJobType() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobType
+}
+
+func (j *JobCancelledData) GetStatus() JobCancelledDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobCancelledData) GetTiming() *JobCancelledDataTiming {
+	if j == nil {
+		return nil
+	}
+	return j.Timing
+}
+
+func (j *JobCancelledData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCancelledData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobCancelledDataFieldJobID)
+}
+
+// SetJobType sets the JobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledData) SetJobType(jobType string) {
+	j.JobType = jobType
+	j.require(jobCancelledDataFieldJobType)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledData) SetStatus(status JobCancelledDataStatus) {
+	j.Status = status
+	j.require(jobCancelledDataFieldStatus)
+}
+
+// SetTiming sets the Timing field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledData) SetTiming(timing *JobCancelledDataTiming) {
+	j.Timing = timing
+	j.require(jobCancelledDataFieldTiming)
+}
+
+func (j *JobCancelledData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCancelledData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCancelledData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCancelledData) MarshalJSON() ([]byte, error) {
+	type embed JobCancelledData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCancelledData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobCancelledDataStatus string
+
+const (
+	JobCancelledDataStatusCancelled JobCancelledDataStatus = "cancelled"
+)
+
+func NewJobCancelledDataStatusFromString(s string) (JobCancelledDataStatus, error) {
+	switch s {
+	case "cancelled":
+		return JobCancelledDataStatusCancelled, nil
+	}
+	var t JobCancelledDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCancelledDataStatus) Ptr() *JobCancelledDataStatus {
+	return &j
+}
+
+var (
+	jobCancelledDataTimingFieldCreatedAt   = big.NewInt(1 << 0)
+	jobCancelledDataTimingFieldCancelledAt = big.NewInt(1 << 1)
+)
+
+type JobCancelledDataTiming struct {
+	CreatedAt   int `json:"createdAt" url:"createdAt"`
+	CancelledAt int `json:"cancelledAt" url:"cancelledAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCancelledDataTiming) GetCreatedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CreatedAt
+}
+
+func (j *JobCancelledDataTiming) GetCancelledAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CancelledAt
+}
+
+func (j *JobCancelledDataTiming) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCancelledDataTiming) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledDataTiming) SetCreatedAt(createdAt int) {
+	j.CreatedAt = createdAt
+	j.require(jobCancelledDataTimingFieldCreatedAt)
+}
+
+// SetCancelledAt sets the CancelledAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledDataTiming) SetCancelledAt(cancelledAt int) {
+	j.CancelledAt = cancelledAt
+	j.require(jobCancelledDataTimingFieldCancelledAt)
+}
+
+func (j *JobCancelledDataTiming) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCancelledDataTiming
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCancelledDataTiming(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCancelledDataTiming) MarshalJSON() ([]byte, error) {
+	type embed JobCancelledDataTiming
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCancelledDataTiming) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobCancelledWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobCancelledWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobCancelledWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobCancelledWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobCancelledWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobCancelledWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobCancelledWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int               `json:"timestamp" url:"timestamp"`
+	OrgID     string            `json:"orgId" url:"orgId"`
+	Data      *JobCancelledData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCancelledWebhookEvent) GetVersion() JobCancelledWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobCancelledWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobCancelledWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobCancelledWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobCancelledWebhookEvent) GetData() *JobCancelledData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobCancelledWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCancelledWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledWebhookEvent) SetVersion(version JobCancelledWebhookEventVersion) {
+	j.Version = version
+	j.require(jobCancelledWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobCancelledWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobCancelledWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobCancelledWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelledWebhookEvent) SetData(data *JobCancelledData) {
+	j.Data = data
+	j.require(jobCancelledWebhookEventFieldData)
+}
+
+func (j *JobCancelledWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCancelledWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCancelledWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCancelledWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobCancelledWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCancelledWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobCancelledWebhookEventVersion string
+
+const (
+	JobCancelledWebhookEventVersionV1 JobCancelledWebhookEventVersion = "1"
+)
+
+func NewJobCancelledWebhookEventVersionFromString(s string) (JobCancelledWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobCancelledWebhookEventVersionV1, nil
+	}
+	var t JobCancelledWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCancelledWebhookEventVersion) Ptr() *JobCancelledWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobCompletedDataFieldJobID          = big.NewInt(1 << 0)
+	jobCompletedDataFieldJobType        = big.NewInt(1 << 1)
+	jobCompletedDataFieldStatus         = big.NewInt(1 << 2)
+	jobCompletedDataFieldOutput         = big.NewInt(1 << 3)
+	jobCompletedDataFieldCost           = big.NewInt(1 << 4)
+	jobCompletedDataFieldTiming         = big.NewInt(1 << 5)
+	jobCompletedDataFieldSteps          = big.NewInt(1 << 6)
+	jobCompletedDataFieldOutputCategory = big.NewInt(1 << 7)
+	jobCompletedDataFieldMediaType      = big.NewInt(1 << 8)
+)
+
+type JobCompletedData struct {
+	JobID          string                  `json:"jobId" url:"jobId"`
+	JobType        string                  `json:"jobType" url:"jobType"`
+	Status         JobCompletedDataStatus  `json:"status" url:"status"`
+	Output         *JobOutput              `json:"output" url:"output"`
+	Cost           *WebhookJobCost         `json:"cost,omitempty" url:"cost,omitempty"`
+	Timing         *JobCompletedDataTiming `json:"timing" url:"timing"`
+	Steps          []*WebhookJobStep       `json:"steps,omitempty" url:"steps,omitempty"`
+	OutputCategory *string                 `json:"outputCategory,omitempty" url:"outputCategory,omitempty"`
+	MediaType      *string                 `json:"mediaType,omitempty" url:"mediaType,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCompletedData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobCompletedData) GetJobType() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobType
+}
+
+func (j *JobCompletedData) GetStatus() JobCompletedDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobCompletedData) GetOutput() *JobOutput {
+	if j == nil {
+		return nil
+	}
+	return j.Output
+}
+
+func (j *JobCompletedData) GetCost() *WebhookJobCost {
+	if j == nil {
+		return nil
+	}
+	return j.Cost
+}
+
+func (j *JobCompletedData) GetTiming() *JobCompletedDataTiming {
+	if j == nil {
+		return nil
+	}
+	return j.Timing
+}
+
+func (j *JobCompletedData) GetSteps() []*WebhookJobStep {
+	if j == nil {
+		return nil
+	}
+	return j.Steps
+}
+
+func (j *JobCompletedData) GetOutputCategory() *string {
+	if j == nil {
+		return nil
+	}
+	return j.OutputCategory
+}
+
+func (j *JobCompletedData) GetMediaType() *string {
+	if j == nil {
+		return nil
+	}
+	return j.MediaType
+}
+
+func (j *JobCompletedData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCompletedData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobCompletedDataFieldJobID)
+}
+
+// SetJobType sets the JobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetJobType(jobType string) {
+	j.JobType = jobType
+	j.require(jobCompletedDataFieldJobType)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetStatus(status JobCompletedDataStatus) {
+	j.Status = status
+	j.require(jobCompletedDataFieldStatus)
+}
+
+// SetOutput sets the Output field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetOutput(output *JobOutput) {
+	j.Output = output
+	j.require(jobCompletedDataFieldOutput)
+}
+
+// SetCost sets the Cost field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetCost(cost *WebhookJobCost) {
+	j.Cost = cost
+	j.require(jobCompletedDataFieldCost)
+}
+
+// SetTiming sets the Timing field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetTiming(timing *JobCompletedDataTiming) {
+	j.Timing = timing
+	j.require(jobCompletedDataFieldTiming)
+}
+
+// SetSteps sets the Steps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetSteps(steps []*WebhookJobStep) {
+	j.Steps = steps
+	j.require(jobCompletedDataFieldSteps)
+}
+
+// SetOutputCategory sets the OutputCategory field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetOutputCategory(outputCategory *string) {
+	j.OutputCategory = outputCategory
+	j.require(jobCompletedDataFieldOutputCategory)
+}
+
+// SetMediaType sets the MediaType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedData) SetMediaType(mediaType *string) {
+	j.MediaType = mediaType
+	j.require(jobCompletedDataFieldMediaType)
+}
+
+func (j *JobCompletedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCompletedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCompletedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCompletedData) MarshalJSON() ([]byte, error) {
+	type embed JobCompletedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCompletedData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobCompletedDataStatus string
+
+const (
+	JobCompletedDataStatusComplete JobCompletedDataStatus = "complete"
+)
+
+func NewJobCompletedDataStatusFromString(s string) (JobCompletedDataStatus, error) {
+	switch s {
+	case "complete":
+		return JobCompletedDataStatusComplete, nil
+	}
+	var t JobCompletedDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCompletedDataStatus) Ptr() *JobCompletedDataStatus {
+	return &j
+}
+
+var (
+	jobCompletedDataTimingFieldCreatedAt    = big.NewInt(1 << 0)
+	jobCompletedDataTimingFieldDispatchedAt = big.NewInt(1 << 1)
+	jobCompletedDataTimingFieldStartedAt    = big.NewInt(1 << 2)
+	jobCompletedDataTimingFieldCompletedAt  = big.NewInt(1 << 3)
+)
+
+type JobCompletedDataTiming struct {
+	CreatedAt    int  `json:"createdAt" url:"createdAt"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	StartedAt    *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	CompletedAt  int  `json:"completedAt" url:"completedAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCompletedDataTiming) GetCreatedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CreatedAt
+}
+
+func (j *JobCompletedDataTiming) GetDispatchedAt() *int {
+	if j == nil {
+		return nil
+	}
+	return j.DispatchedAt
+}
+
+func (j *JobCompletedDataTiming) GetStartedAt() *int {
+	if j == nil {
+		return nil
+	}
+	return j.StartedAt
+}
+
+func (j *JobCompletedDataTiming) GetCompletedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CompletedAt
+}
+
+func (j *JobCompletedDataTiming) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCompletedDataTiming) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedDataTiming) SetCreatedAt(createdAt int) {
+	j.CreatedAt = createdAt
+	j.require(jobCompletedDataTimingFieldCreatedAt)
+}
+
+// SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedDataTiming) SetDispatchedAt(dispatchedAt *int) {
+	j.DispatchedAt = dispatchedAt
+	j.require(jobCompletedDataTimingFieldDispatchedAt)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedDataTiming) SetStartedAt(startedAt *int) {
+	j.StartedAt = startedAt
+	j.require(jobCompletedDataTimingFieldStartedAt)
+}
+
+// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedDataTiming) SetCompletedAt(completedAt int) {
+	j.CompletedAt = completedAt
+	j.require(jobCompletedDataTimingFieldCompletedAt)
+}
+
+func (j *JobCompletedDataTiming) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCompletedDataTiming
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCompletedDataTiming(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCompletedDataTiming) MarshalJSON() ([]byte, error) {
+	type embed JobCompletedDataTiming
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCompletedDataTiming) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobCompletedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobCompletedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobCompletedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobCompletedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobCompletedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobCompletedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobCompletedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int               `json:"timestamp" url:"timestamp"`
+	OrgID     string            `json:"orgId" url:"orgId"`
+	Data      *JobCompletedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCompletedWebhookEvent) GetVersion() JobCompletedWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobCompletedWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobCompletedWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobCompletedWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobCompletedWebhookEvent) GetData() *JobCompletedData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobCompletedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCompletedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedWebhookEvent) SetVersion(version JobCompletedWebhookEventVersion) {
+	j.Version = version
+	j.require(jobCompletedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobCompletedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobCompletedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobCompletedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCompletedWebhookEvent) SetData(data *JobCompletedData) {
+	j.Data = data
+	j.require(jobCompletedWebhookEventFieldData)
+}
+
+func (j *JobCompletedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCompletedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCompletedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCompletedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobCompletedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCompletedWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobCompletedWebhookEventVersion string
+
+const (
+	JobCompletedWebhookEventVersionV1 JobCompletedWebhookEventVersion = "1"
+)
+
+func NewJobCompletedWebhookEventVersionFromString(s string) (JobCompletedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobCompletedWebhookEventVersionV1, nil
+	}
+	var t JobCompletedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCompletedWebhookEventVersion) Ptr() *JobCompletedWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobCreatedFieldID     = big.NewInt(1 << 0)
+	jobCreatedFieldStatus = big.NewInt(1 << 1)
+)
+
+type JobCreated struct {
+	// Job ID
+	ID string `json:"id" url:"id"`
+	// Initial status
+	Status JobCreatedStatus `json:"status" url:"status"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCreated) GetID() string {
+	if j == nil {
+		return ""
+	}
+	return j.ID
+}
+
+func (j *JobCreated) GetStatus() JobCreatedStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobCreated) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCreated) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreated) SetID(id string) {
+	j.ID = id
+	j.require(jobCreatedFieldID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreated) SetStatus(status JobCreatedStatus) {
+	j.Status = status
+	j.require(jobCreatedFieldStatus)
+}
+
+func (j *JobCreated) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCreated
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCreated(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCreated) MarshalJSON() ([]byte, error) {
+	type embed JobCreated
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCreated) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobCreatedDataFieldJobID   = big.NewInt(1 << 0)
+	jobCreatedDataFieldJobType = big.NewInt(1 << 1)
+	jobCreatedDataFieldStatus  = big.NewInt(1 << 2)
+	jobCreatedDataFieldTiming  = big.NewInt(1 << 3)
+)
+
+type JobCreatedData struct {
+	JobID   string                `json:"jobId" url:"jobId"`
+	JobType string                `json:"jobType" url:"jobType"`
+	Status  JobCreatedDataStatus  `json:"status" url:"status"`
+	Timing  *JobCreatedDataTiming `json:"timing" url:"timing"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCreatedData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobCreatedData) GetJobType() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobType
+}
+
+func (j *JobCreatedData) GetStatus() JobCreatedDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobCreatedData) GetTiming() *JobCreatedDataTiming {
+	if j == nil {
+		return nil
+	}
+	return j.Timing
+}
+
+func (j *JobCreatedData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCreatedData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobCreatedDataFieldJobID)
+}
+
+// SetJobType sets the JobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedData) SetJobType(jobType string) {
+	j.JobType = jobType
+	j.require(jobCreatedDataFieldJobType)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedData) SetStatus(status JobCreatedDataStatus) {
+	j.Status = status
+	j.require(jobCreatedDataFieldStatus)
+}
+
+// SetTiming sets the Timing field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedData) SetTiming(timing *JobCreatedDataTiming) {
+	j.Timing = timing
+	j.require(jobCreatedDataFieldTiming)
+}
+
+func (j *JobCreatedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCreatedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCreatedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCreatedData) MarshalJSON() ([]byte, error) {
+	type embed JobCreatedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCreatedData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobCreatedDataStatus string
+
+const (
+	JobCreatedDataStatusWaiting JobCreatedDataStatus = "waiting"
+)
+
+func NewJobCreatedDataStatusFromString(s string) (JobCreatedDataStatus, error) {
+	switch s {
+	case "waiting":
+		return JobCreatedDataStatusWaiting, nil
+	}
+	var t JobCreatedDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCreatedDataStatus) Ptr() *JobCreatedDataStatus {
+	return &j
+}
+
+var (
+	jobCreatedDataTimingFieldCreatedAt = big.NewInt(1 << 0)
+)
+
+type JobCreatedDataTiming struct {
+	CreatedAt int `json:"createdAt" url:"createdAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCreatedDataTiming) GetCreatedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CreatedAt
+}
+
+func (j *JobCreatedDataTiming) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCreatedDataTiming) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedDataTiming) SetCreatedAt(createdAt int) {
+	j.CreatedAt = createdAt
+	j.require(jobCreatedDataTimingFieldCreatedAt)
+}
+
+func (j *JobCreatedDataTiming) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCreatedDataTiming
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCreatedDataTiming(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCreatedDataTiming) MarshalJSON() ([]byte, error) {
+	type embed JobCreatedDataTiming
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCreatedDataTiming) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Initial status
+type JobCreatedStatus string
+
+const (
+	JobCreatedStatusWaiting JobCreatedStatus = "waiting"
+)
+
+func NewJobCreatedStatusFromString(s string) (JobCreatedStatus, error) {
+	switch s {
+	case "waiting":
+		return JobCreatedStatusWaiting, nil
+	}
+	var t JobCreatedStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCreatedStatus) Ptr() *JobCreatedStatus {
+	return &j
+}
+
+var (
+	jobCreatedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobCreatedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobCreatedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobCreatedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobCreatedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobCreatedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobCreatedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int             `json:"timestamp" url:"timestamp"`
+	OrgID     string          `json:"orgId" url:"orgId"`
+	Data      *JobCreatedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCreatedWebhookEvent) GetVersion() JobCreatedWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobCreatedWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobCreatedWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobCreatedWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobCreatedWebhookEvent) GetData() *JobCreatedData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobCreatedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCreatedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedWebhookEvent) SetVersion(version JobCreatedWebhookEventVersion) {
+	j.Version = version
+	j.require(jobCreatedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobCreatedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobCreatedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobCreatedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCreatedWebhookEvent) SetData(data *JobCreatedData) {
+	j.Data = data
+	j.require(jobCreatedWebhookEventFieldData)
+}
+
+func (j *JobCreatedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCreatedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCreatedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCreatedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobCreatedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCreatedWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobCreatedWebhookEventVersion string
+
+const (
+	JobCreatedWebhookEventVersionV1 JobCreatedWebhookEventVersion = "1"
+)
+
+func NewJobCreatedWebhookEventVersionFromString(s string) (JobCreatedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobCreatedWebhookEventVersionV1, nil
+	}
+	var t JobCreatedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCreatedWebhookEventVersion) Ptr() *JobCreatedWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobDeliveriesSettledDataFieldJobID      = big.NewInt(1 << 0)
+	jobDeliveriesSettledDataFieldDeliveries = big.NewInt(1 << 1)
+)
+
+type JobDeliveriesSettledData struct {
+	JobID      string             `json:"jobId" url:"jobId"`
+	Deliveries []*SettledDelivery `json:"deliveries" url:"deliveries"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliveriesSettledData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobDeliveriesSettledData) GetDeliveries() []*SettledDelivery {
+	if j == nil {
+		return nil
+	}
+	return j.Deliveries
+}
+
+func (j *JobDeliveriesSettledData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliveriesSettledData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobDeliveriesSettledDataFieldJobID)
+}
+
+// SetDeliveries sets the Deliveries field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledData) SetDeliveries(deliveries []*SettledDelivery) {
+	j.Deliveries = deliveries
+	j.require(jobDeliveriesSettledDataFieldDeliveries)
+}
+
+func (j *JobDeliveriesSettledData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliveriesSettledData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliveriesSettledData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliveriesSettledData) MarshalJSON() ([]byte, error) {
+	type embed JobDeliveriesSettledData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliveriesSettledData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobDeliveriesSettledWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobDeliveriesSettledWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobDeliveriesSettledWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobDeliveriesSettledWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobDeliveriesSettledWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobDeliveriesSettledWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobDeliveriesSettledWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int                       `json:"timestamp" url:"timestamp"`
+	OrgID     string                    `json:"orgId" url:"orgId"`
+	Data      *JobDeliveriesSettledData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetVersion() JobDeliveriesSettledWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetData() *JobDeliveriesSettledData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledWebhookEvent) SetVersion(version JobDeliveriesSettledWebhookEventVersion) {
+	j.Version = version
+	j.require(jobDeliveriesSettledWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobDeliveriesSettledWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobDeliveriesSettledWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobDeliveriesSettledWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveriesSettledWebhookEvent) SetData(data *JobDeliveriesSettledData) {
+	j.Data = data
+	j.require(jobDeliveriesSettledWebhookEventFieldData)
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliveriesSettledWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliveriesSettledWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobDeliveriesSettledWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliveriesSettledWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobDeliveriesSettledWebhookEventVersion string
+
+const (
+	JobDeliveriesSettledWebhookEventVersionV1 JobDeliveriesSettledWebhookEventVersion = "1"
+)
+
+func NewJobDeliveriesSettledWebhookEventVersionFromString(s string) (JobDeliveriesSettledWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobDeliveriesSettledWebhookEventVersionV1, nil
+	}
+	var t JobDeliveriesSettledWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliveriesSettledWebhookEventVersion) Ptr() *JobDeliveriesSettledWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobDeliveryFailedDataFieldJobID     = big.NewInt(1 << 0)
+	jobDeliveryFailedDataFieldStorageID = big.NewInt(1 << 1)
+	jobDeliveryFailedDataFieldStatus    = big.NewInt(1 << 2)
+	jobDeliveryFailedDataFieldReason    = big.NewInt(1 << 3)
+)
+
+type JobDeliveryFailedData struct {
+	JobID     string                      `json:"jobId" url:"jobId"`
+	StorageID string                      `json:"storageId" url:"storageId"`
+	Status    JobDeliveryFailedDataStatus `json:"status" url:"status"`
+	Reason    string                      `json:"reason" url:"reason"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliveryFailedData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobDeliveryFailedData) GetStorageID() string {
+	if j == nil {
+		return ""
+	}
+	return j.StorageID
+}
+
+func (j *JobDeliveryFailedData) GetStatus() JobDeliveryFailedDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobDeliveryFailedData) GetReason() string {
+	if j == nil {
+		return ""
+	}
+	return j.Reason
+}
+
+func (j *JobDeliveryFailedData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliveryFailedData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobDeliveryFailedDataFieldJobID)
+}
+
+// SetStorageID sets the StorageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedData) SetStorageID(storageID string) {
+	j.StorageID = storageID
+	j.require(jobDeliveryFailedDataFieldStorageID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedData) SetStatus(status JobDeliveryFailedDataStatus) {
+	j.Status = status
+	j.require(jobDeliveryFailedDataFieldStatus)
+}
+
+// SetReason sets the Reason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedData) SetReason(reason string) {
+	j.Reason = reason
+	j.require(jobDeliveryFailedDataFieldReason)
+}
+
+func (j *JobDeliveryFailedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliveryFailedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliveryFailedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliveryFailedData) MarshalJSON() ([]byte, error) {
+	type embed JobDeliveryFailedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliveryFailedData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobDeliveryFailedDataStatus string
+
+const (
+	JobDeliveryFailedDataStatusFailed JobDeliveryFailedDataStatus = "failed"
+)
+
+func NewJobDeliveryFailedDataStatusFromString(s string) (JobDeliveryFailedDataStatus, error) {
+	switch s {
+	case "failed":
+		return JobDeliveryFailedDataStatusFailed, nil
+	}
+	var t JobDeliveryFailedDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliveryFailedDataStatus) Ptr() *JobDeliveryFailedDataStatus {
+	return &j
+}
+
+var (
+	jobDeliveryFailedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobDeliveryFailedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobDeliveryFailedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobDeliveryFailedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobDeliveryFailedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobDeliveryFailedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobDeliveryFailedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int                    `json:"timestamp" url:"timestamp"`
+	OrgID     string                 `json:"orgId" url:"orgId"`
+	Data      *JobDeliveryFailedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetVersion() JobDeliveryFailedWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetData() *JobDeliveryFailedData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobDeliveryFailedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliveryFailedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedWebhookEvent) SetVersion(version JobDeliveryFailedWebhookEventVersion) {
+	j.Version = version
+	j.require(jobDeliveryFailedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobDeliveryFailedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobDeliveryFailedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobDeliveryFailedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliveryFailedWebhookEvent) SetData(data *JobDeliveryFailedData) {
+	j.Data = data
+	j.require(jobDeliveryFailedWebhookEventFieldData)
+}
+
+func (j *JobDeliveryFailedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliveryFailedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliveryFailedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliveryFailedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobDeliveryFailedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliveryFailedWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobDeliveryFailedWebhookEventVersion string
+
+const (
+	JobDeliveryFailedWebhookEventVersionV1 JobDeliveryFailedWebhookEventVersion = "1"
+)
+
+func NewJobDeliveryFailedWebhookEventVersionFromString(s string) (JobDeliveryFailedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobDeliveryFailedWebhookEventVersionV1, nil
+	}
+	var t JobDeliveryFailedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliveryFailedWebhookEventVersion) Ptr() *JobDeliveryFailedWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobDeliverySucceededDataFieldJobID     = big.NewInt(1 << 0)
+	jobDeliverySucceededDataFieldStorageID = big.NewInt(1 << 1)
+	jobDeliverySucceededDataFieldStatus    = big.NewInt(1 << 2)
+	jobDeliverySucceededDataFieldPath      = big.NewInt(1 << 3)
+	jobDeliverySucceededDataFieldURL       = big.NewInt(1 << 4)
+)
+
+type JobDeliverySucceededData struct {
+	JobID     string                         `json:"jobId" url:"jobId"`
+	StorageID string                         `json:"storageId" url:"storageId"`
+	Status    JobDeliverySucceededDataStatus `json:"status" url:"status"`
+	Path      string                         `json:"path" url:"path"`
+	URL       *string                        `json:"url,omitempty" url:"url,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliverySucceededData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobDeliverySucceededData) GetStorageID() string {
+	if j == nil {
+		return ""
+	}
+	return j.StorageID
+}
+
+func (j *JobDeliverySucceededData) GetStatus() JobDeliverySucceededDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobDeliverySucceededData) GetPath() string {
+	if j == nil {
+		return ""
+	}
+	return j.Path
+}
+
+func (j *JobDeliverySucceededData) GetURL() *string {
+	if j == nil {
+		return nil
+	}
+	return j.URL
+}
+
+func (j *JobDeliverySucceededData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliverySucceededData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobDeliverySucceededDataFieldJobID)
+}
+
+// SetStorageID sets the StorageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededData) SetStorageID(storageID string) {
+	j.StorageID = storageID
+	j.require(jobDeliverySucceededDataFieldStorageID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededData) SetStatus(status JobDeliverySucceededDataStatus) {
+	j.Status = status
+	j.require(jobDeliverySucceededDataFieldStatus)
+}
+
+// SetPath sets the Path field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededData) SetPath(path string) {
+	j.Path = path
+	j.require(jobDeliverySucceededDataFieldPath)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededData) SetURL(url *string) {
+	j.URL = url
+	j.require(jobDeliverySucceededDataFieldURL)
+}
+
+func (j *JobDeliverySucceededData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliverySucceededData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliverySucceededData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliverySucceededData) MarshalJSON() ([]byte, error) {
+	type embed JobDeliverySucceededData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliverySucceededData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobDeliverySucceededDataStatus string
+
+const (
+	JobDeliverySucceededDataStatusDelivered JobDeliverySucceededDataStatus = "delivered"
+)
+
+func NewJobDeliverySucceededDataStatusFromString(s string) (JobDeliverySucceededDataStatus, error) {
+	switch s {
+	case "delivered":
+		return JobDeliverySucceededDataStatusDelivered, nil
+	}
+	var t JobDeliverySucceededDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliverySucceededDataStatus) Ptr() *JobDeliverySucceededDataStatus {
+	return &j
+}
+
+var (
+	jobDeliverySucceededWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobDeliverySucceededWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobDeliverySucceededWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobDeliverySucceededWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobDeliverySucceededWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobDeliverySucceededWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobDeliverySucceededWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int                       `json:"timestamp" url:"timestamp"`
+	OrgID     string                    `json:"orgId" url:"orgId"`
+	Data      *JobDeliverySucceededData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetVersion() JobDeliverySucceededWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetData() *JobDeliverySucceededData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobDeliverySucceededWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDeliverySucceededWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededWebhookEvent) SetVersion(version JobDeliverySucceededWebhookEventVersion) {
+	j.Version = version
+	j.require(jobDeliverySucceededWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobDeliverySucceededWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobDeliverySucceededWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobDeliverySucceededWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDeliverySucceededWebhookEvent) SetData(data *JobDeliverySucceededData) {
+	j.Data = data
+	j.require(jobDeliverySucceededWebhookEventFieldData)
+}
+
+func (j *JobDeliverySucceededWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDeliverySucceededWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDeliverySucceededWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDeliverySucceededWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobDeliverySucceededWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDeliverySucceededWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobDeliverySucceededWebhookEventVersion string
+
+const (
+	JobDeliverySucceededWebhookEventVersionV1 JobDeliverySucceededWebhookEventVersion = "1"
+)
+
+func NewJobDeliverySucceededWebhookEventVersionFromString(s string) (JobDeliverySucceededWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobDeliverySucceededWebhookEventVersionV1, nil
+	}
+	var t JobDeliverySucceededWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliverySucceededWebhookEventVersion) Ptr() *JobDeliverySucceededWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobFailedDataFieldJobID   = big.NewInt(1 << 0)
+	jobFailedDataFieldJobType = big.NewInt(1 << 1)
+	jobFailedDataFieldStatus  = big.NewInt(1 << 2)
+	jobFailedDataFieldError   = big.NewInt(1 << 3)
+	jobFailedDataFieldTiming  = big.NewInt(1 << 4)
+	jobFailedDataFieldSteps   = big.NewInt(1 << 5)
+)
+
+type JobFailedData struct {
+	JobID   string               `json:"jobId" url:"jobId"`
+	JobType string               `json:"jobType" url:"jobType"`
+	Status  JobFailedDataStatus  `json:"status" url:"status"`
+	Error   *JobError            `json:"error" url:"error"`
+	Timing  *JobFailedDataTiming `json:"timing" url:"timing"`
+	Steps   []*WebhookJobStep    `json:"steps,omitempty" url:"steps,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobFailedData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobFailedData) GetJobType() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobType
+}
+
+func (j *JobFailedData) GetStatus() JobFailedDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobFailedData) GetError() *JobError {
+	if j == nil {
+		return nil
+	}
+	return j.Error
+}
+
+func (j *JobFailedData) GetTiming() *JobFailedDataTiming {
+	if j == nil {
+		return nil
+	}
+	return j.Timing
+}
+
+func (j *JobFailedData) GetSteps() []*WebhookJobStep {
+	if j == nil {
+		return nil
+	}
+	return j.Steps
+}
+
+func (j *JobFailedData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobFailedData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobFailedDataFieldJobID)
+}
+
+// SetJobType sets the JobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetJobType(jobType string) {
+	j.JobType = jobType
+	j.require(jobFailedDataFieldJobType)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetStatus(status JobFailedDataStatus) {
+	j.Status = status
+	j.require(jobFailedDataFieldStatus)
+}
+
+// SetError sets the Error field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetError(error_ *JobError) {
+	j.Error = error_
+	j.require(jobFailedDataFieldError)
+}
+
+// SetTiming sets the Timing field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetTiming(timing *JobFailedDataTiming) {
+	j.Timing = timing
+	j.require(jobFailedDataFieldTiming)
+}
+
+// SetSteps sets the Steps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedData) SetSteps(steps []*WebhookJobStep) {
+	j.Steps = steps
+	j.require(jobFailedDataFieldSteps)
+}
+
+func (j *JobFailedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobFailedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobFailedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobFailedData) MarshalJSON() ([]byte, error) {
+	type embed JobFailedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobFailedData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobFailedDataStatus string
+
+const (
+	JobFailedDataStatusFailed JobFailedDataStatus = "failed"
+)
+
+func NewJobFailedDataStatusFromString(s string) (JobFailedDataStatus, error) {
+	switch s {
+	case "failed":
+		return JobFailedDataStatusFailed, nil
+	}
+	var t JobFailedDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobFailedDataStatus) Ptr() *JobFailedDataStatus {
+	return &j
+}
+
+var (
+	jobFailedDataTimingFieldCreatedAt    = big.NewInt(1 << 0)
+	jobFailedDataTimingFieldDispatchedAt = big.NewInt(1 << 1)
+	jobFailedDataTimingFieldStartedAt    = big.NewInt(1 << 2)
+	jobFailedDataTimingFieldFailedAt     = big.NewInt(1 << 3)
+)
+
+type JobFailedDataTiming struct {
+	CreatedAt    int  `json:"createdAt" url:"createdAt"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	StartedAt    *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	FailedAt     int  `json:"failedAt" url:"failedAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobFailedDataTiming) GetCreatedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CreatedAt
+}
+
+func (j *JobFailedDataTiming) GetDispatchedAt() *int {
+	if j == nil {
+		return nil
+	}
+	return j.DispatchedAt
+}
+
+func (j *JobFailedDataTiming) GetStartedAt() *int {
+	if j == nil {
+		return nil
+	}
+	return j.StartedAt
+}
+
+func (j *JobFailedDataTiming) GetFailedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.FailedAt
+}
+
+func (j *JobFailedDataTiming) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobFailedDataTiming) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedDataTiming) SetCreatedAt(createdAt int) {
+	j.CreatedAt = createdAt
+	j.require(jobFailedDataTimingFieldCreatedAt)
+}
+
+// SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedDataTiming) SetDispatchedAt(dispatchedAt *int) {
+	j.DispatchedAt = dispatchedAt
+	j.require(jobFailedDataTimingFieldDispatchedAt)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedDataTiming) SetStartedAt(startedAt *int) {
+	j.StartedAt = startedAt
+	j.require(jobFailedDataTimingFieldStartedAt)
+}
+
+// SetFailedAt sets the FailedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedDataTiming) SetFailedAt(failedAt int) {
+	j.FailedAt = failedAt
+	j.require(jobFailedDataTimingFieldFailedAt)
+}
+
+func (j *JobFailedDataTiming) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobFailedDataTiming
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobFailedDataTiming(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobFailedDataTiming) MarshalJSON() ([]byte, error) {
+	type embed JobFailedDataTiming
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobFailedDataTiming) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobFailedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobFailedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobFailedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobFailedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobFailedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobFailedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobFailedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int            `json:"timestamp" url:"timestamp"`
+	OrgID     string         `json:"orgId" url:"orgId"`
+	Data      *JobFailedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobFailedWebhookEvent) GetVersion() JobFailedWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobFailedWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobFailedWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobFailedWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobFailedWebhookEvent) GetData() *JobFailedData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobFailedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobFailedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedWebhookEvent) SetVersion(version JobFailedWebhookEventVersion) {
+	j.Version = version
+	j.require(jobFailedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobFailedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobFailedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobFailedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailedWebhookEvent) SetData(data *JobFailedData) {
+	j.Data = data
+	j.require(jobFailedWebhookEventFieldData)
+}
+
+func (j *JobFailedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobFailedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobFailedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobFailedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobFailedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobFailedWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobFailedWebhookEventVersion string
+
+const (
+	JobFailedWebhookEventVersionV1 JobFailedWebhookEventVersion = "1"
+)
+
+func NewJobFailedWebhookEventVersionFromString(s string) (JobFailedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobFailedWebhookEventVersionV1, nil
+	}
+	var t JobFailedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobFailedWebhookEventVersion) Ptr() *JobFailedWebhookEventVersion {
+	return &j
+}
+
+var (
+	jobStartedDataFieldJobID   = big.NewInt(1 << 0)
+	jobStartedDataFieldJobType = big.NewInt(1 << 1)
+	jobStartedDataFieldStatus  = big.NewInt(1 << 2)
+	jobStartedDataFieldTiming  = big.NewInt(1 << 3)
+)
+
+type JobStartedData struct {
+	JobID   string                `json:"jobId" url:"jobId"`
+	JobType string                `json:"jobType" url:"jobType"`
+	Status  JobStartedDataStatus  `json:"status" url:"status"`
+	Timing  *JobStartedDataTiming `json:"timing" url:"timing"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobStartedData) GetJobID() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobID
+}
+
+func (j *JobStartedData) GetJobType() string {
+	if j == nil {
+		return ""
+	}
+	return j.JobType
+}
+
+func (j *JobStartedData) GetStatus() JobStartedDataStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobStartedData) GetTiming() *JobStartedDataTiming {
+	if j == nil {
+		return nil
+	}
+	return j.Timing
+}
+
+func (j *JobStartedData) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobStartedData) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetJobID sets the JobID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedData) SetJobID(jobID string) {
+	j.JobID = jobID
+	j.require(jobStartedDataFieldJobID)
+}
+
+// SetJobType sets the JobType field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedData) SetJobType(jobType string) {
+	j.JobType = jobType
+	j.require(jobStartedDataFieldJobType)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedData) SetStatus(status JobStartedDataStatus) {
+	j.Status = status
+	j.require(jobStartedDataFieldStatus)
+}
+
+// SetTiming sets the Timing field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedData) SetTiming(timing *JobStartedDataTiming) {
+	j.Timing = timing
+	j.require(jobStartedDataFieldTiming)
+}
+
+func (j *JobStartedData) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobStartedData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobStartedData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobStartedData) MarshalJSON() ([]byte, error) {
+	type embed JobStartedData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobStartedData) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobStartedDataStatus string
+
+const (
+	JobStartedDataStatusRunning JobStartedDataStatus = "running"
+)
+
+func NewJobStartedDataStatusFromString(s string) (JobStartedDataStatus, error) {
+	switch s {
+	case "running":
+		return JobStartedDataStatusRunning, nil
+	}
+	var t JobStartedDataStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobStartedDataStatus) Ptr() *JobStartedDataStatus {
+	return &j
+}
+
+var (
+	jobStartedDataTimingFieldCreatedAt    = big.NewInt(1 << 0)
+	jobStartedDataTimingFieldDispatchedAt = big.NewInt(1 << 1)
+	jobStartedDataTimingFieldStartedAt    = big.NewInt(1 << 2)
+)
+
+type JobStartedDataTiming struct {
+	CreatedAt    int  `json:"createdAt" url:"createdAt"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	StartedAt    int  `json:"startedAt" url:"startedAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobStartedDataTiming) GetCreatedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.CreatedAt
+}
+
+func (j *JobStartedDataTiming) GetDispatchedAt() *int {
+	if j == nil {
+		return nil
+	}
+	return j.DispatchedAt
+}
+
+func (j *JobStartedDataTiming) GetStartedAt() int {
+	if j == nil {
+		return 0
+	}
+	return j.StartedAt
+}
+
+func (j *JobStartedDataTiming) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobStartedDataTiming) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedDataTiming) SetCreatedAt(createdAt int) {
+	j.CreatedAt = createdAt
+	j.require(jobStartedDataTimingFieldCreatedAt)
+}
+
+// SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedDataTiming) SetDispatchedAt(dispatchedAt *int) {
+	j.DispatchedAt = dispatchedAt
+	j.require(jobStartedDataTimingFieldDispatchedAt)
+}
+
+// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedDataTiming) SetStartedAt(startedAt int) {
+	j.StartedAt = startedAt
+	j.require(jobStartedDataTimingFieldStartedAt)
+}
+
+func (j *JobStartedDataTiming) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobStartedDataTiming
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobStartedDataTiming(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobStartedDataTiming) MarshalJSON() ([]byte, error) {
+	type embed JobStartedDataTiming
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobStartedDataTiming) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobStartedWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	jobStartedWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	jobStartedWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	jobStartedWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	jobStartedWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type JobStartedWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version JobStartedWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int             `json:"timestamp" url:"timestamp"`
+	OrgID     string          `json:"orgId" url:"orgId"`
+	Data      *JobStartedData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobStartedWebhookEvent) GetVersion() JobStartedWebhookEventVersion {
+	if j == nil {
+		return ""
+	}
+	return j.Version
+}
+
+func (j *JobStartedWebhookEvent) GetDeliveryID() string {
+	if j == nil {
+		return ""
+	}
+	return j.DeliveryID
+}
+
+func (j *JobStartedWebhookEvent) GetTimestamp() int {
+	if j == nil {
+		return 0
+	}
+	return j.Timestamp
+}
+
+func (j *JobStartedWebhookEvent) GetOrgID() string {
+	if j == nil {
+		return ""
+	}
+	return j.OrgID
+}
+
+func (j *JobStartedWebhookEvent) GetData() *JobStartedData {
+	if j == nil {
+		return nil
+	}
+	return j.Data
+}
+
+func (j *JobStartedWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobStartedWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedWebhookEvent) SetVersion(version JobStartedWebhookEventVersion) {
+	j.Version = version
+	j.require(jobStartedWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedWebhookEvent) SetDeliveryID(deliveryID string) {
+	j.DeliveryID = deliveryID
+	j.require(jobStartedWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedWebhookEvent) SetTimestamp(timestamp int) {
+	j.Timestamp = timestamp
+	j.require(jobStartedWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedWebhookEvent) SetOrgID(orgID string) {
+	j.OrgID = orgID
+	j.require(jobStartedWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobStartedWebhookEvent) SetData(data *JobStartedData) {
+	j.Data = data
+	j.require(jobStartedWebhookEventFieldData)
+}
+
+func (j *JobStartedWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobStartedWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobStartedWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobStartedWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed JobStartedWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobStartedWebhookEvent) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// Envelope version. A new version is a new shape
+type JobStartedWebhookEventVersion string
+
+const (
+	JobStartedWebhookEventVersionV1 JobStartedWebhookEventVersion = "1"
+)
+
+func NewJobStartedWebhookEventVersionFromString(s string) (JobStartedWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return JobStartedWebhookEventVersionV1, nil
+	}
+	var t JobStartedWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobStartedWebhookEventVersion) Ptr() *JobStartedWebhookEventVersion {
+	return &j
+}
+
 type OauthScope string
 
 const (
@@ -1403,6 +9112,510 @@ func (o OauthScope) Ptr() *OauthScope {
 }
 
 var (
+	settledDeliveryFieldStorageID = big.NewInt(1 << 0)
+	settledDeliveryFieldStatus    = big.NewInt(1 << 1)
+	settledDeliveryFieldPath      = big.NewInt(1 << 2)
+	settledDeliveryFieldURL       = big.NewInt(1 << 3)
+	settledDeliveryFieldReason    = big.NewInt(1 << 4)
+	settledDeliveryFieldRenamed   = big.NewInt(1 << 5)
+)
+
+type SettledDelivery struct {
+	// The storage connection id
+	StorageID string                `json:"storageId" url:"storageId"`
+	Status    SettledDeliveryStatus `json:"status" url:"status"`
+	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
+	Path *string `json:"path,omitempty" url:"path,omitempty"`
+	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
+	URL    *string                `json:"url,omitempty" url:"url,omitempty"`
+	Reason *SettledDeliveryReason `json:"reason,omitempty" url:"reason,omitempty"`
+	// The name was taken, so the job's tail was appended to free it
+	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (s *SettledDelivery) GetStorageID() string {
+	if s == nil {
+		return ""
+	}
+	return s.StorageID
+}
+
+func (s *SettledDelivery) GetStatus() SettledDeliveryStatus {
+	if s == nil {
+		return ""
+	}
+	return s.Status
+}
+
+func (s *SettledDelivery) GetPath() *string {
+	if s == nil {
+		return nil
+	}
+	return s.Path
+}
+
+func (s *SettledDelivery) GetURL() *string {
+	if s == nil {
+		return nil
+	}
+	return s.URL
+}
+
+func (s *SettledDelivery) GetReason() *SettledDeliveryReason {
+	if s == nil {
+		return nil
+	}
+	return s.Reason
+}
+
+func (s *SettledDelivery) GetRenamed() *bool {
+	if s == nil {
+		return nil
+	}
+	return s.Renamed
+}
+
+func (s *SettledDelivery) GetExtraProperties() map[string]interface{} {
+	if s == nil {
+		return nil
+	}
+	return s.extraProperties
+}
+
+func (s *SettledDelivery) require(field *big.Int) {
+	next := new(big.Int)
+	if s.explicitFields != nil {
+		next.Set(s.explicitFields)
+	}
+	next.Or(next, field)
+	s.explicitFields = next
+}
+
+// SetStorageID sets the StorageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetStorageID(storageID string) {
+	s.StorageID = storageID
+	s.require(settledDeliveryFieldStorageID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetStatus(status SettledDeliveryStatus) {
+	s.Status = status
+	s.require(settledDeliveryFieldStatus)
+}
+
+// SetPath sets the Path field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetPath(path *string) {
+	s.Path = path
+	s.require(settledDeliveryFieldPath)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetURL(url *string) {
+	s.URL = url
+	s.require(settledDeliveryFieldURL)
+}
+
+// SetReason sets the Reason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetReason(reason *SettledDeliveryReason) {
+	s.Reason = reason
+	s.require(settledDeliveryFieldReason)
+}
+
+// SetRenamed sets the Renamed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SettledDelivery) SetRenamed(renamed *bool) {
+	s.Renamed = renamed
+	s.require(settledDeliveryFieldRenamed)
+}
+
+func (s *SettledDelivery) UnmarshalJSON(data []byte) error {
+	type unmarshaler SettledDelivery
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*s = SettledDelivery(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
+	if err != nil {
+		return err
+	}
+	s.extraProperties = extraProperties
+	s.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (s *SettledDelivery) MarshalJSON() ([]byte, error) {
+	type embed SettledDelivery
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*s),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (s *SettledDelivery) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+	if len(s.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(s); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", s)
+}
+
+type SettledDeliveryReason string
+
+const (
+	SettledDeliveryReasonDestinationDenied      SettledDeliveryReason = "destination_denied"
+	SettledDeliveryReasonSignatureMismatch      SettledDeliveryReason = "signature_mismatch"
+	SettledDeliveryReasonBucketNotFound         SettledDeliveryReason = "bucket_not_found"
+	SettledDeliveryReasonObjectTooLarge         SettledDeliveryReason = "object_too_large"
+	SettledDeliveryReasonAlreadyExists          SettledDeliveryReason = "already_exists"
+	SettledDeliveryReasonDestinationUnavailable SettledDeliveryReason = "destination_unavailable"
+	SettledDeliveryReasonNotDeliverable         SettledDeliveryReason = "not_deliverable"
+)
+
+func NewSettledDeliveryReasonFromString(s string) (SettledDeliveryReason, error) {
+	switch s {
+	case "destination_denied":
+		return SettledDeliveryReasonDestinationDenied, nil
+	case "signature_mismatch":
+		return SettledDeliveryReasonSignatureMismatch, nil
+	case "bucket_not_found":
+		return SettledDeliveryReasonBucketNotFound, nil
+	case "object_too_large":
+		return SettledDeliveryReasonObjectTooLarge, nil
+	case "already_exists":
+		return SettledDeliveryReasonAlreadyExists, nil
+	case "destination_unavailable":
+		return SettledDeliveryReasonDestinationUnavailable, nil
+	case "not_deliverable":
+		return SettledDeliveryReasonNotDeliverable, nil
+	}
+	var t SettledDeliveryReason
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SettledDeliveryReason) Ptr() *SettledDeliveryReason {
+	return &s
+}
+
+type SettledDeliveryStatus string
+
+const (
+	SettledDeliveryStatusDelivered SettledDeliveryStatus = "delivered"
+	SettledDeliveryStatusFailed    SettledDeliveryStatus = "failed"
+)
+
+func NewSettledDeliveryStatusFromString(s string) (SettledDeliveryStatus, error) {
+	switch s {
+	case "delivered":
+		return SettledDeliveryStatusDelivered, nil
+	case "failed":
+		return SettledDeliveryStatusFailed, nil
+	}
+	var t SettledDeliveryStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SettledDeliveryStatus) Ptr() *SettledDeliveryStatus {
+	return &s
+}
+
+var (
+	testEventDataFieldMessage    = big.NewInt(1 << 0)
+	testEventDataFieldEndpointID = big.NewInt(1 << 1)
+)
+
+type TestEventData struct {
+	Message    string `json:"message" url:"message"`
+	EndpointID string `json:"endpointId" url:"endpointId"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TestEventData) GetMessage() string {
+	if t == nil {
+		return ""
+	}
+	return t.Message
+}
+
+func (t *TestEventData) GetEndpointID() string {
+	if t == nil {
+		return ""
+	}
+	return t.EndpointID
+}
+
+func (t *TestEventData) GetExtraProperties() map[string]interface{} {
+	if t == nil {
+		return nil
+	}
+	return t.extraProperties
+}
+
+func (t *TestEventData) require(field *big.Int) {
+	next := new(big.Int)
+	if t.explicitFields != nil {
+		next.Set(t.explicitFields)
+	}
+	next.Or(next, field)
+	t.explicitFields = next
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestEventData) SetMessage(message string) {
+	t.Message = message
+	t.require(testEventDataFieldMessage)
+}
+
+// SetEndpointID sets the EndpointID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestEventData) SetEndpointID(endpointID string) {
+	t.EndpointID = endpointID
+	t.require(testEventDataFieldEndpointID)
+}
+
+func (t *TestEventData) UnmarshalJSON(data []byte) error {
+	type unmarshaler TestEventData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TestEventData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TestEventData) MarshalJSON() ([]byte, error) {
+	type embed TestEventData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TestEventData) String() string {
+	if t == nil {
+		return "<nil>"
+	}
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+var (
+	testWebhookEventFieldVersion    = big.NewInt(1 << 0)
+	testWebhookEventFieldDeliveryID = big.NewInt(1 << 1)
+	testWebhookEventFieldTimestamp  = big.NewInt(1 << 2)
+	testWebhookEventFieldOrgID      = big.NewInt(1 << 3)
+	testWebhookEventFieldData       = big.NewInt(1 << 4)
+)
+
+type TestWebhookEvent struct {
+	// Envelope version. A new version is a new shape
+	Version TestWebhookEventVersion `json:"version" url:"version"`
+	// Unique per delivery. Retries of one delivery share it
+	DeliveryID string `json:"deliveryId" url:"deliveryId"`
+	// When the event happened (Unix ms)
+	Timestamp int            `json:"timestamp" url:"timestamp"`
+	OrgID     string         `json:"orgId" url:"orgId"`
+	Data      *TestEventData `json:"data" url:"data"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (t *TestWebhookEvent) GetVersion() TestWebhookEventVersion {
+	if t == nil {
+		return ""
+	}
+	return t.Version
+}
+
+func (t *TestWebhookEvent) GetDeliveryID() string {
+	if t == nil {
+		return ""
+	}
+	return t.DeliveryID
+}
+
+func (t *TestWebhookEvent) GetTimestamp() int {
+	if t == nil {
+		return 0
+	}
+	return t.Timestamp
+}
+
+func (t *TestWebhookEvent) GetOrgID() string {
+	if t == nil {
+		return ""
+	}
+	return t.OrgID
+}
+
+func (t *TestWebhookEvent) GetData() *TestEventData {
+	if t == nil {
+		return nil
+	}
+	return t.Data
+}
+
+func (t *TestWebhookEvent) GetExtraProperties() map[string]interface{} {
+	if t == nil {
+		return nil
+	}
+	return t.extraProperties
+}
+
+func (t *TestWebhookEvent) require(field *big.Int) {
+	next := new(big.Int)
+	if t.explicitFields != nil {
+		next.Set(t.explicitFields)
+	}
+	next.Or(next, field)
+	t.explicitFields = next
+}
+
+// SetVersion sets the Version field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestWebhookEvent) SetVersion(version TestWebhookEventVersion) {
+	t.Version = version
+	t.require(testWebhookEventFieldVersion)
+}
+
+// SetDeliveryID sets the DeliveryID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestWebhookEvent) SetDeliveryID(deliveryID string) {
+	t.DeliveryID = deliveryID
+	t.require(testWebhookEventFieldDeliveryID)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestWebhookEvent) SetTimestamp(timestamp int) {
+	t.Timestamp = timestamp
+	t.require(testWebhookEventFieldTimestamp)
+}
+
+// SetOrgID sets the OrgID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestWebhookEvent) SetOrgID(orgID string) {
+	t.OrgID = orgID
+	t.require(testWebhookEventFieldOrgID)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TestWebhookEvent) SetData(data *TestEventData) {
+	t.Data = data
+	t.require(testWebhookEventFieldData)
+}
+
+func (t *TestWebhookEvent) UnmarshalJSON(data []byte) error {
+	type unmarshaler TestWebhookEvent
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*t = TestWebhookEvent(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
+	if err != nil {
+		return err
+	}
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (t *TestWebhookEvent) MarshalJSON() ([]byte, error) {
+	type embed TestWebhookEvent
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*t),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (t *TestWebhookEvent) String() string {
+	if t == nil {
+		return "<nil>"
+	}
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(t); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", t)
+}
+
+// Envelope version. A new version is a new shape
+type TestWebhookEventVersion string
+
+const (
+	TestWebhookEventVersionV1 TestWebhookEventVersion = "1"
+)
+
+func NewTestWebhookEventVersionFromString(s string) (TestWebhookEventVersion, error) {
+	switch s {
+	case "1":
+		return TestWebhookEventVersionV1, nil
+	}
+	var t TestWebhookEventVersion
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TestWebhookEventVersion) Ptr() *TestWebhookEventVersion {
+	return &t
+}
+
+var (
 	webhookEndpointFieldID                  = big.NewInt(1 << 0)
 	webhookEndpointFieldName                = big.NewInt(1 << 1)
 	webhookEndpointFieldURL                 = big.NewInt(1 << 2)
@@ -1430,12 +9643,12 @@ type WebhookEndpoint struct {
 	SigningSecret       string   `json:"signingSecret" url:"signingSecret"`
 	Active              bool     `json:"active" url:"active"`
 	DisabledReason      *string  `json:"disabledReason,omitempty" url:"disabledReason,omitempty"`
-	ConsecutiveFailures float64  `json:"consecutiveFailures" url:"consecutiveFailures"`
+	ConsecutiveFailures int      `json:"consecutiveFailures" url:"consecutiveFailures"`
 	SubscribedEvents    []string `json:"subscribedEvents" url:"subscribedEvents"`
 	RotationActive      bool     `json:"rotationActive" url:"rotationActive"`
-	SecretExpiresAt     *float64 `json:"secretExpiresAt,omitempty" url:"secretExpiresAt,omitempty"`
-	CreatedAt           float64  `json:"createdAt" url:"createdAt"`
-	UpdatedAt           float64  `json:"updatedAt" url:"updatedAt"`
+	SecretExpiresAt     *int     `json:"secretExpiresAt,omitempty" url:"secretExpiresAt,omitempty"`
+	CreatedAt           int      `json:"createdAt" url:"createdAt"`
+	UpdatedAt           int      `json:"updatedAt" url:"updatedAt"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1486,7 +9699,7 @@ func (w *WebhookEndpoint) GetDisabledReason() *string {
 	return w.DisabledReason
 }
 
-func (w *WebhookEndpoint) GetConsecutiveFailures() float64 {
+func (w *WebhookEndpoint) GetConsecutiveFailures() int {
 	if w == nil {
 		return 0
 	}
@@ -1507,21 +9720,21 @@ func (w *WebhookEndpoint) GetRotationActive() bool {
 	return w.RotationActive
 }
 
-func (w *WebhookEndpoint) GetSecretExpiresAt() *float64 {
+func (w *WebhookEndpoint) GetSecretExpiresAt() *int {
 	if w == nil {
 		return nil
 	}
 	return w.SecretExpiresAt
 }
 
-func (w *WebhookEndpoint) GetCreatedAt() float64 {
+func (w *WebhookEndpoint) GetCreatedAt() int {
 	if w == nil {
 		return 0
 	}
 	return w.CreatedAt
 }
 
-func (w *WebhookEndpoint) GetUpdatedAt() float64 {
+func (w *WebhookEndpoint) GetUpdatedAt() int {
 	if w == nil {
 		return 0
 	}
@@ -1588,7 +9801,7 @@ func (w *WebhookEndpoint) SetDisabledReason(disabledReason *string) {
 
 // SetConsecutiveFailures sets the ConsecutiveFailures field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WebhookEndpoint) SetConsecutiveFailures(consecutiveFailures float64) {
+func (w *WebhookEndpoint) SetConsecutiveFailures(consecutiveFailures int) {
 	w.ConsecutiveFailures = consecutiveFailures
 	w.require(webhookEndpointFieldConsecutiveFailures)
 }
@@ -1609,21 +9822,21 @@ func (w *WebhookEndpoint) SetRotationActive(rotationActive bool) {
 
 // SetSecretExpiresAt sets the SecretExpiresAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WebhookEndpoint) SetSecretExpiresAt(secretExpiresAt *float64) {
+func (w *WebhookEndpoint) SetSecretExpiresAt(secretExpiresAt *int) {
 	w.SecretExpiresAt = secretExpiresAt
 	w.require(webhookEndpointFieldSecretExpiresAt)
 }
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WebhookEndpoint) SetCreatedAt(createdAt float64) {
+func (w *WebhookEndpoint) SetCreatedAt(createdAt int) {
 	w.CreatedAt = createdAt
 	w.require(webhookEndpointFieldCreatedAt)
 }
 
 // SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WebhookEndpoint) SetUpdatedAt(updatedAt float64) {
+func (w *WebhookEndpoint) SetUpdatedAt(updatedAt int) {
 	w.UpdatedAt = updatedAt
 	w.require(webhookEndpointFieldUpdatedAt)
 }
@@ -1675,4 +9888,649 @@ func (w *WebhookEndpoint) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", w)
+}
+
+var (
+	webhookJobCostFieldAmount    = big.NewInt(1 << 0)
+	webhookJobCostFieldCurrency  = big.NewInt(1 << 1)
+	webhookJobCostFieldFormatted = big.NewInt(1 << 2)
+	webhookJobCostFieldBreakdown = big.NewInt(1 << 3)
+)
+
+type WebhookJobCost struct {
+	Amount    int                    `json:"amount" url:"amount"`
+	Currency  WebhookJobCostCurrency `json:"currency" url:"currency"`
+	Formatted string                 `json:"formatted" url:"formatted"`
+	Breakdown string                 `json:"breakdown" url:"breakdown"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WebhookJobCost) GetAmount() int {
+	if w == nil {
+		return 0
+	}
+	return w.Amount
+}
+
+func (w *WebhookJobCost) GetCurrency() WebhookJobCostCurrency {
+	if w == nil {
+		return ""
+	}
+	return w.Currency
+}
+
+func (w *WebhookJobCost) GetFormatted() string {
+	if w == nil {
+		return ""
+	}
+	return w.Formatted
+}
+
+func (w *WebhookJobCost) GetBreakdown() string {
+	if w == nil {
+		return ""
+	}
+	return w.Breakdown
+}
+
+func (w *WebhookJobCost) GetExtraProperties() map[string]interface{} {
+	if w == nil {
+		return nil
+	}
+	return w.extraProperties
+}
+
+func (w *WebhookJobCost) require(field *big.Int) {
+	next := new(big.Int)
+	if w.explicitFields != nil {
+		next.Set(w.explicitFields)
+	}
+	next.Or(next, field)
+	w.explicitFields = next
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobCost) SetAmount(amount int) {
+	w.Amount = amount
+	w.require(webhookJobCostFieldAmount)
+}
+
+// SetCurrency sets the Currency field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobCost) SetCurrency(currency WebhookJobCostCurrency) {
+	w.Currency = currency
+	w.require(webhookJobCostFieldCurrency)
+}
+
+// SetFormatted sets the Formatted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobCost) SetFormatted(formatted string) {
+	w.Formatted = formatted
+	w.require(webhookJobCostFieldFormatted)
+}
+
+// SetBreakdown sets the Breakdown field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobCost) SetBreakdown(breakdown string) {
+	w.Breakdown = breakdown
+	w.require(webhookJobCostFieldBreakdown)
+}
+
+func (w *WebhookJobCost) UnmarshalJSON(data []byte) error {
+	type unmarshaler WebhookJobCost
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WebhookJobCost(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WebhookJobCost) MarshalJSON() ([]byte, error) {
+	type embed WebhookJobCost
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WebhookJobCost) String() string {
+	if w == nil {
+		return "<nil>"
+	}
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
+}
+
+type WebhookJobCostCurrency string
+
+const (
+	WebhookJobCostCurrencyUsd WebhookJobCostCurrency = "USD"
+)
+
+func NewWebhookJobCostCurrencyFromString(s string) (WebhookJobCostCurrency, error) {
+	switch s {
+	case "USD":
+		return WebhookJobCostCurrencyUsd, nil
+	}
+	var t WebhookJobCostCurrency
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (w WebhookJobCostCurrency) Ptr() *WebhookJobCostCurrency {
+	return &w
+}
+
+var (
+	webhookJobStepFieldID         = big.NewInt(1 << 0)
+	webhookJobStepFieldName       = big.NewInt(1 << 1)
+	webhookJobStepFieldStatus     = big.NewInt(1 << 2)
+	webhookJobStepFieldDurationMs = big.NewInt(1 << 3)
+	webhookJobStepFieldError      = big.NewInt(1 << 4)
+)
+
+type WebhookJobStep struct {
+	ID         string  `json:"id" url:"id"`
+	Name       string  `json:"name" url:"name"`
+	Status     string  `json:"status" url:"status"`
+	DurationMs *int    `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	Error      *string `json:"error,omitempty" url:"error,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WebhookJobStep) GetID() string {
+	if w == nil {
+		return ""
+	}
+	return w.ID
+}
+
+func (w *WebhookJobStep) GetName() string {
+	if w == nil {
+		return ""
+	}
+	return w.Name
+}
+
+func (w *WebhookJobStep) GetStatus() string {
+	if w == nil {
+		return ""
+	}
+	return w.Status
+}
+
+func (w *WebhookJobStep) GetDurationMs() *int {
+	if w == nil {
+		return nil
+	}
+	return w.DurationMs
+}
+
+func (w *WebhookJobStep) GetError() *string {
+	if w == nil {
+		return nil
+	}
+	return w.Error
+}
+
+func (w *WebhookJobStep) GetExtraProperties() map[string]interface{} {
+	if w == nil {
+		return nil
+	}
+	return w.extraProperties
+}
+
+func (w *WebhookJobStep) require(field *big.Int) {
+	next := new(big.Int)
+	if w.explicitFields != nil {
+		next.Set(w.explicitFields)
+	}
+	next.Or(next, field)
+	w.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobStep) SetID(id string) {
+	w.ID = id
+	w.require(webhookJobStepFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobStep) SetName(name string) {
+	w.Name = name
+	w.require(webhookJobStepFieldName)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobStep) SetStatus(status string) {
+	w.Status = status
+	w.require(webhookJobStepFieldStatus)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobStep) SetDurationMs(durationMs *int) {
+	w.DurationMs = durationMs
+	w.require(webhookJobStepFieldDurationMs)
+}
+
+// SetError sets the Error field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookJobStep) SetError(error_ *string) {
+	w.Error = error_
+	w.require(webhookJobStepFieldError)
+}
+
+func (w *WebhookJobStep) UnmarshalJSON(data []byte) error {
+	type unmarshaler WebhookJobStep
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WebhookJobStep(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WebhookJobStep) MarshalJSON() ([]byte, error) {
+	type embed WebhookJobStep
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WebhookJobStep) String() string {
+	if w == nil {
+		return "<nil>"
+	}
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
+}
+
+type WebhookPayload struct {
+	Event                string
+	JobCreated           *JobCreatedWebhookEvent
+	JobStarted           *JobStartedWebhookEvent
+	JobCompleted         *JobCompletedWebhookEvent
+	JobFailed            *JobFailedWebhookEvent
+	JobCancelled         *JobCancelledWebhookEvent
+	JobDeliverySucceeded *JobDeliverySucceededWebhookEvent
+	JobDeliveryFailed    *JobDeliveryFailedWebhookEvent
+	JobDeliveriesSettled *JobDeliveriesSettledWebhookEvent
+	BalanceLow           *BalanceLowWebhookEvent
+	BalanceDepleted      *BalanceDepletedWebhookEvent
+	Test                 *TestWebhookEvent
+
+	rawJSON json.RawMessage
+}
+
+func (w *WebhookPayload) GetEvent() string {
+	if w == nil {
+		return ""
+	}
+	return w.Event
+}
+
+func (w *WebhookPayload) GetJobCreated() *JobCreatedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobCreated
+}
+
+func (w *WebhookPayload) GetJobStarted() *JobStartedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobStarted
+}
+
+func (w *WebhookPayload) GetJobCompleted() *JobCompletedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobCompleted
+}
+
+func (w *WebhookPayload) GetJobFailed() *JobFailedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobFailed
+}
+
+func (w *WebhookPayload) GetJobCancelled() *JobCancelledWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobCancelled
+}
+
+func (w *WebhookPayload) GetJobDeliverySucceeded() *JobDeliverySucceededWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobDeliverySucceeded
+}
+
+func (w *WebhookPayload) GetJobDeliveryFailed() *JobDeliveryFailedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobDeliveryFailed
+}
+
+func (w *WebhookPayload) GetJobDeliveriesSettled() *JobDeliveriesSettledWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.JobDeliveriesSettled
+}
+
+func (w *WebhookPayload) GetBalanceLow() *BalanceLowWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.BalanceLow
+}
+
+func (w *WebhookPayload) GetBalanceDepleted() *BalanceDepletedWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.BalanceDepleted
+}
+
+func (w *WebhookPayload) GetTest() *TestWebhookEvent {
+	if w == nil {
+		return nil
+	}
+	return w.Test
+}
+
+func (w *WebhookPayload) UnmarshalJSON(data []byte) error {
+	var unmarshaler struct {
+		Event string `json:"event"`
+	}
+	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+		return err
+	}
+	w.Event = unmarshaler.Event
+	if unmarshaler.Event == "" {
+		return fmt.Errorf("%T did not include discriminant event", w)
+	}
+	switch unmarshaler.Event {
+	case "job.created":
+		value := new(JobCreatedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobCreated = value
+	case "job.started":
+		value := new(JobStartedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobStarted = value
+	case "job.completed":
+		value := new(JobCompletedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobCompleted = value
+	case "job.failed":
+		value := new(JobFailedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobFailed = value
+	case "job.cancelled":
+		value := new(JobCancelledWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobCancelled = value
+	case "job.delivery_succeeded":
+		value := new(JobDeliverySucceededWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobDeliverySucceeded = value
+	case "job.delivery_failed":
+		value := new(JobDeliveryFailedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobDeliveryFailed = value
+	case "job.deliveries_settled":
+		value := new(JobDeliveriesSettledWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.JobDeliveriesSettled = value
+	case "balance.low":
+		value := new(BalanceLowWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.BalanceLow = value
+	case "balance.depleted":
+		value := new(BalanceDepletedWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.BalanceDepleted = value
+	case "test":
+		value := new(TestWebhookEvent)
+		if err := json.Unmarshal(data, &value); err != nil {
+			return err
+		}
+		w.Test = value
+	}
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w WebhookPayload) MarshalJSON() ([]byte, error) {
+	if err := w.validate(); err != nil {
+		return nil, err
+	}
+	if w.JobCreated != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobCreated, "event", "job.created")
+	}
+	if w.JobStarted != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobStarted, "event", "job.started")
+	}
+	if w.JobCompleted != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobCompleted, "event", "job.completed")
+	}
+	if w.JobFailed != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobFailed, "event", "job.failed")
+	}
+	if w.JobCancelled != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobCancelled, "event", "job.cancelled")
+	}
+	if w.JobDeliverySucceeded != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobDeliverySucceeded, "event", "job.delivery_succeeded")
+	}
+	if w.JobDeliveryFailed != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobDeliveryFailed, "event", "job.delivery_failed")
+	}
+	if w.JobDeliveriesSettled != nil {
+		return internal.MarshalJSONWithExtraProperty(w.JobDeliveriesSettled, "event", "job.deliveries_settled")
+	}
+	if w.BalanceLow != nil {
+		return internal.MarshalJSONWithExtraProperty(w.BalanceLow, "event", "balance.low")
+	}
+	if w.BalanceDepleted != nil {
+		return internal.MarshalJSONWithExtraProperty(w.BalanceDepleted, "event", "balance.depleted")
+	}
+	if w.Test != nil {
+		return internal.MarshalJSONWithExtraProperty(w.Test, "event", "test")
+	}
+	if len(w.rawJSON) > 0 {
+		return w.rawJSON, nil
+	}
+	return nil, fmt.Errorf("type %T does not define a non-empty union type", w)
+}
+
+type WebhookPayloadVisitor interface {
+	VisitJobCreated(*JobCreatedWebhookEvent) error
+	VisitJobStarted(*JobStartedWebhookEvent) error
+	VisitJobCompleted(*JobCompletedWebhookEvent) error
+	VisitJobFailed(*JobFailedWebhookEvent) error
+	VisitJobCancelled(*JobCancelledWebhookEvent) error
+	VisitJobDeliverySucceeded(*JobDeliverySucceededWebhookEvent) error
+	VisitJobDeliveryFailed(*JobDeliveryFailedWebhookEvent) error
+	VisitJobDeliveriesSettled(*JobDeliveriesSettledWebhookEvent) error
+	VisitBalanceLow(*BalanceLowWebhookEvent) error
+	VisitBalanceDepleted(*BalanceDepletedWebhookEvent) error
+	VisitTest(*TestWebhookEvent) error
+}
+
+func (w *WebhookPayload) Accept(visitor WebhookPayloadVisitor) error {
+	if w.JobCreated != nil {
+		return visitor.VisitJobCreated(w.JobCreated)
+	}
+	if w.JobStarted != nil {
+		return visitor.VisitJobStarted(w.JobStarted)
+	}
+	if w.JobCompleted != nil {
+		return visitor.VisitJobCompleted(w.JobCompleted)
+	}
+	if w.JobFailed != nil {
+		return visitor.VisitJobFailed(w.JobFailed)
+	}
+	if w.JobCancelled != nil {
+		return visitor.VisitJobCancelled(w.JobCancelled)
+	}
+	if w.JobDeliverySucceeded != nil {
+		return visitor.VisitJobDeliverySucceeded(w.JobDeliverySucceeded)
+	}
+	if w.JobDeliveryFailed != nil {
+		return visitor.VisitJobDeliveryFailed(w.JobDeliveryFailed)
+	}
+	if w.JobDeliveriesSettled != nil {
+		return visitor.VisitJobDeliveriesSettled(w.JobDeliveriesSettled)
+	}
+	if w.BalanceLow != nil {
+		return visitor.VisitBalanceLow(w.BalanceLow)
+	}
+	if w.BalanceDepleted != nil {
+		return visitor.VisitBalanceDepleted(w.BalanceDepleted)
+	}
+	if w.Test != nil {
+		return visitor.VisitTest(w.Test)
+	}
+	return fmt.Errorf("type %T does not define a non-empty union type", w)
+}
+
+func (w *WebhookPayload) validate() error {
+	if w == nil {
+		return fmt.Errorf("type %T is nil", w)
+	}
+	var fields []string
+	if w.JobCreated != nil {
+		fields = append(fields, "job.created")
+	}
+	if w.JobStarted != nil {
+		fields = append(fields, "job.started")
+	}
+	if w.JobCompleted != nil {
+		fields = append(fields, "job.completed")
+	}
+	if w.JobFailed != nil {
+		fields = append(fields, "job.failed")
+	}
+	if w.JobCancelled != nil {
+		fields = append(fields, "job.cancelled")
+	}
+	if w.JobDeliverySucceeded != nil {
+		fields = append(fields, "job.delivery_succeeded")
+	}
+	if w.JobDeliveryFailed != nil {
+		fields = append(fields, "job.delivery_failed")
+	}
+	if w.JobDeliveriesSettled != nil {
+		fields = append(fields, "job.deliveries_settled")
+	}
+	if w.BalanceLow != nil {
+		fields = append(fields, "balance.low")
+	}
+	if w.BalanceDepleted != nil {
+		fields = append(fields, "balance.depleted")
+	}
+	if w.Test != nil {
+		fields = append(fields, "test")
+	}
+	if len(fields) == 0 {
+		if w.Event != "" {
+			if len(w.rawJSON) > 0 {
+				return nil
+			}
+			return fmt.Errorf("type %T defines a discriminant set to %q but the field is not set", w, w.Event)
+		}
+		return fmt.Errorf("type %T is empty", w)
+	}
+	if len(fields) > 1 {
+		return fmt.Errorf("type %T defines values for %s, but only one value is allowed", w, fields)
+	}
+	if w.Event != "" {
+		field := fields[0]
+		if w.Event != field {
+			return fmt.Errorf(
+				"type %T defines a discriminant set to %q, but it does not match the %T field; either remove or update the discriminant to match",
+				w,
+				w.Event,
+				w,
+			)
+		}
+	}
+	return nil
 }

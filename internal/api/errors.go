@@ -38,7 +38,7 @@ func (b *BadRequestError) GetBody() *ErrorResponse {
 	return b.Body
 }
 
-// Job cannot be cancelled in current status
+// The idempotency key is already bound to another request, or to a job that failed with a retryable error. `error.details.jobId` names that job.
 type ConflictError struct {
 	*core.APIError
 	Body *ErrorResponse

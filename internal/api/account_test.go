@@ -885,7 +885,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataFeatures(t *testin
 func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 	t.Run("SetConcurrentJobs", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueConcurrentJobs float64
+		var fernTestValueConcurrentJobs int
 		obj.SetConcurrentJobs(fernTestValueConcurrentJobs)
 		assert.Equal(t, fernTestValueConcurrentJobs, obj.ConcurrentJobs)
 		assert.NotNil(t, obj.explicitFields)
@@ -893,7 +893,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetMaxQueuedJobs", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxQueuedJobs float64
+		var fernTestValueMaxQueuedJobs int
 		obj.SetMaxQueuedJobs(fernTestValueMaxQueuedJobs)
 		assert.Equal(t, fernTestValueMaxQueuedJobs, obj.MaxQueuedJobs)
 		assert.NotNil(t, obj.explicitFields)
@@ -901,7 +901,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetAPIRequestsPerMinute", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueAPIRequestsPerMinute float64
+		var fernTestValueAPIRequestsPerMinute int
 		obj.SetAPIRequestsPerMinute(fernTestValueAPIRequestsPerMinute)
 		assert.Equal(t, fernTestValueAPIRequestsPerMinute, obj.APIRequestsPerMinute)
 		assert.NotNil(t, obj.explicitFields)
@@ -909,7 +909,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetMaxJobTimeout", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxJobTimeout float64
+		var fernTestValueMaxJobTimeout int
 		obj.SetMaxJobTimeout(fernTestValueMaxJobTimeout)
 		assert.Equal(t, fernTestValueMaxJobTimeout, obj.MaxJobTimeout)
 		assert.NotNil(t, obj.explicitFields)
@@ -917,7 +917,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetMaxInputFileSize", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxInputFileSize float64
+		var fernTestValueMaxInputFileSize int
 		obj.SetMaxInputFileSize(fernTestValueMaxInputFileSize)
 		assert.Equal(t, fernTestValueMaxInputFileSize, obj.MaxInputFileSize)
 		assert.NotNil(t, obj.explicitFields)
@@ -925,7 +925,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetMaxJobInputSize", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxJobInputSize float64
+		var fernTestValueMaxJobInputSize int
 		obj.SetMaxJobInputSize(fernTestValueMaxJobInputSize)
 		assert.Equal(t, fernTestValueMaxJobInputSize, obj.MaxJobInputSize)
 		assert.NotNil(t, obj.explicitFields)
@@ -933,7 +933,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetStorageQuota", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueStorageQuota float64
+		var fernTestValueStorageQuota int
 		obj.SetStorageQuota(fernTestValueStorageQuota)
 		assert.Equal(t, fernTestValueStorageQuota, obj.StorageQuota)
 		assert.NotNil(t, obj.explicitFields)
@@ -941,7 +941,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetOutputRetentionDays", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueOutputRetentionDays float64
+		var fernTestValueOutputRetentionDays int
 		obj.SetOutputRetentionDays(fernTestValueOutputRetentionDays)
 		assert.Equal(t, fernTestValueOutputRetentionDays, obj.OutputRetentionDays)
 		assert.NotNil(t, obj.explicitFields)
@@ -949,7 +949,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetMaxUploadSessionFiles", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxUploadSessionFiles float64
+		var fernTestValueMaxUploadSessionFiles int
 		obj.SetMaxUploadSessionFiles(fernTestValueMaxUploadSessionFiles)
 		assert.Equal(t, fernTestValueMaxUploadSessionFiles, obj.MaxUploadSessionFiles)
 		assert.NotNil(t, obj.explicitFields)
@@ -957,7 +957,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetTeamMembers", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueTeamMembers float64
+		var fernTestValueTeamMembers int
 		obj.SetTeamMembers(fernTestValueTeamMembers)
 		assert.Equal(t, fernTestValueTeamMembers, obj.TeamMembers)
 		assert.NotNil(t, obj.explicitFields)
@@ -965,7 +965,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetComposeMaxPixels", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeMaxPixels float64
+		var fernTestValueComposeMaxPixels int
 		obj.SetComposeMaxPixels(fernTestValueComposeMaxPixels)
 		assert.Equal(t, fernTestValueComposeMaxPixels, obj.ComposeMaxPixels)
 		assert.NotNil(t, obj.explicitFields)
@@ -973,7 +973,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetComposeMaxFps", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeMaxFps float64
+		var fernTestValueComposeMaxFps int
 		obj.SetComposeMaxFps(fernTestValueComposeMaxFps)
 		assert.Equal(t, fernTestValueComposeMaxFps, obj.ComposeMaxFps)
 		assert.NotNil(t, obj.explicitFields)
@@ -981,7 +981,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetComposeAnimatedMaxPixels", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeAnimatedMaxPixels float64
+		var fernTestValueComposeAnimatedMaxPixels int
 		obj.SetComposeAnimatedMaxPixels(fernTestValueComposeAnimatedMaxPixels)
 		assert.Equal(t, fernTestValueComposeAnimatedMaxPixels, obj.ComposeAnimatedMaxPixels)
 		assert.NotNil(t, obj.explicitFields)
@@ -989,7 +989,7 @@ func TestSettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 
 	t.Run("SetComposeAnimatedMaxFps", func(t *testing.T) {
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeAnimatedMaxFps float64
+		var fernTestValueComposeAnimatedMaxFps int
 		obj.SetComposeAnimatedMaxFps(fernTestValueComposeAnimatedMaxFps)
 		assert.Equal(t, fernTestValueComposeAnimatedMaxFps, obj.ComposeAnimatedMaxFps)
 		assert.NotNil(t, obj.explicitFields)
@@ -1002,7 +1002,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.ConcurrentJobs = expected
 
 		// Act & Assert
@@ -1025,7 +1025,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.MaxQueuedJobs = expected
 
 		// Act & Assert
@@ -1048,7 +1048,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.APIRequestsPerMinute = expected
 
 		// Act & Assert
@@ -1071,7 +1071,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.MaxJobTimeout = expected
 
 		// Act & Assert
@@ -1094,7 +1094,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.MaxInputFileSize = expected
 
 		// Act & Assert
@@ -1117,7 +1117,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.MaxJobInputSize = expected
 
 		// Act & Assert
@@ -1140,7 +1140,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.StorageQuota = expected
 
 		// Act & Assert
@@ -1163,7 +1163,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.OutputRetentionDays = expected
 
 		// Act & Assert
@@ -1186,7 +1186,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.MaxUploadSessionFiles = expected
 
 		// Act & Assert
@@ -1209,7 +1209,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.TeamMembers = expected
 
 		// Act & Assert
@@ -1232,7 +1232,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.ComposeMaxPixels = expected
 
 		// Act & Assert
@@ -1255,7 +1255,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.ComposeMaxFps = expected
 
 		// Act & Assert
@@ -1278,7 +1278,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.ComposeAnimatedMaxPixels = expected
 
 		// Act & Assert
@@ -1301,7 +1301,7 @@ func TestGettersGetAccountCapabilitiesResponseDataLimits(t *testing.T) {
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var expected float64
+		var expected int
 		obj.ComposeAnimatedMaxFps = expected
 
 		// Act & Assert
@@ -1327,7 +1327,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueConcurrentJobs float64
+		var fernTestValueConcurrentJobs int
 
 		// Act
 		obj.SetConcurrentJobs(fernTestValueConcurrentJobs)
@@ -1358,7 +1358,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxQueuedJobs float64
+		var fernTestValueMaxQueuedJobs int
 
 		// Act
 		obj.SetMaxQueuedJobs(fernTestValueMaxQueuedJobs)
@@ -1389,7 +1389,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueAPIRequestsPerMinute float64
+		var fernTestValueAPIRequestsPerMinute int
 
 		// Act
 		obj.SetAPIRequestsPerMinute(fernTestValueAPIRequestsPerMinute)
@@ -1420,7 +1420,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxJobTimeout float64
+		var fernTestValueMaxJobTimeout int
 
 		// Act
 		obj.SetMaxJobTimeout(fernTestValueMaxJobTimeout)
@@ -1451,7 +1451,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxInputFileSize float64
+		var fernTestValueMaxInputFileSize int
 
 		// Act
 		obj.SetMaxInputFileSize(fernTestValueMaxInputFileSize)
@@ -1482,7 +1482,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxJobInputSize float64
+		var fernTestValueMaxJobInputSize int
 
 		// Act
 		obj.SetMaxJobInputSize(fernTestValueMaxJobInputSize)
@@ -1513,7 +1513,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueStorageQuota float64
+		var fernTestValueStorageQuota int
 
 		// Act
 		obj.SetStorageQuota(fernTestValueStorageQuota)
@@ -1544,7 +1544,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueOutputRetentionDays float64
+		var fernTestValueOutputRetentionDays int
 
 		// Act
 		obj.SetOutputRetentionDays(fernTestValueOutputRetentionDays)
@@ -1575,7 +1575,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueMaxUploadSessionFiles float64
+		var fernTestValueMaxUploadSessionFiles int
 
 		// Act
 		obj.SetMaxUploadSessionFiles(fernTestValueMaxUploadSessionFiles)
@@ -1606,7 +1606,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueTeamMembers float64
+		var fernTestValueTeamMembers int
 
 		// Act
 		obj.SetTeamMembers(fernTestValueTeamMembers)
@@ -1637,7 +1637,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeMaxPixels float64
+		var fernTestValueComposeMaxPixels int
 
 		// Act
 		obj.SetComposeMaxPixels(fernTestValueComposeMaxPixels)
@@ -1668,7 +1668,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeMaxFps float64
+		var fernTestValueComposeMaxFps int
 
 		// Act
 		obj.SetComposeMaxFps(fernTestValueComposeMaxFps)
@@ -1699,7 +1699,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeAnimatedMaxPixels float64
+		var fernTestValueComposeAnimatedMaxPixels int
 
 		// Act
 		obj.SetComposeAnimatedMaxPixels(fernTestValueComposeAnimatedMaxPixels)
@@ -1730,7 +1730,7 @@ func TestSettersMarkExplicitGetAccountCapabilitiesResponseDataLimits(t *testing.
 		t.Parallel()
 		// Arrange
 		obj := &GetAccountCapabilitiesResponseDataLimits{}
-		var fernTestValueComposeAnimatedMaxFps float64
+		var fernTestValueComposeAnimatedMaxFps int
 
 		// Act
 		obj.SetComposeAnimatedMaxFps(fernTestValueComposeAnimatedMaxFps)
