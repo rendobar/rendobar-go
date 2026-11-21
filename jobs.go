@@ -19,8 +19,29 @@ import (
 // this SDK leaves all of them nil and keeps Status, so code can still branch on it.
 type Job = api.Job
 
+// JobWaiting is a job queued and not yet dispatched (Job.Waiting).
+type JobWaiting = api.JobWaiting
+
+// JobDispatched is a job handed to a runner that has not started (Job.Dispatched).
+type JobDispatched = api.JobDispatched
+
+// JobRunning is a job in progress (Job.Running).
+type JobRunning = api.JobRunning
+
+// JobComplete is a finished job with its output (Job.Complete).
+type JobComplete = api.JobComplete
+
+// JobFailed is a job that failed, with its error (Job.Failed).
+type JobFailed = api.JobFailed
+
+// JobCancelled is a job that was cancelled (Job.Cancelled).
+type JobCancelled = api.JobCancelled
+
 // JobType is one live job type, from Jobs.Types.
 type JobType = api.JobType
+
+// JobTypeSchema is one job type's params, from Jobs.Schema.
+type JobTypeSchema = api.GetJobTypeSchemaResponseData
 
 // AccountCapabilities is what this API key's workspace may do.
 type AccountCapabilities = api.GetAccountCapabilitiesResponseData
@@ -221,7 +242,7 @@ func (j *Jobs) Types(ctx context.Context) ([]*JobType, error) {
 }
 
 // Schema returns one job type's params: its fields, inputs and full JSON Schema. Public: needs no API key.
-func (j *Jobs) Schema(ctx context.Context, jobType string) (*api.GetJobTypeSchemaResponseData, error) {
+func (j *Jobs) Schema(ctx context.Context, jobType string) (*JobTypeSchema, error) {
 	res, err := j.client.core.Jobs.GetJobTypeSchema(ctx, &api.GetJobTypeSchemaRequest{Type: jobType})
 	if err != nil {
 		return nil, fromGenerated(err)
