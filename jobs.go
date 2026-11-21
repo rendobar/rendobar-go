@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"iter"
@@ -13,38 +14,6 @@ import (
 
 	"github.com/rendobar/rendobar-go/internal/api"
 )
-
-// Job is a job in any status. Exactly one of Waiting, Dispatched, Running,
-// Complete, Failed or Cancelled is set, matching Status. A status newer than
-// this SDK leaves all of them nil and keeps Status, so code can still branch on it.
-type Job = api.Job
-
-// JobWaiting is a job queued and not yet dispatched (Job.Waiting).
-type JobWaiting = api.JobWaiting
-
-// JobDispatched is a job handed to a runner that has not started (Job.Dispatched).
-type JobDispatched = api.JobDispatched
-
-// JobRunning is a job in progress (Job.Running).
-type JobRunning = api.JobRunning
-
-// JobComplete is a finished job with its output (Job.Complete).
-type JobComplete = api.JobComplete
-
-// JobFailed is a job that failed, with its error (Job.Failed).
-type JobFailed = api.JobFailed
-
-// JobCancelled is a job that was cancelled (Job.Cancelled).
-type JobCancelled = api.JobCancelled
-
-// JobType is one live job type, from Jobs.Types.
-type JobType = api.JobType
-
-// JobTypeSchema is one job type's params, from Jobs.Schema.
-type JobTypeSchema = api.GetJobTypeSchemaResponseData
-
-// AccountCapabilities is what this API key's workspace may do.
-type AccountCapabilities = api.GetAccountCapabilitiesResponseData
 
 // Variables, not constants, so the tests can shorten them.
 var (
@@ -63,6 +32,8 @@ type CreateParams struct {
 	Inputs map[string]any
 	// IdempotencyKey makes the submit safe to repeat. With none, the SDK
 	// generates one per Create call, so its own retries cannot create a second job.
+	// Reusing a key with different Type, Params or Inputs is refused with a
+	// 409 CONFLICT *Error.
 	IdempotencyKey string
 	Label          string
 	Destinations   []string
@@ -71,8 +42,8 @@ type CreateParams struct {
 
 // Created is what a submit returns: the job id and its status at that moment.
 type Created struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID     string    `json:"id"`
+	Status JobStatus `json:"status"`
 }
 
 // GenerateIdempotencyKey returns "sdk_" plus 32 hex characters: unique per call, not secret.
@@ -141,14 +112,19 @@ func (j *Jobs) Get(ctx context.Context, id string) (*Job, error) {
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	return res.Data, nil
+	return fromAPIJob(res.Data)
 }
 
-// ListParams filters Jobs.List and Jobs.All.
+// ListParams filters Jobs.List and Jobs.All. The zero value lists every job.
 type ListParams struct {
-	Status string
-	Type   string
-	Limit  int
+	// Status keeps jobs in one status, such as StatusFailed. "" keeps all.
+	Status JobStatus
+	// Type keeps jobs of one type, such as "ffmpeg". "" keeps all.
+	Type string
+	// Limit is the page size, up to 100. The API treats a larger value as 100.
+	// 0 uses the API's default of 50 for List, and 100 for All.
+	Limit int
+	// Offset skips that many matching jobs.
 	Offset int
 }
 
@@ -178,7 +154,14 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	page := &Page{Jobs: res.Data}
+	page := &Page{Jobs: make([]*Job, 0, len(res.Data))}
+	for _, in := range res.Data {
+		job, err := fromAPIJob(in)
+		if err != nil {
+			return nil, err
+		}
+		page.Jobs = append(page.Jobs, job)
+	}
 	if res.Meta != nil {
 		page.Total = res.Meta.Total
 	}
@@ -187,7 +170,7 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 
 // All yields every matching job, fetching pages as you range over it.
 //
-//	for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: "failed"}) { ... }
+//	for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: rendobar.StatusFailed}) { ... }
 func (j *Jobs) All(ctx context.Context, p ListParams) iter.Seq2[*Job, error] {
 	return func(yield func(*Job, error) bool) {
 		q := p // a copy per range, so ranging the same sequence twice yields everything twice
@@ -233,12 +216,16 @@ func (j *Jobs) Download(ctx context.Context, id string) ([]byte, error) {
 }
 
 // Types returns every live job type. Public: needs no API key.
-func (j *Jobs) Types(ctx context.Context) ([]*JobType, error) {
+func (j *Jobs) Types(ctx context.Context) ([]JobType, error) {
 	res, err := j.client.core.Jobs.ListJobTypes(ctx)
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	return res.Data, nil
+	types, err := convert[[]JobType](res.Data)
+	if err != nil {
+		return nil, err
+	}
+	return *types, nil
 }
 
 // Schema returns one job type's params: its fields, inputs and full JSON Schema. Public: needs no API key.
@@ -247,7 +234,7 @@ func (j *Jobs) Schema(ctx context.Context, jobType string) (*JobTypeSchema, erro
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	return res.Data, nil
+	return convert[JobTypeSchema](res.Data)
 }
 
 // WaitOptions tune Jobs.Wait and Jobs.Run. The zero value is fine.
@@ -262,23 +249,11 @@ type WaitOptions struct {
 	OnProgress  func(*Job)
 }
 
-func terminal(status string) bool {
-	return status == "complete" || status == "failed" || status == "cancelled"
-}
-
-func budget(job *Job) *int {
-	switch {
-	case job.Waiting != nil:
-		return job.Waiting.TimeoutMs
-	case job.Dispatched != nil:
-		return job.Dispatched.TimeoutMs
-	case job.Running != nil:
-		return job.Running.TimeoutMs
-	}
-	return nil
-}
-
 // Wait polls until the job completes, fails or is cancelled, and returns it.
+//
+// When ctx is cancelled or its deadline passes, Wait returns a *ContextError
+// with the job id and the last job it read. errors.Is(err,
+// context.DeadlineExceeded) and errors.Is(err, context.Canceled) still work.
 func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error) {
 	if o == nil {
 		o = &WaitOptions{}
@@ -296,40 +271,54 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 		deadline = started.Add(o.Timeout)
 	}
 	adopted := o.Timeout > 0
+	var last *Job
 	for {
 		job, err := j.Get(ctx, id)
 		if err != nil {
-			return nil, err
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				if !errors.Is(err, ctxErr) {
+					err = ctxErr
+				}
+				return last, &ContextError{JobID: id, Job: last, Err: err}
+			}
+			return last, err
 		}
+		last = job
 		if o.OnProgress != nil {
 			o.OnProgress(job)
 		}
-		if terminal(job.Status) {
+		if job.Status().terminal() {
 			return job, nil
 		}
-		if ms := budget(job); !adopted && ms != nil {
+		if limit := job.info.Timeout; !adopted && limit > 0 {
 			adopted = true
 			// The budget runs from about now, not from when Wait started.
-			if own := time.Now().Add(time.Duration(*ms)*time.Millisecond + waitGrace); own.After(deadline) {
+			if own := time.Now().Add(limit + waitGrace); own.After(deadline) {
 				deadline = own
 			}
 		}
 		left := time.Until(deadline)
 		if left <= 0 {
-			return nil, &WaitTimeoutError{JobID: id, LastStatus: job.Status, Waited: time.Since(started)}
+			return job, &WaitTimeoutError{JobID: id, LastStatus: job.Status(), Waited: time.Since(started)}
 		}
 		timer := time.NewTimer(min(interval, left))
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return nil, ctx.Err()
+			return job, &ContextError{JobID: id, Job: job, Err: ctx.Err()}
 		case <-timer.C:
 		}
 		interval = min(interval*3/2, maxInterval)
 	}
 }
 
-// Run submits a job and waits for it. A failed or cancelled job returns *JobFailedError with the job.
+// Run submits a job and waits for it. A failed or cancelled job returns
+// *JobFailedError with the job.
+//
+// Once the job is submitted, every error Wait returns comes back with the last
+// job Run read, or nil before the first read. A *ContextError or
+// *WaitTimeoutError also names the job id, so you can call Jobs.Get,
+// Jobs.Wait or Jobs.Cancel with it.
 func (j *Jobs) Run(ctx context.Context, p CreateParams, o *WaitOptions) (*Job, error) {
 	created, err := j.Create(ctx, p)
 	if err != nil {
@@ -337,9 +326,9 @@ func (j *Jobs) Run(ctx context.Context, p CreateParams, o *WaitOptions) (*Job, e
 	}
 	job, err := j.Wait(ctx, created.ID, o)
 	if err != nil {
-		return nil, err
+		return job, err
 	}
-	if job.Status != "complete" {
+	if job.Status() != StatusComplete {
 		return job, &JobFailedError{Job: job}
 	}
 	return job, nil
@@ -354,5 +343,5 @@ func (a *Account) Capabilities(ctx context.Context) (*AccountCapabilities, error
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	return res.Data, nil
+	return convert[AccountCapabilities](res.Data)
 }

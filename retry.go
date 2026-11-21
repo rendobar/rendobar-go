@@ -18,7 +18,8 @@ const (
 )
 
 // retrier sends each request and retries a 429, a 5xx or a connection error,
-// honouring Retry-After. Nothing else is retried: a 408 or a 409 is the API's
+// honouring Retry-After. When the wait before a retry would outlast the
+// context's deadline, it returns that response instead of waiting. Nothing else is retried: a 408 or a 409 is the API's
 // answer, not a transient failure. Each attempt goes through client.Do, so the
 // client's Timeout bounds one attempt, not all of them.
 //
@@ -54,6 +55,11 @@ func (r *retrier) Do(req *http.Request) (*http.Response, error) {
 		if res != nil {
 			if d, ok := retryAfter(res.Header.Get("Retry-After"), time.Now()); ok {
 				delay = min(d, retryMaxDelay)
+			}
+			if deadline, ok := req.Context().Deadline(); ok && time.Until(deadline) < delay {
+				// The retry would start after the caller's deadline. Return this
+				// response, so a 429 still reads as rate limited, with its Retry-After.
+				return res, nil
 			}
 			_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 64<<10))
 			_ = res.Body.Close()

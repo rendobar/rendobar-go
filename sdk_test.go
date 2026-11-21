@@ -138,8 +138,8 @@ func TestWaitCallsOnProgressEveryPoll(t *testing.T) {
 		fmt.Fprint(w, jobJSON("complete", 0))
 	})
 	var seen []string
-	job, err := c.Jobs.Wait(context.Background(), "job_t", &WaitOptions{Interval: 10 * time.Millisecond, OnProgress: func(j *Job) { seen = append(seen, j.Status) }})
-	if err != nil || job.Status != "complete" {
+	job, err := c.Jobs.Wait(context.Background(), "job_t", &WaitOptions{Interval: 10 * time.Millisecond, OnProgress: func(j *Job) { seen = append(seen, string(j.Status())) }})
+	if err != nil || job.Status() != StatusComplete {
 		t.Fatalf("%v %v", job, err)
 	}
 	if strings.Join(seen, ",") != "running,running,complete" {
@@ -170,8 +170,8 @@ func TestJobFailedErrorNeverPanics(t *testing.T) {
 	cases := []*JobFailedError{
 		nil,
 		{},
-		{Job: &Job{Status: "cancelled"}},
-		{Job: &Job{Status: "failed", Failed: &JobFailed{ID: "job_t"}}},
+		{Job: &Job{status: StatusCancelled}},
+		{Job: &Job{status: StatusFailed, Failed: &JobFailed{JobInfo: JobInfo{ID: "job_t"}}}},
 	}
 	for _, e := range cases {
 		if msg := e.Error(); !strings.HasPrefix(msg, "rendobar: job") {
@@ -388,5 +388,81 @@ func TestDeprecationOnStderrNamesTheRealPath(t *testing.T) {
 	out, _ := io.ReadAll(r)
 	if !strings.Contains(string(out), "GET /jobs/job_abc123/logs is deprecated since 2025-10-17") {
 		t.Fatalf("stderr %q", out)
+	}
+}
+
+func TestRunKeepsTheJobIDWhenTheContextEnds(t *testing.T) {
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			w.WriteHeader(201)
+			fmt.Fprint(w, `{"data":{"id":"job_t","status":"waiting"}}`)
+			return
+		}
+		fmt.Fprint(w, jobJSON("running", 0))
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+	job, err := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, &WaitOptions{Interval: 40 * time.Millisecond})
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %v", err)
+	}
+	var ce *ContextError
+	if !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job == nil || ce.Job.Status() != StatusRunning {
+		t.Fatalf("got %#v", err)
+	}
+	if job != ce.Job || !strings.Contains(err.Error(), "job_t") {
+		t.Fatalf("job %v, message %q", job, err)
+	}
+}
+
+func TestWaitKeepsTheJobIDWhenCancelledBeforeTheFirstPoll(t *testing.T) {
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		select { // answers only after the caller gave up
+		case <-time.After(2 * time.Second):
+		case <-r.Context().Done():
+		}
+		fmt.Fprint(w, jobJSON("running", 0))
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(100*time.Millisecond, cancel)
+	job, err := c.Jobs.Wait(ctx, "job_t", nil)
+	var ce *ContextError
+	if !errors.Is(err, context.Canceled) || !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job != nil || job != nil {
+		t.Fatalf("got %v, %#v", job, err)
+	}
+}
+
+func TestWaitTimeoutErrorShowsSubSecondWaits(t *testing.T) {
+	for waited, want := range map[time.Duration]string{
+		341 * time.Millisecond:             "after 341ms",
+		2412 * time.Millisecond:            "after 2.4s",
+		5*time.Minute + 3*time.Millisecond: "after 5m0s",
+	} {
+		e := &WaitTimeoutError{JobID: "job_t", LastStatus: StatusDispatched, Waited: waited}
+		if !strings.Contains(e.Error(), "still dispatched "+want) {
+			t.Fatalf("%v: %q", waited, e.Error())
+		}
+	}
+}
+
+func TestRateLimitLongerThanTheDeadlineStaysRateLimited(t *testing.T) {
+	c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Retry-After", "30")
+		w.WriteHeader(429)
+		fmt.Fprint(w, `{"error":{"code":"RATE_LIMITED","message":"slow down"}}`)
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	started := time.Now()
+	_, err := c.Jobs.Get(ctx, "job_t")
+	if !IsRateLimited(err) {
+		t.Fatalf("got %v", err)
+	}
+	var apiErr *Error
+	if !errors.As(err, &apiErr) || apiErr.RetryAfter != 30*time.Second {
+		t.Fatalf("got %#v", err)
+	}
+	if d := time.Since(started); d > time.Second || hits.Load() != 1 {
+		t.Fatalf("waited %v over %d requests for a retry that could not happen", d, hits.Load())
 	}
 }

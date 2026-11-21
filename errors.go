@@ -62,24 +62,57 @@ func (e *JobFailedError) Error() string {
 		return "rendobar: job failed"
 	}
 	if f := e.Job.Failed; f != nil {
-		if f.Error != nil {
+		if f.Error.Code != "" {
 			return fmt.Sprintf("rendobar: job %s failed: %s (%s)", f.ID, f.Error.Message, f.Error.Code)
 		}
 		return fmt.Sprintf("rendobar: job %s failed", f.ID)
 	}
-	return fmt.Sprintf("rendobar: job ended %s", e.Job.Status)
+	return fmt.Sprintf("rendobar: job %s ended %s", e.Job.ID(), e.Job.Status())
 }
 
-// WaitTimeoutError is returned by Jobs.Wait when the deadline passes first. The job may still finish.
+// WaitTimeoutError is returned by Jobs.Wait when its own deadline (see
+// WaitOptions.Timeout) passes first. The job may still finish.
 type WaitTimeoutError struct {
 	JobID      string
-	LastStatus string
+	LastStatus JobStatus
 	Waited     time.Duration // how long Wait actually waited
 }
 
 func (e *WaitTimeoutError) Error() string {
-	return fmt.Sprintf("rendobar: job %s still %s after %s. It may still finish: call Jobs.Get later", e.JobID, e.LastStatus, e.Waited.Round(time.Second))
+	return fmt.Sprintf("rendobar: job %s still %s after %s. It may still finish: call Jobs.Get later", e.JobID, e.LastStatus, roundWait(e.Waited))
 }
+
+// roundWait keeps a wait readable: 341ms, 2.4s, 5m0s.
+func roundWait(d time.Duration) time.Duration {
+	switch {
+	case d < time.Second:
+		return d.Round(time.Millisecond)
+	case d < time.Minute:
+		return d.Round(100 * time.Millisecond)
+	}
+	return d.Round(time.Second)
+}
+
+// ContextError is returned by Jobs.Wait and Jobs.Run when ctx is cancelled or
+// its deadline passes after the job was submitted. The job keeps running on
+// the API. Use JobID to call Jobs.Get, Jobs.Wait or Jobs.Cancel.
+//
+// It unwraps to the context's error, so errors.Is(err, context.DeadlineExceeded)
+// and errors.Is(err, context.Canceled) report the cause.
+type ContextError struct {
+	JobID string
+	// Job is the last state Wait read, or nil when ctx ended before the first read.
+	Job *Job
+	// Err is the error that ended the wait. It wraps the context's error.
+	Err error
+}
+
+func (e *ContextError) Error() string {
+	return fmt.Sprintf("rendobar: stopped waiting for job %s: %v", e.JobID, e.Err)
+}
+
+// Unwrap returns Err.
+func (e *ContextError) Unwrap() error { return e.Err }
 
 type bodied interface{ GetBody() *api.ErrorResponse }
 
