@@ -1,9 +1,13 @@
 package webhooks
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -53,5 +57,39 @@ func TestVectors(t *testing.T) {
 				t.Fatalf("got %v, want %v", got, c.Expect)
 			}
 		})
+	}
+}
+
+func signedHeader(secret string, ts int64, body string) http.Header {
+	stamp := strconv.FormatInt(ts, 10)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(stamp + "." + body))
+	h := http.Header{}
+	h.Set("X-Rendobar-Timestamp", stamp)
+	h.Set("X-Rendobar-Signature", "sha256="+hex.EncodeToString(mac.Sum(nil)))
+	return h
+}
+
+func TestEmptySecretIsRejected(t *testing.T) {
+	h := signedHeader("", 1700000000, "{}")
+	if VerifyWith([]byte("{}"), h, "", Options{Now: time.Unix(1700000000, 0)}) {
+		t.Fatal("an empty secret verified a delivery")
+	}
+	if Verify([]byte("{}"), h, "") {
+		t.Fatal("Verify accepted an empty secret")
+	}
+}
+
+func TestNonHexSignatureIsRejected(t *testing.T) {
+	for _, sig := range []string{"sha256=éé", "sha256=zz", "not-hex", "sha256="} {
+		h := signedHeader("whsec_x", 1700000000, "{}")
+		h.Set("X-Rendobar-Signature", sig)
+		if VerifyWith([]byte("{}"), h, "whsec_x", Options{Now: time.Unix(1700000000, 0)}) {
+			t.Fatalf("signature %q verified", sig)
+		}
+	}
+	// And the same header with a good signature does verify, so the test can fail.
+	if !VerifyWith([]byte("{}"), signedHeader("whsec_x", 1700000000, "{}"), "whsec_x", Options{Now: time.Unix(1700000000, 0)}) {
+		t.Fatal("a good signature did not verify")
 	}
 }

@@ -29,12 +29,18 @@ type Options struct {
 
 // Verify reports whether body is signed with secret, or with the previous
 // secret during a rotation, and was signed within the tolerance.
+//
+// An empty secret always returns false: anyone can compute an HMAC with an
+// empty key, so it proves nothing. A signature that is not hex returns false.
 func Verify(body []byte, header http.Header, secret string) bool {
 	return VerifyWith(body, header, secret, Options{})
 }
 
 // VerifyWith is Verify with a custom tolerance or clock.
 func VerifyWith(body []byte, header http.Header, secret string, o Options) bool {
+	if secret == "" {
+		return false
+	}
 	signature := header.Get("X-Rendobar-Signature")
 	timestamp := header.Get("X-Rendobar-Timestamp")
 	if signature == "" || timestamp == "" {
