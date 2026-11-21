@@ -1,0 +1,28 @@
+name: release
+# release-please opens a release PR. Merging it tags vX.Y.Z, which is how a Go
+# module is published. Nothing releases until a person merges that PR.
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.rp.outputs.release_created }}
+      tag: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+  index:
+    needs: release-please
+    if: needs.release-please.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the Go module proxy to fetch the release, which lists it on pkg.go.dev
+        run: curl -sf "https://proxy.golang.org/github.com/rendobar/rendobar-go/@v/${{ needs.release-please.outputs.tag }}.info"

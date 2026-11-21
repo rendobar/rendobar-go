@@ -1,0 +1,14 @@
+{
+  "cliVersion": "5.224.0",
+  "generatorName": "fernapi/fern-go-sdk",
+  "generatorVersion": "1.70.19",
+  "generatorConfig": {
+    "module": {
+      "path": "github.com/rendobar/rendobar-go/internal/api"
+    },
+    "packageName": "api",
+    "clientName": "Client",
+    "enableWireTests": false
+  },
+  "invokedBy": "manual"
+}

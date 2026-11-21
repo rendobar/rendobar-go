@@ -1,0 +1,48 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["oldstable", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # the breaking-change check compares with the last release tag
+      - uses: actions/checkout@v4
+        with:
+          repository: rendobar/openapi
+          path: .openapi
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Start the conformance mock
+        run: |
+          python3 -I .openapi/conformance/mock_server.py .openapi/openapi.json 4100 requests.jsonl &
+          for i in $(seq 1 20); do curl -sf -X POST http://127.0.0.1:4100/__reset && break; sleep 0.5; done
+      - run: go vet ./...
+      - name: Tests (conformance scenarios, webhook vectors, examples)
+        run: go test -count=1 ./...
+      - name: Breaking-change check against the last release
+        if: matrix.go == 'stable'
+        run: |
+          last=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          if [ -z "$last" ]; then echo "No release yet, nothing to compare with."; exit 0; fi
+          apidiff="go run golang.org/x/exp/cmd/apidiff@v0.0.0-20261106192419-47ce03d25ef0"
+          git worktree add -q /tmp/base "$last"
+          (cd /tmp/base && $apidiff -m -w /tmp/base.api github.com/rendobar/rendobar-go)
+          out=$($apidiff -m -incompatible /tmp/base.api github.com/rendobar/rendobar-go 2>&1 | grep -vE '^(go: |Ignoring internal)' || true)
+          if [ -n "$out" ]; then echo "Incompatible API changes since $last:"; echo "$out"; exit 1; fi
+      - name: Public-surface deny-list
+        if: matrix.go == 'stable'
+        run: python3 -I .openapi/scripts/deny_list.py

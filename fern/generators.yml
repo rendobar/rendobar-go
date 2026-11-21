@@ -1,0 +1,20 @@
+# The generated core lives in internal/api and is never edited by hand.
+# Regenerate: cd fern && fern generate --local --group go --force (CI does this on every spec change).
+api:
+  specs:
+    - openapi: ./openapi.json
+groups:
+  go:
+    generators:
+      - name: fernapi/fern-go-sdk
+        version: 1.70.19
+        output:
+          location: local-file-system
+          path: ../internal/api
+        config:
+          module:
+            path: github.com/rendobar/rendobar-go/internal/api
+          packageName: api
+          clientName: Client
+          # Wire tests need containers at test time. The shared conformance suite covers the same ground.
+          enableWireTests: false
