@@ -64,6 +64,15 @@ type Client struct {
 	Jobs    *Jobs
 	Account *Account
 	core    *apiclient.Client
+	hasKey  bool
+}
+
+// needKey fails a call that needs an API key, before it sends anything, when the client has none.
+func (c *Client) needKey() error {
+	if !c.hasKey {
+		return ErrNoAPIKey
+	}
+	return nil
 }
 
 type config struct {
@@ -117,7 +126,9 @@ func WithDeprecationHandler(fn func(DeprecationNotice)) Option {
 	return func(c *config) { c.onDeprecation = fn }
 }
 
-// New returns a client. With no WithAPIKey it reads RENDOBAR_API_KEY.
+// New returns a client. With no WithAPIKey it reads RENDOBAR_API_KEY. A client
+// with no key can still call Jobs.Types and Jobs.Schema. Every other call
+// returns ErrNoAPIKey without sending a request.
 func New(opts ...Option) *Client {
 	cfg := config{baseURL: DefaultBaseURL, maxRetries: 2}
 	for _, o := range opts {
@@ -156,7 +167,7 @@ func New(opts ...Option) *Client {
 	if cfg.apiKey != "" {
 		coreOpts = append(coreOpts, option.WithToken(cfg.apiKey))
 	}
-	c := &Client{core: apiclient.NewClient(coreOpts...)}
+	c := &Client{core: apiclient.NewClient(coreOpts...), hasKey: cfg.apiKey != ""}
 	c.Jobs = &Jobs{client: c}
 	c.Account = &Account{client: c}
 	return c

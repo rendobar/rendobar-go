@@ -94,20 +94,20 @@ type Plan struct {
 
 // Limits are the workspace's plan limits.
 type Limits struct {
-	ConcurrentJobs        int
-	MaxQueuedJobs         int
-	APIRequestsPerMinute  int
-	MaxJobTimeoutSeconds  int
-	MaxInputFileSize      int64 // bytes per input file, uploaded or fetched by URL
-	StorageQuota          int64 // bytes
-	OutputRetentionDays   int
-	MaxUploadSessionFiles int
-	TeamMembers           int // members the workspace may hold, pending invitations included
+	ConcurrentJobs        int   `json:"concurrentJobs"`
+	MaxQueuedJobs         int   `json:"maxQueuedJobs"`
+	APIRequestsPerMinute  int   `json:"apiRequestsPerMinute"`
+	MaxJobTimeoutSeconds  int   `json:"maxJobTimeout"`
+	MaxInputFileSize      int64 `json:"maxInputFileSize"` // bytes per input file, uploaded or fetched by URL
+	StorageQuota          int64 `json:"storageQuota"`     // bytes
+	OutputRetentionDays   int   `json:"outputRetentionDays"`
+	MaxUploadSessionFiles int   `json:"maxUploadSessionFiles"`
+	TeamMembers           int   `json:"teamMembers"` // members the workspace may hold, pending invitations included
 
-	ComposeMaxPixels         int64 // largest compose frame, width times height
-	ComposeMaxFPS            int
-	ComposeAnimatedMaxPixels int64 // largest compose frame with animated graphics
-	ComposeAnimatedMaxFPS    int
+	ComposeMaxPixels         int64 `json:"composeMaxPixels"` // largest compose frame, width times height
+	ComposeMaxFPS            int   `json:"composeMaxFps"`
+	ComposeAnimatedMaxPixels int64 `json:"composeAnimatedMaxPixels"` // largest compose frame with animated graphics
+	ComposeAnimatedMaxFPS    int   `json:"composeAnimatedMaxFps"`
 }
 
 type wireLimits struct {
@@ -126,7 +126,8 @@ type wireLimits struct {
 	ComposeAnimatedMaxFps    float64 `json:"composeAnimatedMaxFps"`
 }
 
-// UnmarshalJSON reads the limits, which the API sends as JSON numbers.
+// UnmarshalJSON reads the limits, which the API sends as JSON numbers that
+// may carry a fraction.
 func (l *Limits) UnmarshalJSON(b []byte) error {
 	var w wireLimits
 	if err := json.Unmarshal(b, &w); err != nil {

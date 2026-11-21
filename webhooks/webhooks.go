@@ -30,8 +30,10 @@ type Options struct {
 // Verify reports whether body is signed with secret, or with the previous
 // secret during a rotation, and was signed within the tolerance.
 //
-// An empty secret always returns false: anyone can compute an HMAC with an
-// empty key, so it proves nothing. A signature that is not hex returns false.
+// The signature is "sha256=" followed by the hex HMAC-SHA256 of
+// "<X-Rendobar-Timestamp>.<body>". A signature without the sha256= prefix,
+// or that is not hex, returns false. An empty secret always returns false:
+// anyone can compute an HMAC with an empty key, so it proves nothing.
 func Verify(body []byte, header http.Header, secret string) bool {
 	return VerifyWith(body, header, secret, Options{})
 }
@@ -70,7 +72,11 @@ func VerifyWith(body []byte, header http.Header, secret string, o Options) bool 
 }
 
 func matches(signed []byte, signature, secret string) bool {
-	expected, err := hex.DecodeString(strings.TrimPrefix(signature, "sha256="))
+	digest, ok := strings.CutPrefix(signature, "sha256=")
+	if !ok {
+		return false
+	}
+	expected, err := hex.DecodeString(digest)
 	if err != nil {
 		return false
 	}

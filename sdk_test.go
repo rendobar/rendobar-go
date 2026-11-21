@@ -4,6 +4,7 @@ package rendobar
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,8 +15,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/rendobar/rendobar-go/internal/api/core"
 )
 
 func testServer(t *testing.T, h http.HandlerFunc) (*Client, *atomic.Int32) {
@@ -52,7 +51,7 @@ func TestWaitTimesOutAndReportsActualWait(t *testing.T) {
 	started := time.Now()
 	_, err := c.Jobs.Wait(context.Background(), "job_t", &WaitOptions{Timeout: 300 * time.Millisecond, Interval: 40 * time.Millisecond})
 	var te *WaitTimeoutError
-	if !errors.As(err, &te) || te.LastStatus != "running" {
+	if !errors.As(err, &te) || te.LastStatus != "running" || te.Job == nil || te.Job.ID() != "job_t" {
 		t.Fatalf("got %v", err)
 	}
 	if te.Waited < 300*time.Millisecond || te.Waited > time.Since(started) {
@@ -306,7 +305,7 @@ func TestConnectionErrorIsRetriedAndSubmitKeepsItsBody(t *testing.T) {
 	}
 }
 
-func TestErrorUnwrapsAndReadsRetryAfter(t *testing.T) {
+func TestErrorReadsRetryAfterAndHidesTheCore(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Retry-After", "7")
 		w.WriteHeader(429)
@@ -319,9 +318,9 @@ func TestErrorUnwrapsAndReadsRetryAfter(t *testing.T) {
 	if !errors.As(err, &apiErr) || apiErr.RetryAfter != 7*time.Second {
 		t.Fatalf("got %#v", err)
 	}
-	var coreErr *core.APIError
-	if !errors.As(err, &coreErr) || coreErr.StatusCode != 429 || errors.Unwrap(apiErr) == nil {
-		t.Fatalf("does not unwrap to the core error: %v", err)
+	// The core's error types are internal, so *Error never hands one out.
+	if errors.Unwrap(apiErr) != nil {
+		t.Fatalf("unwraps to %T", errors.Unwrap(apiErr))
 	}
 }
 
@@ -407,7 +406,7 @@ func TestRunKeepsTheJobIDWhenTheContextEnds(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	var ce *ContextError
-	if !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job == nil || ce.Job.Status() != StatusRunning {
+	if !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job == nil || ce.Job.Status() != StatusRunning || !strings.HasPrefix(ce.IdempotencyKey, "sdk_") {
 		t.Fatalf("got %#v", err)
 	}
 	if job != ce.Job || !strings.Contains(err.Error(), "job_t") {
@@ -464,5 +463,94 @@ func TestRateLimitLongerThanTheDeadlineStaysRateLimited(t *testing.T) {
 	}
 	if d := time.Since(started); d > time.Second || hits.Load() != 1 {
 		t.Fatalf("waited %v over %d requests for a retry that could not happen", d, hits.Load())
+	}
+}
+
+func TestCreateKeepsTheIdempotencyKeyWhenTheContextEnds(t *testing.T) {
+	sent := make(chan string, 4)
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			IdempotencyKey string `json:"idempotencyKey"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		sent <- body.IdempotencyKey
+		<-r.Context().Done() // never answers: the caller gives up mid-submit
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(100*time.Millisecond, cancel)
+	created, err := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe", Params: map[string]any{"command": "x"}})
+	var ce *ContextError
+	if created != nil || !errors.Is(err, context.Canceled) || !errors.As(err, &ce) {
+		t.Fatalf("got %v, %#v", created, err)
+	}
+	if key := <-sent; ce.IdempotencyKey != key || key == "" || ce.JobID != "" || ce.Job != nil {
+		t.Fatalf("error %+v, sent key %q", ce, key)
+	}
+	if !strings.Contains(err.Error(), ce.IdempotencyKey) {
+		t.Fatalf("message %q", err)
+	}
+}
+
+func TestNoAPIKeyFailsBeforeSending(t *testing.T) {
+	t.Setenv("RENDOBAR_API_KEY", "")
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		fmt.Fprint(w, `{"data":[]}`)
+	}))
+	defer srv.Close()
+	c := New(WithBaseURL(srv.URL))
+	ctx := context.Background()
+	_, getErr := c.Jobs.Get(ctx, "job_t")
+	_, createErr := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe"})
+	_, listErr := c.Jobs.List(ctx, ListParams{})
+	_, runErr := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, nil)
+	_, capsErr := c.Account.Capabilities(ctx)
+	for _, err := range []error{getErr, createErr, listErr, runErr, capsErr, c.Jobs.Cancel(ctx, "job_t")} {
+		if !errors.Is(err, ErrNoAPIKey) {
+			t.Fatalf("got %v", err)
+		}
+	}
+	if !strings.Contains(ErrNoAPIKey.Error(), "RENDOBAR_API_KEY") || !strings.Contains(ErrNoAPIKey.Error(), "WithAPIKey") {
+		t.Fatalf("message %q", ErrNoAPIKey)
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("%d requests sent without a key", hits.Load())
+	}
+	if _, err := c.Jobs.Types(ctx); err != nil || hits.Load() != 1 {
+		t.Fatalf("the public endpoint needs no key: %v, %d requests", err, hits.Load())
+	}
+}
+
+func TestEmptyIDAndNegativePagingFailBeforeSending(t *testing.T) {
+	c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, jobJSON("running", 0)) })
+	ctx := context.Background()
+	_, getErr := c.Jobs.Get(ctx, "")
+	_, waitErr := c.Jobs.Wait(ctx, "", nil)
+	_, downloadErr := c.Jobs.Download(ctx, "")
+	for _, err := range []error{getErr, waitErr, downloadErr, c.Jobs.Cancel(ctx, "")} {
+		if err == nil || IsNotFound(err) || !strings.Contains(err.Error(), "job id is empty") {
+			t.Fatalf("got %v", err)
+		}
+	}
+	for _, p := range []ListParams{{Limit: -1}, {Offset: -1}} {
+		if _, err := c.Jobs.List(ctx, p); err == nil || !strings.Contains(err.Error(), "negative") {
+			t.Fatalf("%+v: got %v", p, err)
+		}
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("%d requests sent", hits.Load())
+	}
+}
+
+func TestStatusHelpers(t *testing.T) {
+	for status, is := range map[int]func(error) bool{401: IsUnauthorized, 409: IsConflict, 404: IsNotFound, 429: IsRateLimited} {
+		err := error(&Error{StatusCode: status})
+		if !is(fmt.Errorf("wrapped: %w", err)) {
+			t.Fatalf("%d not recognised", status)
+		}
+		if is(&Error{StatusCode: 500}) {
+			t.Fatalf("%d helper matched a 500", status)
+		}
 	}
 }
