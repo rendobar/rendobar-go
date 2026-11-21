@@ -15,6 +15,13 @@ For coding agents changing this SDK. Users of the SDK want the README.
   Never edit them. CI fails when they are stale, and the regenerate workflow runs `go generate` after
   Fern. A union whose branch names read badly gets a name in `branchNames`. A response enum that is a type
   the SDK already has gets an entry in the webhooks `aliases`.
+- Param type rules are frozen, so a harmless schema change never breaks a Go caller: every integer is
+  `int64`, every number `float64`; integer, number, boolean and object fields are always pointers,
+  required or not; strings and enums are always values; unions are interfaces; every tag has
+  `omitempty`. Required-ness lives only in `Validate`. `internal/cmd/genparams/rules_test.go` pins the
+  rules and a golden file (`go test ./internal/cmd/genparams -update` after a reviewed change).
+- Job and account reads (`rawjson.go`) and `Jobs.Download` bypass the core. The core decodes integers
+  into `int`, which overflows on 32-bit platforms. CI runs the tests as `GOARCH=386`.
 - The job model (`job.go`) stays hand-written on purpose: it turns the wire's Unix-ms integers and
   millisecond counts into `time.Time` and `time.Duration`, and models statuses as variants. Its enums
   and the shapes it does not convert come from the spec.

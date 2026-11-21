@@ -69,24 +69,37 @@ if s := probe.Summary; s != nil && s.Video != nil {
 Each job type has its own params struct, generated from the API's published schema: `FfmpegParams`, `FfprobeParams`, `CompressTargetParams`, `CaptionBurnParams`, `CaptionsAnimateParams`, `ImageUpscaleParams`, and one struct per model for image generation and editing, such as `ImageGenerateFlux2DevParams`. The struct sets the job type, so a misspelt param or a wrong value type fails to compile.
 
 - A field with a fixed set of values has its own type and constants, such as `FfmpegComputeGPU`.
-- A field that takes one of several shapes is an interface. Set it to one of the types its godoc lists, such as `ImageUpscaleSizingFactor{Factor: 2}` or `CompressTargetTargetPresetBalanced`.
-- An optional number or boolean is a pointer. `rendobar.Ptr` makes one: `Timeout: rendobar.Ptr[int64](600)`.
+- A field that takes one of several shapes is an interface. Set it to one of the types its godoc lists, such as `ImageUpscaleSizingHeight` or `CompressTargetTargetPresetBalanced`.
+- Every number and boolean is a pointer, required or not, so the Go type never changes when the API makes a field optional. `rendobar.Ptr` makes one: `Timeout: rendobar.Ptr[int64](600)`. Integers are always `int64`. Strings and enums are values, and `""` means unset.
 
 ```go
 rendobar.CreateParams{
 	Params: rendobar.ImageUpscaleParams{
 		Model:  rendobar.ImageUpscaleModelSeedvr27b,
-		Sizing: rendobar.ImageUpscaleSizingHeight{Height: 2160},
+		Sizing: rendobar.ImageUpscaleSizingHeight{Height: rendobar.Ptr[int64](2160)},
 	},
-	Inputs: map[string]string{"image": "https://example.com/photo.jpg"},
+	Inputs: map[string]rendobar.Input{"source": rendobar.URL("https://example.com/photo.jpg")},
 }
 ```
 
 `Jobs.Create` checks the params against the schema before it sends anything, and refuses them with an `*rendobar.Error` whose code is `INVALID_ARGUMENT`, one `Problem` per mistake. `Params.Validate()` runs the same check on its own.
 
-`Inputs` maps an input name to the URL of a file the API can fetch. `Jobs.Schema` lists the names a type takes. ffmpeg and ffprobe accept any name, and the command refers to the file by it.
+`Inputs` maps an input name to its value. `Jobs.Schema` lists the names a type takes. ffmpeg and ffprobe accept any file name, and the command refers to the file by it. A value is one of:
 
-For a job type this SDK predates, use `rendobar.CustomParams{Type: "new.type", Fields: map[string]any{...}}`. It is the only untyped path, and it refuses a type that already has a struct.
+- `rendobar.URL("https://...")`: one file the API fetches. An uploaded asset's content URL works too.
+- `rendobar.URLs{...}`: a list of files, such as image.edit's `"images"`, one to four pictures to edit.
+- `rendobar.Content("...")`: a small text file sent inline, up to 64 KiB, such as an ffmpeg concat list.
+- `rendobar.FromJob("job_...")`: a completed job's output, to chain ffmpeg jobs.
+- `rendobar.Fonts{{Family: "Display", Src: "https://..."}}`: font files for text, under names the params use.
+
+```go
+rendobar.CreateParams{
+	Params: rendobar.ImageEditQwenImageEdit2511Params{Prompt: "make the sky purple"},
+	Inputs: map[string]rendobar.Input{"images": rendobar.URLs{"https://example.com/photo.jpg"}},
+}
+```
+
+`rendobar.CustomParams{Type: ..., Fields: map[string]any{...}}` is the one unchecked path. It takes any job type: one this SDK predates, or a typed one when you need a param or value the API added after this release. The SDK checks only the type name, and the API checks the rest. `rendobar.JobTypeFfmpeg` and the other `JobType` constants name the types this SDK has structs for.
 
 Compose jobs also go through `CustomParams`. The API keeps compose out of the typed submit schema on purpose, because its nested timeline objects have no stable names to generate from. `Jobs.Schema("compose")` describes its params.
 
@@ -124,7 +137,7 @@ defer d.Body.Close()
 _, err = io.Copy(file, d.Body)
 ```
 
-`WithTimeout` bounds only the wait for the response headers. Your `ctx` bounds the body, so a large file takes as long as it needs. `Download.Size` is the length in bytes, or -1 when the API does not say. The file's SHA-256 is `OutputFile.SHA256` on the complete job.
+`WithTimeout` bounds only the wait for the response headers. Your `ctx` bounds the body, so a large file takes as long as it needs. `Download.Size` is the length in bytes, or -1 when the API does not say. `Download.Filename` is the suggested name without any directory part, so it is safe to join to your own directory. The file's SHA-256 is `OutputFile.SHA256` on the complete job.
 
 ### Waiting
 
@@ -212,7 +225,9 @@ if err != nil {
 }
 switch data := payload.(type) {
 case *webhooks.JobCompletedData:
-	log.Println(data.JobID, data.Output.File.URL)
+	if data.Output != nil && data.Output.File != nil { // a data job, such as ffprobe, has no file
+		log.Println(data.JobID, data.Output.File.URL)
+	}
 case *webhooks.JobFailedData:
 	log.Println(data.JobID, data.Error.Code)
 default:
@@ -226,7 +241,7 @@ Every delivery is a JSON envelope:
 {"version": "1", "event": "job.completed", "deliveryId": "whd_...", "timestamp": 1763700000000, "orgId": "org_...", "data": {}}
 ```
 
-`Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. `event.Payload()` reads `Data` as the type the spec defines for the event, such as `*JobCompletedData` or `*BalanceLowData`, one per event the `webhooks.Job...`, `webhooks.Balance...` and `webhooks.Test` constants name. An event newer than this SDK gives `*UnknownPayload` with its `Type` and raw `Data`. Timestamps in event data are `rendobar.UnixMillis`, and `.Time()` turns one into a `time.Time`.
+An envelope whose `version` is not `"1"` gives `*UnknownPayload`, because its data may have another shape. `Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. `event.Payload()` reads `Data` as the type the spec defines for the event, such as `*JobCompletedData` or `*BalanceLowData`, one per event the `webhooks.Job...`, `webhooks.Balance...` and `webhooks.Test` constants name. An event newer than this SDK gives `*UnknownPayload` with its `Type` and raw `Data`. Timestamps in event data are `rendobar.UnixMillis`, and `.Time()` turns one into a `time.Time`.
 
 Each delivery carries two headers:
 
@@ -250,7 +265,7 @@ rb := rendobar.New(
 - `WithTimeout` bounds each attempt, 30 seconds by default, including reading the body. For `Jobs.Download` it bounds only the wait for the response headers. It wins over the `Timeout` of a `WithHTTPClient` client in either order.
 - `WithHTTPClient` sets the HTTP client. The client you pass is copied and never changed.
 - `WithMaxRetries` sets how many times a 429, 500, 502, 503, 504 or a connection error is retried. The default is 2.
-- `WithApp` names your application in requests.
+- `WithApp` names your application in requests, 1 to 32 letters, digits or `. _ + -`. Another name makes every call return an `INVALID_ARGUMENT` error.
 - `WithDeprecationHandler` is called once per deprecated endpoint you use. The default logs to stderr.
 
 ## Support policy
