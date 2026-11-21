@@ -277,3 +277,47 @@ func TestDeprecationHandlerThatPanicsDoesNotBreakTheCall(t *testing.T) {
 		t.Fatalf("call broke: %v", err)
 	}
 }
+
+func TestC16RunCompletes(t *testing.T) {
+	reset(t, "")
+	var seen []string
+	job, err := client().Jobs.Run(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "https://x/a.mp4"}},
+		&WaitOptions{Interval: 20 * time.Millisecond, OnProgress: func(j *Job) { seen = append(seen, j.Status) }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.Status != "complete" || job.Complete == nil || job.Complete.Output == nil || job.Complete.Output.File == nil || job.Complete.Output.File.URL == "" {
+		t.Fatalf("job %+v", job)
+	}
+	if strings.Join(seen, ",") != "running,complete" {
+		t.Fatalf("OnProgress saw %v, want running then complete", seen)
+	}
+}
+
+func TestC17WaitOnAFailedJob(t *testing.T) {
+	reset(t, "")
+	job, err := client().Jobs.Wait(context.Background(), "job_failed", &WaitOptions{Interval: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if job.Status != "failed" || job.Failed == nil || job.Failed.Error == nil || job.Failed.Error.Code == "" {
+		t.Fatalf("job %+v", job)
+	}
+	failed := &JobFailedError{Job: job}
+	if !strings.Contains(failed.Error(), job.Failed.Error.Code) {
+		t.Fatalf("error %q does not carry the code %q", failed.Error(), job.Failed.Error.Code)
+	}
+}
+
+func TestC18ConflictIsNotRetried(t *testing.T) {
+	reset(t, "")
+	rec := &recorder{}
+	_, err := client(WithHTTPClient(&http.Client{Transport: rec})).Jobs.Get(context.Background(), "job_409")
+	var apiErr *Error
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != 409 || apiErr.Code != "CONFLICT" {
+		t.Fatalf("got %v", err)
+	}
+	if len(rec.reqs) != 1 {
+		t.Fatalf("%d requests, want exactly 1", len(rec.reqs))
+	}
+}
