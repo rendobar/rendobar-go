@@ -44,7 +44,7 @@ func main() {
 
 `Jobs.Run` submits the job and waits until it completes, fails or is cancelled. A failed or cancelled job returns `*rendobar.JobFailedError` with the job attached.
 
-An ffmpeg job writes files, so `Output.File` is the file it wrote and `Output.Files` lists all of them. A data job such as ffprobe writes no file, and `Output.File` is nil. `JobComplete.Ffprobe` reads its result:
+An ffmpeg job writes files, so `Output.File` is the file it wrote and `Output.Files` lists all of them. A data job such as ffprobe writes no file, and `Output.File` is nil. `JobComplete.Ffprobe` reads its result as the `FfprobeResult` the API's spec describes:
 
 ```go
 job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
@@ -57,8 +57,12 @@ probe, err := job.Complete.Ffprobe()
 if err != nil {
 	log.Fatal(err)
 }
-fmt.Println(probe.Summary.Duration, probe.Summary.Video.Width, probe.Summary.Video.Height)
+if s := probe.Summary; s != nil && s.Video != nil {
+	fmt.Println(*s.Video.DurationSec, *s.Video.Video.Width, *s.Video.Video.Height)
+}
 ```
+
+`FfprobeSummary` holds one variant per kind of media (`Video`, `Audio`, `Image`, `Other`), matching `Kind`. A number ffprobe could not read is a nil pointer.
 
 ## Job params
 
@@ -84,6 +88,8 @@ rendobar.CreateParams{
 
 For a job type this SDK predates, use `rendobar.CustomParams{Type: "new.type", Fields: map[string]any{...}}`. It is the only untyped path, and it refuses a type that already has a struct.
 
+Compose jobs also go through `CustomParams`. The API keeps compose out of the typed submit schema on purpose, because its nested timeline objects have no stable names to generate from. `Jobs.Schema("compose")` describes its params.
+
 `CreateParams.Callback` asks the API to POST the job's result to your URL when the job ends. It carries the same envelope as a webhook, so `webhooks.Parse` reads it.
 
 ## Jobs
@@ -99,7 +105,7 @@ for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: rendobar.Stat
 }
 ```
 
-`job.Info()` returns the rest of the shared fields, such as `Label`, `Cost` and `WebURL`. A status newer than this SDK leaves all six fields nil, and the methods still answer. `JobStatus.IsTerminal` reports whether a job has finished.
+`job.Info()` returns the rest of the shared fields, such as `Label`, `Cost` and `WebURL`. A status newer than this SDK leaves all six fields nil, and the methods still answer. `job.IsTerminal()` reports whether a job has finished. For a status newer than this SDK it reads the API's `terminal` flag, so `Jobs.Wait` stops on a final status it does not know.
 
 `Jobs.List` returns one page. `ListParams.Limit` goes up to 100, and the API treats a larger value as 100. `Jobs.All` fetches every page for you, 100 jobs at a time. A negative `Limit` or `Offset` returns an `INVALID_ARGUMENT` error before any request, and so does a job ID that is not letters, digits, `.`, `_` and `-`.
 
@@ -199,12 +205,16 @@ if err != nil {
 	w.WriteHeader(http.StatusUnauthorized) // errors.Is(err, webhooks.ErrSignature) and the like name why
 	return
 }
-switch event.Type {
-case webhooks.JobCompleted:
-	job, err := event.Job()
-	if err == nil {
-		log.Println(job.JobID, job.Output.File.URL)
-	}
+payload, err := event.Payload()
+if err != nil {
+	w.WriteHeader(http.StatusBadRequest)
+	return
+}
+switch data := payload.(type) {
+case *webhooks.JobCompletedData:
+	log.Println(data.JobID, data.Output.File.URL)
+case *webhooks.JobFailedData:
+	log.Println(data.JobID, data.Error.Code)
 default:
 	// an event this handler ignores, or one newer than this SDK
 }
@@ -216,7 +226,7 @@ Every delivery is a JSON envelope:
 {"version": "1", "event": "job.completed", "deliveryId": "whd_...", "timestamp": 1763700000000, "orgId": "org_...", "data": {}}
 ```
 
-`Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. Read `Data` with `event.Job()` for `job.created`, `job.started`, `job.completed`, `job.failed` and `job.cancelled`. Use `event.Delivery()` for `job.delivery_succeeded`, `job.delivery_failed` and `job.deliveries_settled`, and `event.Balance()` for `balance.low` and `balance.depleted`. An event or version newer than this SDK still parses, with its own `Type`.
+`Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. `event.Payload()` reads `Data` as the type the spec defines for the event, such as `*JobCompletedData` or `*BalanceLowData`, one per event the `webhooks.Job...`, `webhooks.Balance...` and `webhooks.Test` constants name. An event newer than this SDK gives `*UnknownPayload` with its `Type` and raw `Data`. Timestamps in event data are `rendobar.UnixMillis`, and `.Time()` turns one into a `time.Time`.
 
 Each delivery carries two headers:
 
