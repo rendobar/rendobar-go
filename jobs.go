@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"iter"
@@ -58,6 +57,9 @@ type CreateParams struct {
 type Created struct {
 	ID     string    `json:"id"`
 	Status JobStatus `json:"status"`
+	// Replayed reports that an earlier submit with the same idempotency key
+	// already created this job, so this call created nothing new.
+	Replayed bool `json:"idempotent"`
 }
 
 // GenerateIdempotencyKey returns "sdk_" plus 32 hex characters: unique per call, not secret.
@@ -89,8 +91,9 @@ func toMap(v any) (map[string]any, error) {
 
 // Create submits a job and returns at once. Safe to retry: one key rides every retry of this call.
 //
-// When ctx ends before the API answers, the job may still have been created.
-// Create then returns a *ContextError whose IdempotencyKey is the key it sent.
+// When the submit fails in a way that may have left a job behind (ctx ended,
+// a connection error, a timed-out attempt, or a 429 or 5xx after the last
+// retry), Create returns a *SubmitError with the idempotency key it sent.
 // Submit again with that key to get the same job.
 func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if err := j.client.needKey(); err != nil {
@@ -113,10 +116,7 @@ func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	}
 	res, err := j.client.core.Jobs.SubmitJob(ctx, &api.SubmitJobRequest{SubmitAnyJob: body})
 	if err != nil {
-		if ce := contextError(ctx, err, "", key, nil); ce != nil {
-			return nil, ce
-		}
-		return nil, fromGenerated(err)
+		return nil, submitError(ctx, err, key)
 	}
 	// The data is one of several documented shapes. Each carries id and status.
 	raw, err := json.Marshal(res.Data)
@@ -135,8 +135,8 @@ func (j *Jobs) Get(ctx context.Context, id string) (*Job, error) {
 	if err := j.client.needKey(); err != nil {
 		return nil, err
 	}
-	if id == "" {
-		return nil, errEmptyID
+	if err := checkID(id); err != nil {
+		return nil, err
 	}
 	res, err := j.client.core.Jobs.GetJob(ctx, &api.GetJobRequest{ID: id})
 	if err != nil {
@@ -152,10 +152,10 @@ type ListParams struct {
 	// Type keeps jobs of one type, such as "ffmpeg". "" keeps all.
 	Type string
 	// Limit is the page size, up to 100. The API treats a larger value as 100.
-	// 0 uses the API's default of 50 for List, and 100 for All. A negative
-	// Limit is an error.
+	// 0 uses the API's default of 50 for List. All always fetches pages of
+	// 100 or of a smaller Limit you set. A negative Limit is an INVALID_ARGUMENT *Error.
 	Limit int
-	// Offset skips that many matching jobs. A negative Offset is an error.
+	// Offset skips that many matching jobs. A negative Offset is an INVALID_ARGUMENT *Error.
 	Offset int
 }
 
@@ -171,7 +171,7 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 		return nil, err
 	}
 	if p.Limit < 0 || p.Offset < 0 {
-		return nil, fmt.Errorf("rendobar: ListParams Limit and Offset must not be negative, got %d and %d", p.Limit, p.Offset)
+		return nil, local("INVALID_ARGUMENT", "ListParams Limit and Offset must not be negative, got %d and %d", p.Limit, p.Offset)
 	}
 	req := &api.ListJobsRequest{}
 	if p.Status != "" {
@@ -211,8 +211,8 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 func (j *Jobs) All(ctx context.Context, p ListParams) iter.Seq2[*Job, error] {
 	return func(yield func(*Job, error) bool) {
 		q := p // a copy per range, so ranging the same sequence twice yields everything twice
-		if q.Limit <= 0 {
-			q.Limit = 100
+		if q.Limit <= 0 || q.Limit > 100 {
+			q.Limit = 100 // the API's largest page
 		}
 		for {
 			page, err := j.List(ctx, q)
@@ -238,8 +238,8 @@ func (j *Jobs) Cancel(ctx context.Context, id string) error {
 	if err := j.client.needKey(); err != nil {
 		return err
 	}
-	if id == "" {
-		return errEmptyID
+	if err := checkID(id); err != nil {
+		return err
 	}
 	_, err := j.client.core.Jobs.CancelJob(ctx, &api.CancelJobRequest{ID: id})
 	return fromGenerated(err)
@@ -251,8 +251,8 @@ func (j *Jobs) Download(ctx context.Context, id string) ([]byte, error) {
 	if err := j.client.needKey(); err != nil {
 		return nil, err
 	}
-	if id == "" {
-		return nil, errEmptyID
+	if err := checkID(id); err != nil {
+		return nil, err
 	}
 	r, err := j.client.core.Jobs.DownloadJobOutput(ctx, &api.DownloadJobOutputRequest{ID: id})
 	if err != nil {
@@ -329,7 +329,7 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 	for {
 		job, err := j.Get(ctx, id)
 		if err != nil {
-			if ce := contextError(ctx, err, id, "", last); ce != nil {
+			if ce := contextError(ctx, err, id, last); ce != nil {
 				return last, ce
 			}
 			return last, err
@@ -356,7 +356,7 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-			return job, contextError(ctx, ctx.Err(), id, "", job)
+			return job, contextError(ctx, ctx.Err(), id, job)
 		case <-timer.C:
 		}
 		interval = min(interval*3/2, maxInterval)
@@ -369,26 +369,19 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 // Once the job is submitted, every error Wait returns comes back with the last
 // job Run read, or nil before the first read. A *ContextError or
 // *WaitTimeoutError also names the job id, so you can call Jobs.Get,
-// Jobs.Wait or Jobs.Cancel with it. A *ContextError from Run also carries
-// the idempotency key the submit sent.
+// Jobs.Wait or Jobs.Cancel with it. A failed submit returns what Jobs.Create
+// returns, such as a *SubmitError with the idempotency key.
 func (j *Jobs) Run(ctx context.Context, p CreateParams, o *WaitOptions) (*Job, error) {
-	if p.IdempotencyKey == "" {
-		p.IdempotencyKey = GenerateIdempotencyKey() // p is a copy, so the caller's params stay as they were
-	}
 	created, err := j.Create(ctx, p)
 	if err != nil {
 		return nil, err
 	}
 	job, err := j.Wait(ctx, created.ID, o)
-	var ce *ContextError
-	if errors.As(err, &ce) {
-		ce.IdempotencyKey = p.IdempotencyKey
-	}
 	if err != nil {
 		return job, err
 	}
 	if job.Status() != StatusComplete {
-		return job, &JobFailedError{Job: job}
+		return job, jobFailed(job)
 	}
 	return job, nil
 }

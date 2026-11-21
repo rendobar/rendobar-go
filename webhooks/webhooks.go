@@ -32,15 +32,15 @@ type Options struct {
 //
 // The signature is "sha256=" followed by the hex HMAC-SHA256 of
 // "<X-Rendobar-Timestamp>.<body>". A signature without the sha256= prefix,
-// or that is not hex, returns false. An empty secret always returns false:
-// anyone can compute an HMAC with an empty key, so it proves nothing.
+// or that is not hex, returns false. An empty or whitespace-only secret always
+// returns false: it is a configuration mistake, and an empty key proves nothing.
 func Verify(body []byte, header http.Header, secret string) bool {
 	return VerifyWith(body, header, secret, Options{})
 }
 
 // VerifyWith is Verify with a custom tolerance or clock.
 func VerifyWith(body []byte, header http.Header, secret string, o Options) bool {
-	if secret == "" {
+	if strings.TrimSpace(secret) == "" {
 		return false
 	}
 	signature := header.Get("X-Rendobar-Signature")

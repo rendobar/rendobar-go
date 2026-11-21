@@ -89,6 +89,12 @@ func TestNonHexSignatureIsRejected(t *testing.T) {
 			t.Fatalf("signature %q verified", sig)
 		}
 	}
+	// A whitespace-only secret proves nothing.
+	for _, secret := range []string{" ", "\t\n"} {
+		if VerifyWith([]byte("{}"), signedHeader(secret, 1700000000, "{}"), secret, Options{Now: time.Unix(1700000000, 0)}) {
+			t.Fatalf("secret %q verified", secret)
+		}
+	}
 	// A correct digest without the sha256= prefix is rejected too.
 	h := signedHeader("whsec_x", 1700000000, "{}")
 	h.Set("X-Rendobar-Signature", strings.TrimPrefix(h.Get("X-Rendobar-Signature"), "sha256="))
@@ -98,5 +104,14 @@ func TestNonHexSignatureIsRejected(t *testing.T) {
 	// And the same header with a good signature does verify, so the test can fail.
 	if !VerifyWith([]byte("{}"), signedHeader("whsec_x", 1700000000, "{}"), "whsec_x", Options{Now: time.Unix(1700000000, 0)}) {
 		t.Fatal("a good signature did not verify")
+	}
+}
+
+func TestToleranceBoundary(t *testing.T) {
+	h := signedHeader("whsec_x", 1700000000, "{}")
+	for offset, want := range map[int64]bool{300: true, -300: true, 301: false, -301: false} {
+		if got := VerifyWith([]byte("{}"), h, "whsec_x", Options{Now: time.Unix(1700000000+offset, 0)}); got != want {
+			t.Fatalf("%+ds: got %v", offset, got)
+		}
 	}
 }

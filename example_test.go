@@ -77,19 +77,23 @@ func ExampleContextError() {
 	rb := rendobar.New()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	_, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
+	params := rendobar.CreateParams{
 		Type:   "ffprobe",
 		Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
-	}, nil)
+	}
+	_, err := rb.Jobs.Run(ctx, params, nil)
 	var stopped *rendobar.ContextError
-	if errors.As(err, &stopped) {
-		if stopped.JobID != "" {
-			fmt.Println("still running:", stopped.JobID, errors.Is(err, context.DeadlineExceeded))
-			return
-		}
+	var cutOff *rendobar.SubmitError
+	switch {
+	case errors.As(err, &stopped):
+		// Submitted: the job keeps running. Pick it up later by id.
+		fmt.Println("still running:", stopped.JobID, errors.Is(err, context.DeadlineExceeded))
+	case errors.As(err, &cutOff):
 		// The submit itself was cut off. Resubmitting with the same key returns
 		// the job the API may have created, never a second one.
-		fmt.Println("resubmit with idempotency key", stopped.IdempotencyKey)
+		params.IdempotencyKey = cutOff.IdempotencyKey
+		created, err := rb.Jobs.Create(context.Background(), params)
+		fmt.Println(created, err)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -406,7 +407,7 @@ func TestRunKeepsTheJobIDWhenTheContextEnds(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	var ce *ContextError
-	if !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job == nil || ce.Job.Status() != StatusRunning || !strings.HasPrefix(ce.IdempotencyKey, "sdk_") {
+	if !errors.As(err, &ce) || ce.JobID != "job_t" || ce.Job == nil || ce.Job.Status() != StatusRunning {
 		t.Fatalf("got %#v", err)
 	}
 	if job != ce.Job || !strings.Contains(err.Error(), "job_t") {
@@ -466,80 +467,244 @@ func TestRateLimitLongerThanTheDeadlineStaysRateLimited(t *testing.T) {
 	}
 }
 
-func TestCreateKeepsTheIdempotencyKeyWhenTheContextEnds(t *testing.T) {
-	sent := make(chan string, 4)
-	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+func codeOf(err error) string {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.Code
+	}
+	return ""
+}
+
+// keyServer records the idempotency key of every submit and answers with h.
+func keyServer(t *testing.T, h http.HandlerFunc, opts ...Option) (*Client, chan string) {
+	t.Helper()
+	sent := make(chan string, 8)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			IdempotencyKey string `json:"idempotencyKey"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		sent <- body.IdempotencyKey
-		<-r.Context().Done() // never answers: the caller gives up mid-submit
-	})
-	ctx, cancel := context.WithCancel(context.Background())
-	time.AfterFunc(100*time.Millisecond, cancel)
-	created, err := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe", Params: map[string]any{"command": "x"}})
-	var ce *ContextError
-	if created != nil || !errors.Is(err, context.Canceled) || !errors.As(err, &ce) {
-		t.Fatalf("got %v, %#v", created, err)
-	}
-	if key := <-sent; ce.IdempotencyKey != key || key == "" || ce.JobID != "" || ce.Job != nil {
-		t.Fatalf("error %+v, sent key %q", ce, key)
-	}
-	if !strings.Contains(err.Error(), ce.IdempotencyKey) {
-		t.Fatalf("message %q", err)
+		h(w, r)
+	}))
+	t.Cleanup(srv.Close)
+	return New(append([]Option{WithAPIKey("rb_test"), WithBaseURL(srv.URL)}, opts...)...), sent
+}
+
+func TestSubmitErrorCarriesTheKeyWhenTheJobMayExist(t *testing.T) {
+	stall := func(w http.ResponseWriter, r *http.Request) { <-r.Context().Done() }
+	for _, tc := range []struct {
+		name    string
+		handler http.HandlerFunc
+		opts    []Option
+		ctx     func() (context.Context, context.CancelFunc)
+		is      func(error) bool
+	}{
+		{"ctx cancelled", stall, nil, func() (context.Context, context.CancelFunc) {
+			ctx, cancel := context.WithCancel(context.Background())
+			time.AfterFunc(100*time.Millisecond, cancel)
+			return ctx, cancel
+		}, func(err error) bool { return errors.Is(err, context.Canceled) }},
+		{"attempt timed out", stall, []Option{WithTimeout(150 * time.Millisecond)}, nil,
+			func(err error) bool { var ue *url.Error; return errors.As(err, &ue) && ue.Timeout() }},
+		{"503 after the last retry", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", "0")
+			w.WriteHeader(503)
+			fmt.Fprint(w, `{"error":{"code":"UNAVAILABLE","message":"down"}}`)
+		}, nil, nil, func(err error) bool { var e *Error; return errors.As(err, &e) && e.StatusCode == 503 }},
+		{"connection dropped", func(w http.ResponseWriter, r *http.Request) {
+			conn, _, _ := w.(http.Hijacker).Hijack()
+			conn.Close()
+		}, []Option{WithMaxRetries(0)}, nil, func(err error) bool { return err != nil }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, sent := keyServer(t, tc.handler, tc.opts...)
+			ctx, cancel := context.Background(), context.CancelFunc(func() {})
+			if tc.ctx != nil {
+				ctx, cancel = tc.ctx()
+			}
+			defer cancel()
+			created, err := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe", Params: map[string]any{"command": "x"}})
+			var se *SubmitError
+			if created != nil || !errors.As(err, &se) || !tc.is(err) {
+				t.Fatalf("got %v, %#v", created, err)
+			}
+			if key := <-sent; se.IdempotencyKey != key || !strings.HasPrefix(key, "sdk_") || !strings.Contains(err.Error(), key) {
+				t.Fatalf("error %q, sent key %q", err, key)
+			}
+		})
 	}
 }
 
-func TestNoAPIKeyFailsBeforeSending(t *testing.T) {
-	t.Setenv("RENDOBAR_API_KEY", "")
-	var hits atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits.Add(1)
-		fmt.Fprint(w, `{"data":[]}`)
-	}))
-	defer srv.Close()
-	c := New(WithBaseURL(srv.URL))
-	ctx := context.Background()
-	_, getErr := c.Jobs.Get(ctx, "job_t")
-	_, createErr := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe"})
-	_, listErr := c.Jobs.List(ctx, ListParams{})
-	_, runErr := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, nil)
-	_, capsErr := c.Account.Capabilities(ctx)
-	for _, err := range []error{getErr, createErr, listErr, runErr, capsErr, c.Jobs.Cancel(ctx, "job_t")} {
-		if !errors.Is(err, ErrNoAPIKey) {
-			t.Fatalf("got %v", err)
+func TestSubmitRefusalIsNotASubmitError(t *testing.T) {
+	c, _ := keyServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		fmt.Fprint(w, `{"error":{"code":"VALIDATION_ERROR","message":"bad","details":[{"path":["params","command"],"message":"Required"},{"path":"type","message":"Unknown","upgradeTo":"pro"},"junk"]}}`)
+	})
+	_, err := c.Jobs.Create(context.Background(), CreateParams{Type: "ffprobe"})
+	var se *SubmitError
+	var apiErr *Error
+	if errors.As(err, &se) || !errors.As(err, &apiErr) || apiErr.StatusCode != 400 {
+		t.Fatalf("got %#v", err)
+	}
+	want := []Problem{{Path: "params.command", Message: "Required"}, {Path: "type", Message: "Unknown", UpgradeTo: "pro"}}
+	if fmt.Sprint(apiErr.Problems) != fmt.Sprint(want) {
+		t.Fatalf("problems %+v", apiErr.Problems)
+	}
+}
+
+func TestProblemsAreParsedDefensively(t *testing.T) {
+	for _, details := range []any{nil, "text", map[string]any{"jobId": "job_1"}, []any{1, "x", nil}} {
+		if p := problems("VALIDATION_ERROR", details); len(p) != 0 {
+			t.Fatalf("%v gave %+v", details, p)
 		}
 	}
-	if !strings.Contains(ErrNoAPIKey.Error(), "RENDOBAR_API_KEY") || !strings.Contains(ErrNoAPIKey.Error(), "WithAPIKey") {
-		t.Fatalf("message %q", ErrNoAPIKey)
-	}
-	if hits.Load() != 0 {
-		t.Fatalf("%d requests sent without a key", hits.Load())
-	}
-	if _, err := c.Jobs.Types(ctx); err != nil || hits.Load() != 1 {
-		t.Fatalf("the public endpoint needs no key: %v, %d requests", err, hits.Load())
+	if p := problems("CONFLICT", []any{map[string]any{"path": "x", "message": "y"}}); p != nil {
+		t.Fatalf("a CONFLICT gave problems %+v", p)
 	}
 }
 
-func TestEmptyIDAndNegativePagingFailBeforeSending(t *testing.T) {
+func TestCreatedFlagsAReplay(t *testing.T) {
+	n := 0
+	c, _ := keyServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if n++; n == 1 {
+			w.WriteHeader(201)
+			fmt.Fprint(w, `{"data":{"id":"job_t","status":"waiting"}}`)
+			return
+		}
+		fmt.Fprint(w, `{"data":{"id":"job_t","status":"running","idempotent":true}}`)
+	})
+	p := CreateParams{Type: "ffprobe", IdempotencyKey: "mine"}
+	first, err1 := c.Jobs.Create(context.Background(), p)
+	again, err2 := c.Jobs.Create(context.Background(), p)
+	if err1 != nil || err2 != nil || first.Replayed || !again.Replayed || again.ID != first.ID {
+		t.Fatalf("%+v %v, %+v %v", first, err1, again, err2)
+	}
+}
+
+func TestKeyProblemsFailBeforeSending(t *testing.T) {
+	for _, tc := range []struct{ key, code string }{{"", "MISSING_API_KEY"}, {"sk_live_x", "INVALID_API_KEY"}} {
+		t.Run(tc.code, func(t *testing.T) {
+			t.Setenv("RENDOBAR_API_KEY", "")
+			var hits atomic.Int32
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hits.Add(1)
+				fmt.Fprint(w, `{"data":[]}`)
+			}))
+			defer srv.Close()
+			c := New(WithAPIKey(tc.key), WithBaseURL(srv.URL))
+			ctx := context.Background()
+			_, getErr := c.Jobs.Get(ctx, "job_t")
+			_, createErr := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe"})
+			_, listErr := c.Jobs.List(ctx, ListParams{})
+			_, runErr := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, nil)
+			_, capsErr := c.Account.Capabilities(ctx)
+			_, dlErr := c.Jobs.Download(ctx, "job_t")
+			for _, err := range []error{getErr, createErr, listErr, runErr, capsErr, dlErr, c.Jobs.Cancel(ctx, "job_t")} {
+				if codeOf(err) != tc.code || !strings.Contains(err.Error(), "RENDOBAR_API_KEY") || !strings.Contains(err.Error(), "WithAPIKey") {
+					t.Fatalf("got %v", err)
+				}
+			}
+			if hits.Load() != 0 {
+				t.Fatalf("%d requests sent", hits.Load())
+			}
+			if _, err := c.Jobs.Types(ctx); err != nil || hits.Load() != 1 {
+				t.Fatalf("the public endpoint needs no key: %v, %d requests", err, hits.Load())
+			}
+		})
+	}
+}
+
+func TestBadIDsAndNegativePagingFailBeforeSending(t *testing.T) {
 	c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, jobJSON("running", 0)) })
 	ctx := context.Background()
-	_, getErr := c.Jobs.Get(ctx, "")
-	_, waitErr := c.Jobs.Wait(ctx, "", nil)
-	_, downloadErr := c.Jobs.Download(ctx, "")
-	for _, err := range []error{getErr, waitErr, downloadErr, c.Jobs.Cancel(ctx, "")} {
-		if err == nil || IsNotFound(err) || !strings.Contains(err.Error(), "job id is empty") {
-			t.Fatalf("got %v", err)
+	for _, id := range []string{"", "a/b", "..", ".", "job x", "job?x=1", "job_%2F"} {
+		_, getErr := c.Jobs.Get(ctx, id)
+		_, waitErr := c.Jobs.Wait(ctx, id, nil)
+		_, downloadErr := c.Jobs.Download(ctx, id)
+		for _, err := range []error{getErr, waitErr, downloadErr, c.Jobs.Cancel(ctx, id)} {
+			if codeOf(err) != "INVALID_ARGUMENT" || IsNotFound(err) {
+				t.Fatalf("%q: got %v", id, err)
+			}
 		}
 	}
 	for _, p := range []ListParams{{Limit: -1}, {Offset: -1}} {
-		if _, err := c.Jobs.List(ctx, p); err == nil || !strings.Contains(err.Error(), "negative") {
+		if _, err := c.Jobs.List(ctx, p); codeOf(err) != "INVALID_ARGUMENT" {
 			t.Fatalf("%+v: got %v", p, err)
 		}
 	}
 	if hits.Load() != 0 {
 		t.Fatalf("%d requests sent", hits.Load())
+	}
+	if _, err := c.Jobs.Get(ctx, "job_A.b-c_1"); err != nil {
+		t.Fatalf("a valid id was refused: %v", err)
+	}
+}
+
+func TestRetrySetAndRetryAfterCap(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		status     int
+		retryAfter string
+		want       int32
+	}{
+		{"500 retried", 500, "0", 3},
+		{"502 retried", 502, "0", 3},
+		{"504 retried", 504, "0", 3},
+		{"501 not retried", 501, "0", 1},
+		{"505 not retried", 505, "0", 1},
+		{"Retry-After over 60s stops at once", 429, "3600", 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Retry-After", tc.retryAfter)
+				w.WriteHeader(tc.status)
+				fmt.Fprint(w, `{"error":{"code":"X","message":"no"}}`)
+			})
+			started := time.Now()
+			_, err := c.Jobs.Get(context.Background(), "job_t")
+			var apiErr *Error
+			if !errors.As(err, &apiErr) || apiErr.StatusCode != tc.status || hits.Load() != tc.want {
+				t.Fatalf("got %v after %d requests", err, hits.Load())
+			}
+			if tc.retryAfter == "3600" && (apiErr.RetryAfter != time.Hour || time.Since(started) > time.Second) {
+				t.Fatalf("RetryAfter %v after %v", apiErr.RetryAfter, time.Since(started))
+			}
+		})
+	}
+}
+
+func TestRunReportsTheCode(t *testing.T) {
+	for status, code := range map[string]string{"failed": "INPUT_UNREADABLE", "cancelled": "JOB_CANCELLED"} {
+		c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				w.WriteHeader(201)
+				fmt.Fprint(w, `{"data":{"id":"job_t","status":"waiting"}}`)
+				return
+			}
+			fmt.Fprint(w, jobJSON(status, 0))
+		})
+		job, err := c.Jobs.Run(context.Background(), CreateParams{Type: "ffprobe"}, &WaitOptions{Interval: 10 * time.Millisecond})
+		var failed *JobFailedError
+		if !errors.As(err, &failed) || failed.Code != code || failed.Job != job {
+			t.Fatalf("%s: got %#v", status, err)
+		}
+	}
+}
+
+func TestAllPagesBy100(t *testing.T) {
+	var limits []string
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		limits = append(limits, r.URL.Query().Get("limit"))
+		fmt.Fprint(w, `{"data":[],"meta":{"total":0}}`)
+	})
+	for _, limit := range []int{0, 500, 20} {
+		for _, err := range c.Jobs.All(context.Background(), ListParams{Limit: limit}) {
+			t.Fatal(err)
+		}
+	}
+	if strings.Join(limits, ",") != "100,100,20" {
+		t.Fatalf("page sizes %v", limits)
 	}
 }
 

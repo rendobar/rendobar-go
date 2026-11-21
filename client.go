@@ -64,13 +64,19 @@ type Client struct {
 	Jobs    *Jobs
 	Account *Account
 	core    *apiclient.Client
-	hasKey  bool
+	keyErr  error // why a call that needs a key cannot be sent, or nil
 }
 
-// needKey fails a call that needs an API key, before it sends anything, when the client has none.
-func (c *Client) needKey() error {
-	if !c.hasKey {
-		return ErrNoAPIKey
+// needKey fails a call that needs an API key, before it sends anything, when
+// the client has none or has one that cannot be a Rendobar key.
+func (c *Client) needKey() error { return c.keyErr }
+
+func checkKey(key string) error {
+	switch {
+	case key == "":
+		return local("MISSING_API_KEY", "no API key: set RENDOBAR_API_KEY or pass rendobar.WithAPIKey")
+	case !strings.HasPrefix(key, "rb_"):
+		return local("INVALID_API_KEY", "the API key does not start with rb_: check RENDOBAR_API_KEY or the key passed to rendobar.WithAPIKey")
 	}
 	return nil
 }
@@ -107,8 +113,8 @@ func WithHTTPClient(hc *http.Client) Option { return func(c *config) { c.httpCli
 // and never changes that client.
 func WithTimeout(d time.Duration) Option { return func(c *config) { c.timeout = d } }
 
-// WithMaxRetries sets how many times a 429, a 5xx or a connection error is
-// retried. The default is 2. 0 (or a negative number) sends each request once.
+// WithMaxRetries sets how many times a 429, 500, 502, 503, 504 or a
+// connection error is retried. The default is 2. 0 (or a negative number) sends each request once.
 func WithMaxRetries(n int) Option {
 	return func(c *config) {
 		if n < 0 {
@@ -128,7 +134,8 @@ func WithDeprecationHandler(fn func(DeprecationNotice)) Option {
 
 // New returns a client. With no WithAPIKey it reads RENDOBAR_API_KEY. A client
 // with no key can still call Jobs.Types and Jobs.Schema. Every other call
-// returns ErrNoAPIKey without sending a request.
+// returns an *Error with code MISSING_API_KEY without sending a request, or
+// INVALID_API_KEY when the key does not start with rb_.
 func New(opts ...Option) *Client {
 	cfg := config{baseURL: DefaultBaseURL, maxRetries: 2}
 	for _, o := range opts {
@@ -167,7 +174,7 @@ func New(opts ...Option) *Client {
 	if cfg.apiKey != "" {
 		coreOpts = append(coreOpts, option.WithToken(cfg.apiKey))
 	}
-	c := &Client{core: apiclient.NewClient(coreOpts...), hasKey: cfg.apiKey != ""}
+	c := &Client{core: apiclient.NewClient(coreOpts...), keyErr: checkKey(cfg.apiKey)}
 	c.Jobs = &Jobs{client: c}
 	c.Account = &Account{client: c}
 	return c

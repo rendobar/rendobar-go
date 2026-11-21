@@ -15,12 +15,16 @@ import (
 const (
 	retryBaseDelay = 500 * time.Millisecond
 	retryMaxDelay  = 30 * time.Second
+	// maxRetryAfter is the longest Retry-After the client waits out. A longer
+	// one returns the error at once, with Error.RetryAfter set.
+	maxRetryAfter = 60 * time.Second
 )
 
-// retrier sends each request and retries a 429, a 5xx or a connection error,
-// honouring Retry-After. When the wait before a retry would outlast the
-// context's deadline, it returns that response instead of waiting. Nothing else is retried: a 408 or a 409 is the API's
-// answer, not a transient failure. Each attempt goes through client.Do, so the
+// retrier sends each request and retries a 429, 500, 502, 503 or 504 or a
+// connection error, honouring Retry-After up to 60 seconds. When the wait
+// before a retry would outlast that cap or the context's deadline, it returns
+// what the last attempt got instead of waiting. Nothing else is retried: a
+// 408, a 409 or a 501 is the API's answer, not a transient failure. Each attempt goes through client.Do, so the
 // client's Timeout bounds one attempt, not all of them.
 //
 // Retrying a submit is safe because Jobs.Create always sends an idempotency key.
@@ -54,13 +58,18 @@ func (r *retrier) Do(req *http.Request) (*http.Response, error) {
 		delay := backoff(attempt)
 		if res != nil {
 			if d, ok := retryAfter(res.Header.Get("Retry-After"), time.Now()); ok {
-				delay = min(d, retryMaxDelay)
+				if d > maxRetryAfter {
+					return res, nil // too long to wait: the caller gets the error with RetryAfter set
+				}
+				delay = d
 			}
-			if deadline, ok := req.Context().Deadline(); ok && time.Until(deadline) < delay {
-				// The retry would start after the caller's deadline. Return this
-				// response, so a 429 still reads as rate limited, with its Retry-After.
-				return res, nil
-			}
+		}
+		if deadline, ok := req.Context().Deadline(); ok && time.Until(deadline) < delay {
+			// The retry would start after the caller's deadline. Return what this
+			// attempt got, so a 429 still reads as rate limited, with its Retry-After.
+			return res, err
+		}
+		if res != nil {
 			_, _ = io.Copy(io.Discard, io.LimitReader(res.Body, 64<<10))
 			_ = res.Body.Close()
 		}
@@ -85,7 +94,12 @@ func retryable(ctx context.Context, res *http.Response, err error) bool {
 		}
 		return true
 	}
-	return res.StatusCode == http.StatusTooManyRequests || res.StatusCode >= 500
+	switch res.StatusCode {
+	case http.StatusTooManyRequests, http.StatusInternalServerError, http.StatusBadGateway,
+		http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	}
+	return false // a 501 or any other status is the API's answer
 }
 
 // backoff is 0.5s, 1s, 2s... with 10% jitter either way, capped at 30s.
