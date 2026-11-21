@@ -1,29 +1,22 @@
 package rendobar
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/rendobar/rendobar-go/internal/api"
 )
 
-// JobStatus is where a job is in its life. A job moves from waiting to
-// dispatched to running, and ends complete, failed or cancelled. The API may
-// add statuses later, so treat an unknown one as still in progress.
-type JobStatus string
-
-// The job statuses this SDK knows.
-const (
-	StatusWaiting    JobStatus = "waiting"    // queued, not yet handed to a runner
-	StatusDispatched JobStatus = "dispatched" // handed to a runner that has not started
-	StatusRunning    JobStatus = "running"    // in progress
-	StatusComplete   JobStatus = "complete"   // finished with its output
-	StatusFailed     JobStatus = "failed"     // ended with an error
-	StatusCancelled  JobStatus = "cancelled"  // cancelled before it finished
-)
-
-func (s JobStatus) terminal() bool {
-	return s == StatusComplete || s == StatusFailed || s == StatusCancelled
+// IsTerminal reports whether a job in this status has finished: complete,
+// failed or cancelled. An unknown status is not terminal.
+func (s JobStatus) IsTerminal() bool {
+	switch s {
+	case StatusComplete, StatusFailed, StatusCancelled:
+		return true
+	}
+	return false
 }
 
 // Job is a job in any status. Exactly one of Waiting, Dispatched, Running,
@@ -67,6 +60,17 @@ func (j *Job) CreatedAt() time.Time { return j.info.CreatedAt }
 // WebURL. Each status type embeds the same JobInfo.
 func (j *Job) Info() JobInfo { return j.info }
 
+// UnmarshalJSON reads a job as the API sends it, the data of GET /jobs/{id}.
+// Unknown fields are ignored and an unknown status sets no variant.
+func (j *Job) UnmarshalJSON(b []byte) error {
+	var w wireJob
+	if err := json.Unmarshal(b, &w); err != nil {
+		return fmt.Errorf("rendobar: unreadable job: %w", err)
+	}
+	*j = *w.job()
+	return nil
+}
+
 // JobInfo holds what a job carries in every status. Each status type embeds
 // it, so job.Complete.ID and job.Failed.CreatedAt read it directly. A time
 // the job has not reached yet is the zero time.Time.
@@ -76,17 +80,16 @@ type JobInfo struct {
 	Type  string // job type, such as ffmpeg
 	Label string // the name given at submit, or ""
 
-	Source         string         // how the job was created: api, dashboard, mcp and others
-	Client         string         // the client that sent it, such as sdk, cli or n8n, or ""
-	IdempotencyKey string         // the key the submit carried, or ""
-	Params         map[string]any // the params as submitted
-	Inputs         map[string]any // the input files as submitted
+	Source         string          // how the job was created: api, dashboard, mcp and others
+	Client         string          // the client that sent it, such as sdk, cli or n8n, or ""
+	IdempotencyKey string          // the key the submit carried, or ""
+	Params         json.RawMessage // the params as submitted, a JSON object
+	Inputs         json.RawMessage // the input files as submitted, a JSON object
 
 	// MediaType is the detected media of the input: video, image or audio, or "".
 	MediaType string
-	// OutputCategory is the kind of output the job makes: video, image,
-	// audio, json, captions or raw. New values may appear.
-	OutputCategory string
+	// OutputCategory is the kind of output the job makes.
+	OutputCategory OutputCategory
 	// Model is the generation model an image.generate or image.edit job resolved to, or "".
 	Model string
 	// Region is where the job runs, such as us-east-1, or "" until it is dispatched.
@@ -104,9 +107,9 @@ type JobInfo struct {
 	LogsAvailable bool
 	// ResourcesAvailable reports whether CPU and memory usage over time is stored.
 	ResourcesAvailable bool
-	// CallbackStatus is the delivery state of the callback set at submit:
-	// pending, delivered or failed. "" when the job has no callback.
-	CallbackStatus string
+	// CallbackStatus is the delivery state of the callback set at submit, or
+	// "" when the job has no callback.
+	CallbackStatus CallbackStatus
 	// Deliveries lists where the output was or will be delivered, one entry per
 	// destination given at submit. Only Jobs.Get fills it.
 	Deliveries []Delivery
@@ -170,9 +173,10 @@ type JobCancelled struct {
 // fills Data and has no files. A file job such as ffmpeg fills Files, and File
 // when it has one headline result.
 type JobOutput struct {
-	// Data is the job type's computed result, such as an ffprobe report or a
-	// transcript, decoded from JSON. nil when the job produced no data.
-	Data any
+	// Data is the job type's computed result as JSON, or nil when the job
+	// produced none. JobComplete has typed readers for known shapes, such as
+	// JobComplete.Ffprobe.
+	Data json.RawMessage
 	// File is the single headline file: the one output file, or the stream
 	// manifest (.m3u8 or .mpd). nil for data jobs and for plain sets of files.
 	File *OutputFile
@@ -182,14 +186,29 @@ type JobOutput struct {
 	ExpiresAt time.Time
 }
 
+// UnmarshalJSON reads a job output as the API sends it.
+func (o *JobOutput) UnmarshalJSON(b []byte) error {
+	var w wireOutput
+	if err := json.Unmarshal(b, &w); err != nil {
+		return err
+	}
+	*o = JobOutput{Data: present(w.Data), ExpiresAt: unixMs(w.ExpiresAt)}
+	if w.File != nil {
+		f := w.File.file()
+		o.File = &f
+	}
+	for _, f := range w.Files {
+		o.Files = append(o.Files, f.file())
+	}
+	return nil
+}
+
 // OutputFile is one file a job produced.
 type OutputFile struct {
-	URL  string // a ready-to-fetch URL that expires at JobOutput.ExpiresAt
-	Path string // the path within the job output, such as the name an ffmpeg command wrote
-	// Type is the file type from its extension: video, image, audio,
-	// captions, playlist, data or other. New values may appear.
-	Type string
-	Size int64 // bytes
+	URL  string   // a ready-to-fetch URL that expires at JobOutput.ExpiresAt
+	Path string   // the path within the job output, such as the name an ffmpeg command wrote
+	Type FileType // the file type, from its extension
+	Size int64    // bytes
 	// SHA256 is the file's digest as 64 lowercase hex characters, or "" on
 	// jobs completed before October 2026.
 	SHA256 string
@@ -204,54 +223,98 @@ type OutputFile struct {
 
 // JobError is why a job failed (JobFailed.Error).
 type JobError struct {
-	Code      string // stable machine-readable code, such as INPUT_UNREADABLE
-	Message   string // human-readable explanation
-	Detail    string // the tail of the tool's stderr, such as ffmpeg's, or ""
-	Retryable bool   // true when running the same job again may succeed
-	// Phase is the phase the job failed in: preparing, processing or
-	// finalizing, or "" when unknown.
-	Phase string
+	// Code is the job's error code, such as INPUT_UNREADABLE. Job codes are
+	// their own open set, apart from the API's ErrorCode values.
+	Code      string
+	Message   string       // human-readable explanation
+	Detail    string       // the tail of the tool's stderr, such as ffmpeg's, or ""
+	Retryable bool         // true when running the same job again may succeed
+	Phase     FailurePhase // the phase the job failed in, or "" when unknown
+}
+
+// UnmarshalJSON reads a job error as the API sends it.
+func (e *JobError) UnmarshalJSON(b []byte) error {
+	var w wireJobError
+	if err := json.Unmarshal(b, &w); err != nil {
+		return err
+	}
+	*e = JobError{Code: w.Code, Message: w.Message, Detail: str(w.Detail), Retryable: w.Retryable, Phase: FailurePhase(str(w.FailedPhase))}
+	return nil
 }
 
 // Cost is what a job was charged.
 type Cost struct {
-	Nanodollars int64  // the amount, where 1 USD is 1,000,000,000
-	Currency    string // ISO 4217 code, such as USD
-	Formatted   string // the amount for display, such as $0.50
+	Nanodollars int64    // the amount, where 1 USD is 1,000,000,000
+	Currency    Currency // ISO 4217 code
+	Formatted   string   // the amount for display, such as $0.50
+}
+
+// UnmarshalJSON reads a cost as the API sends it.
+func (c *Cost) UnmarshalJSON(b []byte) error {
+	var w wireCost
+	if err := json.Unmarshal(b, &w); err != nil {
+		return err
+	}
+	*c = Cost{Nanodollars: int64(w.Amount), Currency: Currency(w.Currency), Formatted: w.Formatted}
+	return nil
 }
 
 // JobStep is one execution step of a job.
 type JobStep struct {
 	ID     string
 	Name   string
-	Status string // pending, running, complete, skipped or error
-	Error  string // why the step failed, or ""
-	Meta   map[string]any
+	Status StepStatus
+	Error  string          // why the step failed, or ""
+	Meta   json.RawMessage // step details as the API sent them, or nil
 
 	StartedAt   time.Time
 	CompletedAt time.Time
 	Duration    time.Duration
 }
 
+// UnmarshalJSON reads a step as the API sends it.
+func (s *JobStep) UnmarshalJSON(b []byte) error {
+	var w wireStep
+	if err := json.Unmarshal(b, &w); err != nil {
+		return err
+	}
+	*s = JobStep{
+		ID: w.ID, Name: w.Name, Status: StepStatus(w.Status), Error: str(w.Error), Meta: present(w.Meta),
+		StartedAt: unixMs(w.StartedAt), CompletedAt: unixMs(w.CompletedAt), Duration: ms(w.DurationMs),
+	}
+	return nil
+}
+
 // Delivery is one destination a job's output goes to.
 type Delivery struct {
 	StorageID string // the storage connection
-	Status    string // pending, delivered or failed
+	Status    DeliveryStatus
 	// Path is the object key in the bucket. A folder of files ends in /.
 	Path string
 	// URL is where to fetch the delivered file, or "" for a folder.
 	URL string
-	// Reason is why a delivery failed, such as destination_denied or
-	// already_exists, or "".
-	Reason string
+	// Reason is why a delivery failed, or "".
+	Reason DeliveryReason
 	// Renamed reports that the name was taken, so the job id was appended.
 	Renamed bool
 }
 
+// UnmarshalJSON reads a delivery as the API sends it.
+func (d *Delivery) UnmarshalJSON(b []byte) error {
+	var w wireDelivery
+	if err := json.Unmarshal(b, &w); err != nil {
+		return err
+	}
+	*d = Delivery{
+		StorageID: w.StorageID, Status: DeliveryStatus(w.Status), Path: str(w.Path), URL: str(w.URL),
+		Reason: DeliveryReason(str(w.Reason)), Renamed: w.Renamed != nil && *w.Renamed,
+	}
+	return nil
+}
+
 // BootState describes a runner starting up for a dispatched job.
 type BootState struct {
-	// Phase is scheduling, queued, pulling-image, booting or restoring.
-	Phase string
+	Phase BootPhase
 	// Detail is a human-readable line, such as "waiting for GPU capacity".
 	Detail  string
 	Elapsed time.Duration // since dispatch
@@ -259,46 +322,46 @@ type BootState struct {
 	ETA     time.Duration // estimated time left for the whole job, or 0 when unknown
 }
 
-// The wire shape of a job. The generated core decodes the response, and
-// fromAPIJob re-reads its JSON into this, then builds the public types.
+// The wire shape of a job. Job.UnmarshalJSON reads this, then builds the
+// public types, which never expose generated ones.
 type wireJob struct {
-	ID                 string         `json:"id"`
-	OrgID              string         `json:"orgId"`
-	Type               string         `json:"type"`
-	Status             string         `json:"status"`
-	Label              *string        `json:"label"`
-	Source             string         `json:"source"`
-	Client             *string        `json:"client"`
-	IdempotencyKey     *string        `json:"idempotencyKey"`
-	Params             map[string]any `json:"params"`
-	Inputs             map[string]any `json:"inputs"`
-	MediaType          *string        `json:"mediaType"`
-	OutputCategory     string         `json:"outputCategory"`
-	Model              *string        `json:"model"`
-	Region             *string        `json:"region"`
-	TimeoutMs          *float64       `json:"timeoutMs"`
-	Cost               *wireCost      `json:"cost"`
-	RetryCount         int            `json:"retryCount"`
-	Steps              []wireStep     `json:"steps"`
-	LogsAvailable      bool           `json:"logsAvailable"`
-	ResourcesAvailable bool           `json:"resourcesAvailable"`
+	ID                 string          `json:"id"`
+	OrgID              string          `json:"orgId"`
+	Type               string          `json:"type"`
+	Status             string          `json:"status"`
+	Label              *string         `json:"label"`
+	Source             string          `json:"source"`
+	Client             *string         `json:"client"`
+	IdempotencyKey     *string         `json:"idempotencyKey"`
+	Params             json.RawMessage `json:"params"`
+	Inputs             json.RawMessage `json:"inputs"`
+	MediaType          *string         `json:"mediaType"`
+	OutputCategory     string          `json:"outputCategory"`
+	Model              *string         `json:"model"`
+	Region             *string         `json:"region"`
+	TimeoutMs          *float64        `json:"timeoutMs"`
+	Cost               *Cost           `json:"cost"`
+	RetryCount         int             `json:"retryCount"`
+	Steps              []JobStep       `json:"steps"`
+	LogsAvailable      bool            `json:"logsAvailable"`
+	ResourcesAvailable bool            `json:"resourcesAvailable"`
 	Callback           *struct {
 		Status string `json:"status"`
 	} `json:"callback"`
-	Deliveries         []wireDelivery `json:"deliveries"`
-	WebURL             string         `json:"webUrl"`
-	CreatedAt          *float64       `json:"createdAt"`
-	DispatchedAt       *float64       `json:"dispatchedAt"`
-	StartedAt          *float64       `json:"startedAt"`
-	CompletedAt        *float64       `json:"completedAt"`
-	SettledAt          *float64       `json:"settledAt"`
-	RetentionExpiresAt *float64       `json:"retentionExpiresAt"`
+	Deliveries         []Delivery `json:"deliveries"`
+	WebURL             string     `json:"webUrl"`
+	CreatedAt          *float64   `json:"createdAt"`
+	DispatchedAt       *float64   `json:"dispatchedAt"`
+	StartedAt          *float64   `json:"startedAt"`
+	CompletedAt        *float64   `json:"completedAt"`
+	SettledAt          *float64   `json:"settledAt"`
+	RetentionExpiresAt *float64   `json:"retentionExpiresAt"`
 
 	Progress  *float64       `json:"progress"`
 	Eta       *float64       `json:"eta"`
 	BootState *wireBootState `json:"bootState"`
-	Output    *wireOutput    `json:"output"`
-	Error     *wireJobError  `json:"error"`
+	Output    *JobOutput     `json:"output"`
+	Error     *JobError      `json:"error"`
 }
 
 type wireCost struct {
@@ -308,14 +371,14 @@ type wireCost struct {
 }
 
 type wireStep struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Status      string         `json:"status"`
-	Error       *string        `json:"error"`
-	Meta        map[string]any `json:"meta"`
-	StartedAt   *float64       `json:"startedAt"`
-	CompletedAt *float64       `json:"completedAt"`
-	DurationMs  *float64       `json:"durationMs"`
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	Status      string          `json:"status"`
+	Error       *string         `json:"error"`
+	Meta        json.RawMessage `json:"meta"`
+	StartedAt   *float64        `json:"startedAt"`
+	CompletedAt *float64        `json:"completedAt"`
+	DurationMs  *float64        `json:"durationMs"`
 }
 
 type wireDelivery struct {
@@ -336,10 +399,10 @@ type wireBootState struct {
 }
 
 type wireOutput struct {
-	Data      any        `json:"data"`
-	File      *wireFile  `json:"file"`
-	Files     []wireFile `json:"files"`
-	ExpiresAt *float64   `json:"expiresAt"`
+	Data      json.RawMessage `json:"data"`
+	File      *wireFile       `json:"file"`
+	Files     []wireFile      `json:"files"`
+	ExpiresAt *float64        `json:"expiresAt"`
 }
 
 type wireFile struct {
@@ -365,16 +428,20 @@ type wireJobError struct {
 	FailedPhase *string `json:"failedPhase"`
 }
 
-// fromAPIJob turns the generated core's job into the public Job.
+// fromAPIJob turns the generated core's job into the public Job, through its JSON.
 func fromAPIJob(in *api.Job) (*Job, error) {
 	if in == nil {
 		return nil, fmt.Errorf("rendobar: response has no job")
 	}
-	w, err := convert[wireJob](in)
+	raw, err := json.Marshal(in)
 	if err != nil {
+		return nil, fmt.Errorf("rendobar: unreadable job: %w", err)
+	}
+	job := new(Job)
+	if err := job.UnmarshalJSON(raw); err != nil {
 		return nil, err
 	}
-	return w.job(), nil
+	return job, nil
 }
 
 func (w *wireJob) job() *Job {
@@ -386,16 +453,19 @@ func (w *wireJob) job() *Job {
 		Source:             w.Source,
 		Client:             str(w.Client),
 		IdempotencyKey:     str(w.IdempotencyKey),
-		Params:             w.Params,
-		Inputs:             w.Inputs,
+		Params:             present(w.Params),
+		Inputs:             present(w.Inputs),
 		MediaType:          str(w.MediaType),
-		OutputCategory:     w.OutputCategory,
+		OutputCategory:     OutputCategory(w.OutputCategory),
 		Model:              str(w.Model),
 		Region:             str(w.Region),
 		Timeout:            ms(w.TimeoutMs),
+		Cost:               w.Cost,
 		RetryCount:         w.RetryCount,
+		Steps:              w.Steps,
 		LogsAvailable:      w.LogsAvailable,
 		ResourcesAvailable: w.ResourcesAvailable,
+		Deliveries:         w.Deliveries,
 		WebURL:             w.WebURL,
 		CreatedAt:          unixMs(w.CreatedAt),
 		DispatchedAt:       unixMs(w.DispatchedAt),
@@ -404,23 +474,8 @@ func (w *wireJob) job() *Job {
 		SettledAt:          unixMs(w.SettledAt),
 		RetentionExpiresAt: unixMs(w.RetentionExpiresAt),
 	}
-	if w.Cost != nil {
-		info.Cost = &Cost{Nanodollars: int64(w.Cost.Amount), Currency: w.Cost.Currency, Formatted: w.Cost.Formatted}
-	}
 	if w.Callback != nil {
-		info.CallbackStatus = w.Callback.Status
-	}
-	for _, s := range w.Steps {
-		info.Steps = append(info.Steps, JobStep{
-			ID: s.ID, Name: s.Name, Status: s.Status, Error: str(s.Error), Meta: s.Meta,
-			StartedAt: unixMs(s.StartedAt), CompletedAt: unixMs(s.CompletedAt), Duration: ms(s.DurationMs),
-		})
-	}
-	for _, d := range w.Deliveries {
-		info.Deliveries = append(info.Deliveries, Delivery{
-			StorageID: d.StorageID, Status: d.Status, Path: str(d.Path), URL: str(d.URL), Reason: str(d.Reason),
-			Renamed: d.Renamed != nil && *d.Renamed,
-		})
+		info.CallbackStatus = CallbackStatus(w.Callback.Status)
 	}
 
 	job := &Job{status: JobStatus(w.Status), info: info}
@@ -431,7 +486,7 @@ func (w *wireJob) job() *Job {
 		job.Dispatched = &JobDispatched{JobInfo: info, Progress: w.Progress, ETA: secs(w.Eta)}
 		if b := w.BootState; b != nil {
 			job.Dispatched.Boot = &BootState{
-				Phase: b.Phase, Detail: b.Detail,
+				Phase: BootPhase(b.Phase), Detail: b.Detail,
 				Elapsed: ms(&b.ElapsedMs), Typical: ms(b.TypicalMs), ETA: ms(b.EtaMs),
 			}
 		}
@@ -439,32 +494,24 @@ func (w *wireJob) job() *Job {
 		job.Running = &JobRunning{JobInfo: info, Progress: w.Progress, ETA: secs(w.Eta)}
 	case StatusComplete:
 		job.Complete = &JobComplete{JobInfo: info}
-		if o := w.Output; o != nil {
-			out := JobOutput{Data: o.Data, ExpiresAt: unixMs(o.ExpiresAt)}
-			if o.File != nil {
-				f := o.File.file()
-				out.File = &f
-			}
-			for _, f := range o.Files {
-				out.Files = append(out.Files, f.file())
-			}
-			job.Complete.Output = out
+		if w.Output != nil {
+			job.Complete.Output = *w.Output
 		}
 	case StatusFailed:
 		job.Failed = &JobFailed{JobInfo: info}
-		if e := w.Error; e != nil {
-			job.Failed.Error = JobError{
-				Code: e.Code, Message: e.Message, Detail: str(e.Detail), Retryable: e.Retryable, Phase: str(e.FailedPhase),
-			}
+		if w.Error != nil {
+			job.Failed.Error = *w.Error
 		}
 	case StatusCancelled:
 		job.Cancelled = &JobCancelled{JobInfo: info}
+	default:
+		// A status newer than this SDK: no variant, but Status and Info still answer.
 	}
 	return job
 }
 
 func (f wireFile) file() OutputFile {
-	out := OutputFile{URL: f.URL, Path: f.Path, Type: f.Type, Size: int64(f.Size), SHA256: str(f.Sha256)}
+	out := OutputFile{URL: f.URL, Path: f.Path, Type: FileType(f.Type), Size: int64(f.Size), SHA256: str(f.Sha256)}
 	if m := f.Meta; m != nil {
 		out.Format = str(m.Format)
 		out.Width = int(num(m.Width))
@@ -473,6 +520,14 @@ func (f wireFile) file() OutputFile {
 		out.Seed = int64(num(m.Seed))
 	}
 	return out
+}
+
+// present returns raw, or nil when it is absent or JSON null.
+func present(raw json.RawMessage) json.RawMessage {
+	if t := bytes.TrimSpace(raw); len(t) == 0 || string(t) == "null" {
+		return nil
+	}
+	return raw
 }
 
 func str(p *string) string {

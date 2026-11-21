@@ -1,7 +1,9 @@
 package rendobar
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,22 +11,63 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rendobar/rendobar-go/internal/api"
 	"github.com/rendobar/rendobar-go/internal/api/core"
+)
+
+// ErrorCode is the stable machine-readable code of an *Error. The constants
+// below are the codes this SDK knows. The API may add codes, and an unknown
+// one arrives as its own string, so compare with == and keep a default branch.
+type ErrorCode string
+
+// Codes the SDK sets itself, before sending a request (StatusCode 0).
+const (
+	CodeMissingAPIKey   ErrorCode = "MISSING_API_KEY"  // no key: set RENDOBAR_API_KEY or pass WithAPIKey
+	CodeInvalidAPIKey   ErrorCode = "INVALID_API_KEY"  // the key does not start with rb_
+	CodeInvalidArgument ErrorCode = "INVALID_ARGUMENT" // params, an id or paging the SDK refused
+	CodeUnknown         ErrorCode = "UNKNOWN_ERROR"    // the API answered without its error envelope
+)
+
+// Codes the API sends.
+const (
+	CodeUnauthorized         ErrorCode = "UNAUTHORIZED"
+	CodeForbidden            ErrorCode = "FORBIDDEN"
+	CodeInsufficientScope    ErrorCode = "INSUFFICIENT_SCOPE"
+	CodeValidation           ErrorCode = "VALIDATION_ERROR"
+	CodeInvalidJobType       ErrorCode = "INVALID_JOB_TYPE"
+	CodeFeatureNotEnabled    ErrorCode = "FEATURE_NOT_ENABLED"
+	CodeInsufficientCredits  ErrorCode = "INSUFFICIENT_CREDITS"
+	CodePlanLimit            ErrorCode = "PLAN_LIMIT"
+	CodeStorageQuotaExceeded ErrorCode = "STORAGE_QUOTA_EXCEEDED"
+	CodeFileTooLarge         ErrorCode = "FILE_TOO_LARGE"
+	CodeRateLimited          ErrorCode = "RATE_LIMITED"
+	CodeQueueFull            ErrorCode = "QUEUE_FULL"
+	CodeQueueExpired         ErrorCode = "QUEUE_EXPIRED"
+	CodeNotFound             ErrorCode = "NOT_FOUND"
+	CodeConflict             ErrorCode = "CONFLICT"
+	CodeGone                 ErrorCode = "GONE"
+	CodeOrgSuspended         ErrorCode = "ORG_SUSPENDED"
+	CodeInputURLBlocked      ErrorCode = "INPUT_URL_BLOCKED"
+	CodeInputNotMedia        ErrorCode = "INPUT_NOT_MEDIA"
+	CodeInputUnsupported     ErrorCode = "INPUT_UNSUPPORTED"
+	CodeInputFetchFailed     ErrorCode = "INPUT_FETCH_FAILED"
+	CodeInputFetchStalled    ErrorCode = "INPUT_FETCH_STALLED"
+	CodeProcessingFailed     ErrorCode = "PROCESSING_FAILED"
+	CodeRunnerError          ErrorCode = "RUNNER_ERROR"
+	CodeRunnerTimeout        ErrorCode = "RUNNER_TIMEOUT"
+	CodeInternal             ErrorCode = "INTERNAL_ERROR"
+	CodeNotImplemented       ErrorCode = "NOT_IMPLEMENTED"
+	CodeUpstream             ErrorCode = "UPSTREAM_ERROR"
+	CodeNotConfigured        ErrorCode = "NOT_CONFIGURED"
 )
 
 // Error is an error with a stable code: a refusal from the API (a 4xx or 5xx
 // with Rendobar's error envelope), or a call the SDK refused before sending
-// anything (StatusCode 0).
+// anything (StatusCode 0). Check it with errors.As and compare Code:
 //
 //	var apiErr *rendobar.Error
-//	if errors.As(err, &apiErr) && apiErr.Code == "NOT_FOUND" { ... }
-//
-// The SDK's own codes are MISSING_API_KEY (no key set), INVALID_API_KEY (a key
-// that does not start with rb_) and INVALID_ARGUMENT (such as a malformed job id).
+//	if errors.As(err, &apiErr) && apiErr.Code == rendobar.CodeNotFound { ... }
 type Error struct {
-	// Code is the stable machine-readable code, such as NOT_FOUND or INSUFFICIENT_CREDITS.
-	Code string
+	Code ErrorCode
 	// Message is the human-readable explanation.
 	Message string
 	// StatusCode is the HTTP status, or 0 when the SDK refused the call before sending it.
@@ -33,11 +76,11 @@ type Error struct {
 	RequestID string
 	// RetryAfter is how long the server asked the caller to wait (Retry-After), or 0.
 	RetryAfter time.Duration
-	// Problems lists what a VALIDATION_ERROR, PLAN_LIMIT or FEATURE_NOT_ENABLED
-	// refusal found wrong, one entry per problem.
+	// Problems lists what the request got wrong, one entry each, when the
+	// API (or Validate) sent a list of problems.
 	Problems []Problem
-	// Details is the error's raw detail as the API sent it, decoded from JSON.
-	Details any
+	// Details is the error's detail as the API sent it, or nil.
+	Details json.RawMessage
 }
 
 // Problem is one thing a refusal found wrong with a request.
@@ -46,7 +89,7 @@ type Problem struct {
 	Message string
 	// UpgradeTo names the cheapest plan that allows the request, or "" when
 	// no plan change helps or only an enterprise plan does.
-	UpgradeTo string
+	UpgradeTo PlanSlug
 }
 
 func (e *Error) Error() string {
@@ -59,37 +102,21 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("rendobar: %s (%d %s)", e.Message, e.StatusCode, e.Code)
 }
 
-// IsNotFound reports whether err is a 404 from the API.
-func IsNotFound(err error) bool { return statusIs(err, http.StatusNotFound) }
-
-// IsRateLimited reports whether err is a 429 from the API.
-func IsRateLimited(err error) bool { return statusIs(err, http.StatusTooManyRequests) }
-
-// IsUnauthorized reports whether err is a 401 from the API: the API key is
-// wrong or revoked. A client with no key fails before sending, with code MISSING_API_KEY.
-func IsUnauthorized(err error) bool { return statusIs(err, http.StatusUnauthorized) }
-
-// IsConflict reports whether err is a 409 from the API, such as an
-// idempotency key reused with different params.
-func IsConflict(err error) bool { return statusIs(err, http.StatusConflict) }
-
-func statusIs(err error, status int) bool {
-	var e *Error
-	return errors.As(err, &e) && e.StatusCode == status
-}
-
 // local is an error the SDK raises before sending a request.
-func local(code, format string, args ...any) *Error {
+func local(code ErrorCode, format string, args ...any) *Error {
 	return &Error{Code: code, Message: fmt.Sprintf(format, args...)}
 }
 
-var jobID = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+var (
+	jobID       = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+	jobTypeName = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
+)
 
 // checkID refuses a job id the API could never have issued, so a value such
 // as "" or "../x" is never sent as a path.
 func checkID(id string) error {
 	if !jobID.MatchString(id) || id == "." || id == ".." {
-		return local("INVALID_ARGUMENT", "job id %q is not valid: use letters, digits, '.', '_' and '-'", id)
+		return local(CodeInvalidArgument, "job id %q is not valid: use letters, digits, '.', '_' and '-'", id)
 	}
 	return nil
 }
@@ -97,7 +124,7 @@ func checkID(id string) error {
 // JobFailedError is returned by Jobs.Run when the job ends failed or cancelled.
 type JobFailedError struct {
 	// Code is the job's error code, such as INPUT_UNREADABLE, or
-	// JOB_CANCELLED for a cancelled job.
+	// JOB_CANCELLED for a cancelled job. Job codes are their own open set.
 	Code string
 	Job  *Job
 }
@@ -223,72 +250,96 @@ func contextError(ctx context.Context, err error, jobID string, job *Job) *Conte
 	return &ContextError{JobID: jobID, Job: job, Err: err}
 }
 
-type bodied interface{ GetBody() *api.ErrorResponse }
-
-// fromGenerated turns the generated core's typed errors into *Error. Anything else passes through.
+// fromGenerated turns the generated core's errors into *Error. Anything else passes through.
 func fromGenerated(err error) error {
 	if err == nil {
 		return nil
 	}
-	var apiErr *core.APIError
-	if !errors.As(err, &apiErr) {
+	var coreErr *core.APIError
+	if !errors.As(err, &coreErr) {
 		return err
 	}
-	out := &Error{
-		Code:       "UNKNOWN_ERROR",
-		Message:    fmt.Sprintf("request failed with status %d", apiErr.StatusCode),
-		StatusCode: apiErr.StatusCode,
-		RequestID:  apiErr.Header.Get(requestIDHeader),
+	var body []byte
+	if raw := coreErr.Unwrap(); raw != nil {
+		body = []byte(raw.Error()) // the core keeps the raw response body as this error's text
 	}
-	if ra, ok := retryAfter(apiErr.Header.Get("Retry-After"), time.Now()); ok {
+	return apiError(coreErr.StatusCode, coreErr.Header, body)
+}
+
+// apiError reads Rendobar's error envelope, {"error": {code, message, details}}.
+// A body of another shape still gives an *Error, with code UNKNOWN_ERROR.
+func apiError(status int, header http.Header, body []byte) *Error {
+	out := &Error{
+		Code:       CodeUnknown,
+		Message:    fmt.Sprintf("request failed with status %d", status),
+		StatusCode: status,
+		RequestID:  header.Get(requestIDHeader),
+	}
+	if ra, ok := retryAfter(header.Get("Retry-After"), time.Now()); ok {
 		out.RetryAfter = ra
 	}
-	var b bodied
-	if errors.As(err, &b) {
-		if body := b.GetBody(); body != nil && body.Error != nil {
-			out.Code = body.Error.Code
-			out.Message = body.Error.Message
-			out.Details = body.Error.Details
-			out.Problems = problems(out.Code, out.Details)
-		}
+	var env struct {
+		Error *struct {
+			Code    ErrorCode       `json:"code"`
+			Message string          `json:"message"`
+			Details json.RawMessage `json:"details"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(body, &env) != nil || env.Error == nil {
+		return out
+	}
+	if env.Error.Code != "" {
+		out.Code = env.Error.Code
+	}
+	if env.Error.Message != "" {
+		out.Message = env.Error.Message
+	}
+	if d := bytes.TrimSpace(env.Error.Details); len(d) > 0 && string(d) != "null" {
+		out.Details = d
+		out.Problems = problems(d)
 	}
 	return out
 }
 
-// problems reads error.details as a list of {path, message, upgradeTo} on the
-// codes that send one. Anything of another shape is skipped, never an error.
-func problems(code string, details any) []Problem {
-	if code != "VALIDATION_ERROR" && code != "PLAN_LIMIT" && code != "FEATURE_NOT_ENABLED" {
-		return nil
-	}
-	items, ok := details.([]any)
-	if !ok {
+// problems reads details sent as a list of {path, message, upgradeTo}.
+// Entries of another shape are skipped, never an error.
+func problems(details json.RawMessage) []Problem {
+	var items []json.RawMessage
+	if json.Unmarshal(details, &items) != nil {
 		return nil
 	}
 	var out []Problem
 	for _, item := range items {
-		m, ok := item.(map[string]any)
-		if !ok {
+		var p struct {
+			Path      json.RawMessage `json:"path"`
+			Message   string          `json:"message"`
+			UpgradeTo *string         `json:"upgradeTo"`
+		}
+		if json.Unmarshal(item, &p) != nil || p.Message == "" {
 			continue
 		}
-		message, _ := m["message"].(string)
-		upgradeTo, _ := m["upgradeTo"].(string)
-		out = append(out, Problem{Path: problemPath(m["path"]), Message: message, UpgradeTo: upgradeTo})
+		problem := Problem{Path: problemPath(p.Path), Message: p.Message}
+		if p.UpgradeTo != nil {
+			problem.UpgradeTo = PlanSlug(*p.UpgradeTo)
+		}
+		out = append(out, problem)
 	}
 	return out
 }
 
 // problemPath reads a path sent as "a.b" or as ["a", "b", 0].
-func problemPath(v any) string {
-	switch p := v.(type) {
-	case string:
-		return p
-	case []any:
-		parts := make([]string, 0, len(p))
-		for _, seg := range p {
-			parts = append(parts, fmt.Sprint(seg))
-		}
-		return strings.Join(parts, ".")
+func problemPath(raw json.RawMessage) string {
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s
 	}
-	return ""
+	var parts []any
+	if json.Unmarshal(raw, &parts) != nil {
+		return ""
+	}
+	segs := make([]string, 0, len(parts))
+	for _, p := range parts {
+		segs = append(segs, fmt.Sprint(p))
+	}
+	return strings.Join(segs, ".")
 }

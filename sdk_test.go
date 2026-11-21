@@ -156,7 +156,7 @@ func TestRunReturnsJobFailedError(t *testing.T) {
 		}
 		fmt.Fprint(w, jobJSON("failed", 0))
 	})
-	job, err := c.Jobs.Run(context.Background(), CreateParams{Type: "ffprobe"}, &WaitOptions{Interval: 10 * time.Millisecond})
+	job, err := c.Jobs.Run(context.Background(), CreateParams{Params: FfprobeParams{Command: "x"}}, &WaitOptions{Interval: 10 * time.Millisecond})
 	var failed *JobFailedError
 	if !errors.As(err, &failed) || failed.Job != job || job.Failed.Error.Code != "INPUT_UNREADABLE" {
 		t.Fatalf("got %v, %v", job, err)
@@ -297,7 +297,7 @@ func TestConnectionErrorIsRetriedAndSubmitKeepsItsBody(t *testing.T) {
 	}))
 	defer srv.Close()
 	c := New(WithAPIKey("rb_test"), WithBaseURL(srv.URL))
-	created, err := c.Jobs.Create(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "x"}})
+	created, err := c.Jobs.Create(context.Background(), CreateParams{Params: FfprobeParams{Command: "x"}})
 	if err != nil || created.ID != "job_t" {
 		t.Fatalf("%v %v", created, err)
 	}
@@ -402,7 +402,7 @@ func TestRunKeepsTheJobIDWhenTheContextEnds(t *testing.T) {
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
 	defer cancel()
-	job, err := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, &WaitOptions{Interval: 40 * time.Millisecond})
+	job, err := c.Jobs.Run(ctx, CreateParams{Params: FfprobeParams{Command: "x"}}, &WaitOptions{Interval: 40 * time.Millisecond})
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("got %v", err)
 	}
@@ -455,7 +455,7 @@ func TestRateLimitLongerThanTheDeadlineStaysRateLimited(t *testing.T) {
 	defer cancel()
 	started := time.Now()
 	_, err := c.Jobs.Get(ctx, "job_t")
-	if !IsRateLimited(err) {
+	if codeOf(err) != CodeRateLimited {
 		t.Fatalf("got %v", err)
 	}
 	var apiErr *Error
@@ -467,12 +467,20 @@ func TestRateLimitLongerThanTheDeadlineStaysRateLimited(t *testing.T) {
 	}
 }
 
-func codeOf(err error) string {
+func codeOf(err error) ErrorCode {
 	var e *Error
 	if errors.As(err, &e) {
 		return e.Code
 	}
 	return ""
+}
+
+func statusOf(err error) int {
+	var e *Error
+	if errors.As(err, &e) {
+		return e.StatusCode
+	}
+	return 0
 }
 
 // keyServer records the idempotency key of every submit and answers with h.
@@ -524,7 +532,7 @@ func TestSubmitErrorCarriesTheKeyWhenTheJobMayExist(t *testing.T) {
 				ctx, cancel = tc.ctx()
 			}
 			defer cancel()
-			created, err := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe", Params: map[string]any{"command": "x"}})
+			created, err := c.Jobs.Create(ctx, CreateParams{Params: FfprobeParams{Command: "x"}})
 			var se *SubmitError
 			if created != nil || !errors.As(err, &se) || !tc.is(err) {
 				t.Fatalf("got %v, %#v", created, err)
@@ -541,7 +549,7 @@ func TestSubmitRefusalIsNotASubmitError(t *testing.T) {
 		w.WriteHeader(400)
 		fmt.Fprint(w, `{"error":{"code":"VALIDATION_ERROR","message":"bad","details":[{"path":["params","command"],"message":"Required"},{"path":"type","message":"Unknown","upgradeTo":"pro"},"junk"]}}`)
 	})
-	_, err := c.Jobs.Create(context.Background(), CreateParams{Type: "ffprobe"})
+	_, err := c.Jobs.Create(context.Background(), CreateParams{Params: FfprobeParams{Command: "x"}})
 	var se *SubmitError
 	var apiErr *Error
 	if errors.As(err, &se) || !errors.As(err, &apiErr) || apiErr.StatusCode != 400 {
@@ -554,13 +562,35 @@ func TestSubmitRefusalIsNotASubmitError(t *testing.T) {
 }
 
 func TestProblemsAreParsedDefensively(t *testing.T) {
-	for _, details := range []any{nil, "text", map[string]any{"jobId": "job_1"}, []any{1, "x", nil}} {
-		if p := problems("VALIDATION_ERROR", details); len(p) != 0 {
-			t.Fatalf("%v gave %+v", details, p)
+	for _, details := range []string{`null`, `"text"`, `{"jobId":"job_1"}`, `[1,"x",null,{"path":"a"}]`, `not json`} {
+		if p := problems(json.RawMessage(details)); len(p) != 0 {
+			t.Fatalf("%s gave %+v", details, p)
 		}
 	}
-	if p := problems("CONFLICT", []any{map[string]any{"path": "x", "message": "y"}}); p != nil {
-		t.Fatalf("a CONFLICT gave problems %+v", p)
+	// Any code with a problem list gets problems, not only a fixed few.
+	p := problems(json.RawMessage(`[{"path":["inputs",0],"message":"unreachable","upgradeTo":null}]`))
+	if len(p) != 1 || p[0].Path != "inputs.0" || p[0].UpgradeTo != "" {
+		t.Fatalf("problems %+v", p)
+	}
+}
+
+func TestAnUnknownErrorCodeFlowsThrough(t *testing.T) {
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(418)
+		fmt.Fprint(w, `{"error":{"code":"BRAND_NEW_CODE","message":"new","details":{"why":"later"}}}`)
+	})
+	_, err := c.Jobs.Get(context.Background(), "job_t")
+	var apiErr *Error
+	if !errors.As(err, &apiErr) || apiErr.Code != "BRAND_NEW_CODE" || string(apiErr.Details) != `{"why":"later"}` || apiErr.Problems != nil {
+		t.Fatalf("got %#v", err)
+	}
+	c, _ = testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(502)
+		fmt.Fprint(w, `<html>bad gateway</html>`)
+	})
+	_, err = New(WithAPIKey("rb_test"), WithBaseURL(c.baseURL), WithMaxRetries(0)).Jobs.Get(context.Background(), "job_t")
+	if codeOf(err) != CodeUnknown || statusOf(err) != 502 {
+		t.Fatalf("a non-JSON body gave %#v", err)
 	}
 }
 
@@ -574,7 +604,7 @@ func TestCreatedFlagsAReplay(t *testing.T) {
 		}
 		fmt.Fprint(w, `{"data":{"id":"job_t","status":"running","idempotent":true}}`)
 	})
-	p := CreateParams{Type: "ffprobe", IdempotencyKey: "mine"}
+	p := CreateParams{Params: FfprobeParams{Command: "x"}, IdempotencyKey: "mine"}
 	first, err1 := c.Jobs.Create(context.Background(), p)
 	again, err2 := c.Jobs.Create(context.Background(), p)
 	if err1 != nil || err2 != nil || first.Replayed || !again.Replayed || again.ID != first.ID {
@@ -583,8 +613,11 @@ func TestCreatedFlagsAReplay(t *testing.T) {
 }
 
 func TestKeyProblemsFailBeforeSending(t *testing.T) {
-	for _, tc := range []struct{ key, code string }{{"", "MISSING_API_KEY"}, {"sk_live_x", "INVALID_API_KEY"}} {
-		t.Run(tc.code, func(t *testing.T) {
+	for _, tc := range []struct {
+		key  string
+		code ErrorCode
+	}{{"", CodeMissingAPIKey}, {"sk_live_x", CodeInvalidAPIKey}} {
+		t.Run(string(tc.code), func(t *testing.T) {
 			t.Setenv("RENDOBAR_API_KEY", "")
 			var hits atomic.Int32
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -595,9 +628,9 @@ func TestKeyProblemsFailBeforeSending(t *testing.T) {
 			c := New(WithAPIKey(tc.key), WithBaseURL(srv.URL))
 			ctx := context.Background()
 			_, getErr := c.Jobs.Get(ctx, "job_t")
-			_, createErr := c.Jobs.Create(ctx, CreateParams{Type: "ffprobe"})
+			_, createErr := c.Jobs.Create(ctx, CreateParams{Params: FfprobeParams{Command: "x"}})
 			_, listErr := c.Jobs.List(ctx, ListParams{})
-			_, runErr := c.Jobs.Run(ctx, CreateParams{Type: "ffprobe"}, nil)
+			_, runErr := c.Jobs.Run(ctx, CreateParams{Params: FfprobeParams{Command: "x"}}, nil)
 			_, capsErr := c.Account.Capabilities(ctx)
 			_, dlErr := c.Jobs.Download(ctx, "job_t")
 			for _, err := range []error{getErr, createErr, listErr, runErr, capsErr, dlErr, c.Jobs.Cancel(ctx, "job_t")} {
@@ -623,7 +656,7 @@ func TestBadIDsAndNegativePagingFailBeforeSending(t *testing.T) {
 		_, waitErr := c.Jobs.Wait(ctx, id, nil)
 		_, downloadErr := c.Jobs.Download(ctx, id)
 		for _, err := range []error{getErr, waitErr, downloadErr, c.Jobs.Cancel(ctx, id)} {
-			if codeOf(err) != "INVALID_ARGUMENT" || IsNotFound(err) {
+			if codeOf(err) != CodeInvalidArgument {
 				t.Fatalf("%q: got %v", id, err)
 			}
 		}
@@ -684,7 +717,7 @@ func TestRunReportsTheCode(t *testing.T) {
 			}
 			fmt.Fprint(w, jobJSON(status, 0))
 		})
-		job, err := c.Jobs.Run(context.Background(), CreateParams{Type: "ffprobe"}, &WaitOptions{Interval: 10 * time.Millisecond})
+		job, err := c.Jobs.Run(context.Background(), CreateParams{Params: FfprobeParams{Command: "x"}}, &WaitOptions{Interval: 10 * time.Millisecond})
 		var failed *JobFailedError
 		if !errors.As(err, &failed) || failed.Code != code || failed.Job != job {
 			t.Fatalf("%s: got %#v", status, err)
@@ -705,17 +738,5 @@ func TestAllPagesBy100(t *testing.T) {
 	}
 	if strings.Join(limits, ",") != "100,100,20" {
 		t.Fatalf("page sizes %v", limits)
-	}
-}
-
-func TestStatusHelpers(t *testing.T) {
-	for status, is := range map[int]func(error) bool{401: IsUnauthorized, 409: IsConflict, 404: IsNotFound, 429: IsRateLimited} {
-		err := error(&Error{StatusCode: status})
-		if !is(fmt.Errorf("wrapped: %w", err)) {
-			t.Fatalf("%d not recognised", status)
-		}
-		if is(&Error{StatusCode: 500}) {
-			t.Fatalf("%d helper matched a 500", status)
-		}
 	}
 }

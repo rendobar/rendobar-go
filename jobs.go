@@ -1,13 +1,11 @@
 package rendobar
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"iter"
 	"time"
 
@@ -23,22 +21,19 @@ var (
 // Jobs submits jobs, follows them to the end, and reads their output.
 type Jobs struct{ client *Client }
 
-// CreateParams is a job submit.
+// CreateParams is a job submit. Params is required: the typed params of one
+// job type, such as FfmpegParams, or CustomParams for a type this SDK predates.
 type CreateParams struct {
-	// Type is the job type, such as "ffmpeg" or "ffprobe". Jobs.Types lists them.
-	Type string
-	// Params is the job type's params: a map, or any struct that encodes to
-	// the JSON the type's schema describes (see Jobs.Schema).
-	Params any
-	// Inputs maps an input name to a file URL, such as
-	// {"source": "https://example.com/in.mp4"}. Jobs.Schema lists the names a
-	// type takes. ffmpeg and ffprobe accept any name, and the command refers
+	// Params are the job's params. Their JobType is the job type submitted.
+	Params JobParams
+	// Inputs maps an input name to the URL of a file the API can fetch, such
+	// as {"source": "https://example.com/in.mp4"}. Jobs.Schema lists the names
+	// a type takes. ffmpeg and ffprobe accept any name, and the command refers
 	// to the file by it. A command that names its input URLs needs no Inputs.
-	Inputs map[string]any
+	Inputs map[string]string
 	// IdempotencyKey makes the submit safe to repeat. With none, the SDK
 	// generates one per Create call, so its own retries cannot create a second job.
-	// Reusing a key with different Type, Params or Inputs is refused with a
-	// 409 CONFLICT *Error (see IsConflict).
+	// Reusing a key with different params is refused with a 409 *Error, code CodeConflict.
 	IdempotencyKey string
 	// Label is a short name for the job, up to 200 characters, such as "Trim
 	// intro for episode 12". The dashboard shows it, and JobInfo.Label returns it.
@@ -48,9 +43,49 @@ type CreateParams struct {
 	// "storage://<id>/<path template>". A path template may use {job_id},
 	// {ext}, {source_name} and {date}. JobInfo.Deliveries reports each one.
 	Destinations []string
+	// Callback asks the API to POST the job's result to a URL of yours when
+	// the job ends, or nil.
+	Callback *Callback
 	// ForceAsync makes the submit return as soon as the job is queued, even
 	// for a job type the API could finish within the submit request.
 	ForceAsync bool
+}
+
+// Callback is a per-job completion callback. When the job completes, fails or
+// is cancelled, the API POSTs the standard webhook envelope to URL (see the
+// webhooks package).
+type Callback struct {
+	URL string // an HTTPS URL
+	// Headers are sent with the POST, such as an Authorization bearer for an
+	// authenticated endpoint. X-Rendobar-* headers are reserved.
+	Headers map[string]string
+	// Verify signs the POST with X-Rendobar-Signature, the webhook scheme,
+	// keyed with your workspace's callback signing secret. Unsigned by default.
+	Verify bool
+	// Events adds non-terminal events. The terminal ones always fire.
+	Events []CallbackEvent
+}
+
+func (cb *Callback) validate(c *check) {
+	if cb.URL == "" {
+		c.fail("callback.url", "is required")
+	}
+	for _, e := range cb.Events {
+		if !e.known() {
+			c.fail("callback.events", fmt.Sprintf("%q is not one of the known events", e))
+		}
+	}
+}
+
+func (cb *Callback) wire() *api.SubmitAnyJobCallback {
+	out := &api.SubmitAnyJobCallback{URL: cb.URL, Headers: cb.Headers}
+	if cb.Verify {
+		out.Verify = &cb.Verify
+	}
+	for _, e := range cb.Events {
+		out.Events = append(out.Events, api.SubmitAnyJobCallbackEventsItem(e))
+	}
+	return out
 }
 
 // Created is what a submit returns: the job id and its status at that moment.
@@ -60,6 +95,9 @@ type Created struct {
 	// Replayed reports that an earlier submit with the same idempotency key
 	// already created this job, so this call created nothing new.
 	Replayed bool `json:"idempotent"`
+	// URL is the result as a data URL when the API finished the job within
+	// the submit request (Status complete), else "".
+	URL string `json:"url"`
 }
 
 // GenerateIdempotencyKey returns "sdk_" plus 32 hex characters: unique per call, not secret.
@@ -71,20 +109,15 @@ func GenerateIdempotencyKey() string {
 	return "sdk_" + hex.EncodeToString(b[:])
 }
 
-func toMap(v any) (map[string]any, error) {
-	if v == nil {
-		return map[string]any{}, nil
-	}
-	if m, ok := v.(map[string]any); ok {
-		return m, nil
-	}
-	raw, err := json.Marshal(v)
+// paramsMap encodes typed params as the JSON object the API takes.
+func paramsMap(p JobParams) (map[string]any, error) {
+	raw, err := json.Marshal(p)
 	if err != nil {
-		return nil, fmt.Errorf("rendobar: params do not encode to JSON: %w", err)
+		return nil, local(CodeInvalidArgument, "params do not encode to JSON: %v", err)
 	}
 	var m map[string]any
 	if err := json.Unmarshal(raw, &m); err != nil {
-		return nil, fmt.Errorf("rendobar: params must encode to a JSON object: %w", err)
+		return nil, local(CodeInvalidArgument, "params must encode to a JSON object: %v", err)
 	}
 	return m, nil
 }
@@ -95,11 +128,27 @@ func toMap(v any) (map[string]any, error) {
 // a connection error, a timed-out attempt, or a 429 or 5xx after the last
 // retry), Create returns a *SubmitError with the idempotency key it sent.
 // Submit again with that key to get the same job.
+//
+// Create validates the params first (JobParams.Validate) and sends nothing
+// when they are wrong.
 func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if err := j.client.needKey(); err != nil {
 		return nil, err
 	}
-	params, err := toMap(p.Params)
+	if p.Params == nil {
+		return nil, local(CodeInvalidArgument, "CreateParams.Params is required: use the job type's params struct, such as FfmpegParams")
+	}
+	if err := p.Params.Validate(); err != nil {
+		return nil, err
+	}
+	if p.Callback != nil {
+		var c check
+		p.Callback.validate(&c)
+		if err := c.err(); err != nil {
+			return nil, err
+		}
+	}
+	params, err := paramsMap(p.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +156,14 @@ func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if key == "" {
 		key = GenerateIdempotencyKey()
 	}
-	body := &api.SubmitAnyJob{Type: p.Type, Params: params, Inputs: p.Inputs, IdempotencyKey: &key, Destinations: p.Destinations}
+	inputs := make(map[string]any, len(p.Inputs))
+	for k, v := range p.Inputs {
+		inputs[k] = v
+	}
+	body := &api.SubmitAnyJob{Type: p.Params.JobType(), Params: params, Inputs: inputs, IdempotencyKey: &key, Destinations: p.Destinations}
+	if p.Callback != nil {
+		body.Callback = p.Callback.wire()
+	}
 	if p.Label != "" {
 		body.Label = &p.Label
 	}
@@ -171,7 +227,7 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 		return nil, err
 	}
 	if p.Limit < 0 || p.Offset < 0 {
-		return nil, local("INVALID_ARGUMENT", "ListParams Limit and Offset must not be negative, got %d and %d", p.Limit, p.Offset)
+		return nil, local(CodeInvalidArgument, "ListParams Limit and Offset must not be negative, got %d and %d", p.Limit, p.Offset)
 	}
 	req := &api.ListJobsRequest{}
 	if p.Status != "" {
@@ -245,25 +301,6 @@ func (j *Jobs) Cancel(ctx context.Context, id string) error {
 	return fromGenerated(err)
 }
 
-// Download returns the output file of a completed job, held in memory.
-// WithTimeout bounds the whole download, not only its first byte.
-func (j *Jobs) Download(ctx context.Context, id string) ([]byte, error) {
-	if err := j.client.needKey(); err != nil {
-		return nil, err
-	}
-	if err := checkID(id); err != nil {
-		return nil, err
-	}
-	r, err := j.client.core.Jobs.DownloadJobOutput(ctx, &api.DownloadJobOutputRequest{ID: id})
-	if err != nil {
-		return nil, fromGenerated(err)
-	}
-	if buf, ok := r.(*bytes.Buffer); ok {
-		return buf.Bytes(), nil // the core already buffered it: hand those bytes over, no second copy
-	}
-	return io.ReadAll(r)
-}
-
 // Types returns every live job type. Public: needs no API key.
 func (j *Jobs) Types(ctx context.Context) ([]JobType, error) {
 	res, err := j.client.core.Jobs.ListJobTypes(ctx)
@@ -279,6 +316,9 @@ func (j *Jobs) Types(ctx context.Context) ([]JobType, error) {
 
 // Schema returns one job type's params: its fields, inputs and full JSON Schema. Public: needs no API key.
 func (j *Jobs) Schema(ctx context.Context, jobType string) (*JobTypeSchema, error) {
+	if !jobTypeName.MatchString(jobType) {
+		return nil, local(CodeInvalidArgument, "job type %q is not valid: use the name Jobs.Types lists, such as ffmpeg", jobType)
+	}
 	res, err := j.client.core.Jobs.GetJobTypeSchema(ctx, &api.GetJobTypeSchemaRequest{Type: jobType})
 	if err != nil {
 		return nil, fromGenerated(err)
@@ -338,7 +378,7 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 		if o.OnProgress != nil {
 			o.OnProgress(job)
 		}
-		if job.Status().terminal() {
+		if job.Status().IsTerminal() {
 			return job, nil
 		}
 		if limit := job.info.Timeout; !adopted && limit > 0 {

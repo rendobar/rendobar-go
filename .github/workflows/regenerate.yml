@@ -57,6 +57,8 @@ jobs:
           # The generator writes its own module files and docs. This repo is one module.
           git rm -q --ignore-unmatch internal/api/go.mod internal/api/go.sum internal/api/README.md internal/api/CONTRIBUTING.md internal/api/reference.md
           rm -f internal/api/go.mod internal/api/go.sum internal/api/README.md internal/api/CONTRIBUTING.md internal/api/reference.md
+          # The typed job params come from the same spec.
+          go generate ./...
           go mod tidy && go build ./... && go vet ./...
       - name: Open the regeneration PR
         if: steps.spec.outputs.changed == 'true'

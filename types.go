@@ -3,6 +3,44 @@ package rendobar
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+)
+
+// StepStatus is where a job step is. The API documents these values in prose,
+// not as a schema enum, so the list is kept here. New values may appear.
+type StepStatus string
+
+// The StepStatus values this SDK knows.
+const (
+	StepPending  StepStatus = "pending"
+	StepRunning  StepStatus = "running"
+	StepComplete StepStatus = "complete"
+	StepSkipped  StepStatus = "skipped"
+	StepError    StepStatus = "error"
+)
+
+// BootPhase is how far a runner is in starting up for a job. The API documents
+// these values in prose, so the list is kept here. New values may appear.
+type BootPhase string
+
+// The BootPhase values this SDK knows.
+const (
+	BootScheduling   BootPhase = "scheduling"
+	BootQueued       BootPhase = "queued"
+	BootPullingImage BootPhase = "pulling-image"
+	BootBooting      BootPhase = "booting"
+	BootRestoring    BootPhase = "restoring"
+)
+
+// PlanSlug names a Rendobar plan. The API documents these values in prose, so
+// the list is kept here. New plans may appear.
+type PlanSlug string
+
+// The plans this SDK knows.
+const (
+	PlanFree   PlanSlug = "free"
+	PlanPro    PlanSlug = "pro"
+	PlanStudio PlanSlug = "studio"
 )
 
 // JobType is one live job type, from Jobs.Types.
@@ -25,8 +63,8 @@ type JobTypeSchema struct {
 	// Discriminator names the field that picks a branch when the params are a
 	// union of shapes, or "".
 	Discriminator string `json:"discriminator"`
-	// JSONSchema is the full JSON Schema of the params, decoded from JSON.
-	JSONSchema any `json:"jsonSchema"`
+	// JSONSchema is the full JSON Schema of the params.
+	JSONSchema json.RawMessage `json:"jsonSchema"`
 }
 
 // SchemaInputs describes the input files of a job type.
@@ -46,17 +84,17 @@ type SchemaField struct {
 	Name  string `json:"name"`
 	Label string `json:"label"`
 	// Type is string, number, boolean, options or json.
-	Type        string         `json:"type"`
-	Description string         `json:"description"`
-	Required    bool           `json:"required"`
-	Nullable    bool           `json:"nullable"`
-	Default     any            `json:"default"`
-	Example     any            `json:"example"`
-	Options     []SchemaOption `json:"options"`   // the allowed values when Type is options
-	Min         *float64       `json:"min"`       // smallest number, or nil
-	Max         *float64       `json:"max"`       // largest number, or nil
-	MinLength   *float64       `json:"minLength"` // shortest string, or nil
-	MaxLength   *float64       `json:"maxLength"` // longest string, or nil
+	Type        FieldType       `json:"type"`
+	Description string          `json:"description"`
+	Required    bool            `json:"required"`
+	Nullable    bool            `json:"nullable"`
+	Default     json.RawMessage `json:"default"`   // the default value as JSON, or nil
+	Example     json.RawMessage `json:"example"`   // an example value as JSON, or nil
+	Options     []SchemaOption  `json:"options"`   // the allowed values when Type is options
+	Min         *float64        `json:"min"`       // smallest number, or nil
+	Max         *float64        `json:"max"`       // largest number, or nil
+	MinLength   *float64        `json:"minLength"` // shortest string, or nil
+	MaxLength   *float64        `json:"maxLength"` // longest string, or nil
 	// Advanced marks a field a form can tuck behind an Advanced section.
 	Advanced bool `json:"advanced"`
 	// ShowWhen is set on a field that belongs to one branch of a union, or nil.
@@ -88,21 +126,21 @@ type AccountCapabilities struct {
 
 // Plan is the workspace's plan.
 type Plan struct {
-	Slug string `json:"slug"` // free, pro or studio
-	Name string `json:"name"` // display name
+	Slug PlanSlug `json:"slug"`
+	Name string   `json:"name"` // display name
 }
 
 // Limits are the workspace's plan limits.
 type Limits struct {
-	ConcurrentJobs        int   `json:"concurrentJobs"`
-	MaxQueuedJobs         int   `json:"maxQueuedJobs"`
-	APIRequestsPerMinute  int   `json:"apiRequestsPerMinute"`
-	MaxJobTimeoutSeconds  int   `json:"maxJobTimeout"`
-	MaxInputFileSize      int64 `json:"maxInputFileSize"` // bytes per input file, uploaded or fetched by URL
-	StorageQuota          int64 `json:"storageQuota"`     // bytes
-	OutputRetentionDays   int   `json:"outputRetentionDays"`
-	MaxUploadSessionFiles int   `json:"maxUploadSessionFiles"`
-	TeamMembers           int   `json:"teamMembers"` // members the workspace may hold, pending invitations included
+	ConcurrentJobs        int           `json:"concurrentJobs"`
+	MaxQueuedJobs         int           `json:"maxQueuedJobs"`
+	APIRequestsPerMinute  int           `json:"apiRequestsPerMinute"`
+	MaxJobTimeout         time.Duration `json:"maxJobTimeout"`    // longest a job may run; encodes as nanoseconds
+	MaxInputFileSize      int64         `json:"maxInputFileSize"` // bytes per input file, uploaded or fetched by URL
+	StorageQuota          int64         `json:"storageQuota"`     // bytes
+	OutputRetentionDays   int           `json:"outputRetentionDays"`
+	MaxUploadSessionFiles int           `json:"maxUploadSessionFiles"`
+	TeamMembers           int           `json:"teamMembers"` // members the workspace may hold, pending invitations included
 
 	ComposeMaxPixels         int64 `json:"composeMaxPixels"` // largest compose frame, width times height
 	ComposeMaxFPS            int   `json:"composeMaxFps"`
@@ -137,7 +175,7 @@ func (l *Limits) UnmarshalJSON(b []byte) error {
 		ConcurrentJobs:           int(w.ConcurrentJobs),
 		MaxQueuedJobs:            int(w.MaxQueuedJobs),
 		APIRequestsPerMinute:     int(w.APIRequestsPerMinute),
-		MaxJobTimeoutSeconds:     int(w.MaxJobTimeout),
+		MaxJobTimeout:            time.Duration(w.MaxJobTimeout * float64(time.Second)),
 		MaxInputFileSize:         int64(w.MaxInputFileSize),
 		StorageQuota:             int64(w.StorageQuota),
 		OutputRetentionDays:      int(w.OutputRetentionDays),

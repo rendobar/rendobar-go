@@ -170,3 +170,60 @@ func jsonNames(t reflect.Type) map[string]bool {
 	}
 	return names
 }
+
+// The output of a real ffprobe run on the sample file, trimmed to its summary.
+const ffprobeJob = `{"data":{"id":"job_p","type":"ffprobe","status":"complete","createdAt":1,
+"output":{"data":{"summary":{"container":"mp4","formatLongName":"QuickTime / MOV","durationSec":5.013,
+"sizeBytes":352121,"bitrateBps":561932,"startTimeSec":0,"streamCounts":{"video":1,"audio":1,"subtitle":0,
+"data":0,"attachment":0},"tags":{"encoder":"Lavf62.3.100"},"kind":"video","video":{"codec":"h264",
+"profile":"High","width":1280,"height":720,"displayAspectRatio":"16:9","pixelFormat":"yuv420p","bitDepth":8,
+"fps":24,"isVariableFrameRate":false,"rotation":0,"isHdr":false,"bitrateBps":459337,"language":null},
+"audio":{"codec":"aac","profile":"LC","channels":2,"channelLayout":"stereo","sampleRate":48000,
+"bitrateBps":95699,"language":null},"brandNewField":true},"format":{"format_name":"mov,mp4"},"streams":[]},
+"files":[]}}}`
+
+func TestFfprobeReadsTheSummary(t *testing.T) {
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, ffprobeJob) })
+	job, err := c.Jobs.Get(context.Background(), "job_p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe, err := job.Complete.Ffprobe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := probe.Summary
+	if s == nil || s.Kind != ProbeKindVideo || s.Duration != 5013*time.Millisecond || s.SizeBytes != 352121 ||
+		s.StreamCounts.Audio != 1 || s.Tags["encoder"] != "Lavf62.3.100" {
+		t.Fatalf("summary %+v", s)
+	}
+	if v := s.Video; v == nil || v.Width != 1280 || v.FPS != 24 || v.Codec != "h264" || v.Language != "" {
+		t.Fatalf("video %+v", v)
+	}
+	if a := s.Audio; a == nil || a.SampleRate != 48000 || a.Channels != 2 {
+		t.Fatalf("audio %+v", a)
+	}
+	if string(probe.Format) != `{"format_name":"mov,mp4"}` || probe.Chapters != nil {
+		t.Fatalf("raw sections %s %s", probe.Format, probe.Chapters)
+	}
+}
+
+func TestFfprobeRefusesAnotherJobType(t *testing.T) {
+	c, _ := testServer(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, completeJob) })
+	job, err := c.Jobs.Get(context.Background(), "job_c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := job.Complete.Ffprobe(); err == nil || !strings.Contains(err.Error(), "not ffprobe") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestStatusIsTerminal(t *testing.T) {
+	for s, want := range map[JobStatus]bool{StatusComplete: true, StatusFailed: true, StatusCancelled: true,
+		StatusRunning: false, StatusWaiting: false, "paused": false} {
+		if s.IsTerminal() != want {
+			t.Fatalf("%s: %v", s, !want)
+		}
+	}
+}

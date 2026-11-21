@@ -1,32 +1,30 @@
 // Package rendobar is the Go client for the Rendobar API: media processing and AI generation.
 //
-// An ffprobe job reads a file and returns data. Its result is in
-// Output.Data, and it writes no file, so Output.File is nil:
+// Each job type has a typed params struct generated from the API's schema.
+// An ffmpeg job writes files, and Output.File is the one it wrote:
 //
 //	rb := rendobar.New() // reads RENDOBAR_API_KEY
 //	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
-//		Type:   "ffprobe",
-//		Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
-//	}, nil)
-//	if err != nil {
-//		return err
-//	}
-//	fmt.Println(job.Complete.Output.Data)
-//
-// An ffmpeg job writes files. Output.File is the one it wrote:
-//
-//	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
-//		Type:   "ffmpeg",
-//		Params: map[string]any{"command": "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4"},
+//		Params: rendobar.FfmpegParams{Command: "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4"},
 //	}, nil)
 //	if err != nil {
 //		return err
 //	}
 //	fmt.Println(job.Complete.Output.File.URL)
 //
-// On top of the API calls, the client sends keyed submits that a retry cannot
-// duplicate, waits for jobs, returns typed errors with the request id, reports
-// deprecated endpoints and reads RENDOBAR_API_KEY.
+// An ffprobe job reads a file and returns data, not a file, so Output.File
+// is nil. JobComplete.Ffprobe reads the data:
+//
+//	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
+//		Params: rendobar.FfprobeParams{Command: "https://cdn.rendobar.com/assets/examples/sample.mp4"},
+//	}, nil)
+//	if err != nil {
+//		return err
+//	}
+//	probe, err := job.Complete.Ffprobe()
+//
+// Errors are *Error values: check them with errors.As and compare Code with
+// the Code constants. The webhooks package verifies and reads deliveries.
 package rendobar
 
 import (
@@ -65,6 +63,11 @@ type Client struct {
 	Account *Account
 	core    *apiclient.Client
 	keyErr  error // why a call that needs a key cannot be sent, or nil
+
+	// The streaming route (Jobs.Download) bypasses the core, which buffers bodies.
+	baseURL string
+	header  http.Header // X-Rendobar-Client and Authorization
+	stream  *retrier    // its client has no Timeout: a header timeout bounds each attempt instead
 }
 
 // needKey fails a call that needs an API key, before it sends anything, when
@@ -74,9 +77,9 @@ func (c *Client) needKey() error { return c.keyErr }
 func checkKey(key string) error {
 	switch {
 	case key == "":
-		return local("MISSING_API_KEY", "no API key: set RENDOBAR_API_KEY or pass rendobar.WithAPIKey")
+		return local(CodeMissingAPIKey, "no API key: set RENDOBAR_API_KEY or pass rendobar.WithAPIKey")
 	case !strings.HasPrefix(key, "rb_"):
-		return local("INVALID_API_KEY", "the API key does not start with rb_: check RENDOBAR_API_KEY or the key passed to rendobar.WithAPIKey")
+		return local(CodeInvalidAPIKey, "the API key does not start with rb_: check RENDOBAR_API_KEY or the key passed to rendobar.WithAPIKey")
 	}
 	return nil
 }
@@ -107,9 +110,10 @@ func WithBaseURL(url string) Option {
 // pass is never changed. Its Timeout bounds each attempt unless WithTimeout is also given.
 func WithHTTPClient(hc *http.Client) Option { return func(c *config) { c.httpClient = hc } }
 
-// WithTimeout bounds each request attempt, including reading the whole response
-// body, so for Jobs.Download it bounds the whole download. The default is 30
-// seconds. It wins over the Timeout of a WithHTTPClient client, in either order,
+// WithTimeout bounds each request attempt, 30 seconds by default. For every
+// call but Jobs.Download it includes reading the whole response body. For
+// Jobs.Download it bounds only the wait for the response headers, and ctx
+// bounds the body. It wins over the Timeout of a WithHTTPClient client, in either order,
 // and never changes that client.
 func WithTimeout(d time.Duration) Option { return func(c *config) { c.timeout = d } }
 
@@ -161,6 +165,12 @@ func New(opts ...Option) *Client {
 	}
 	hc.Transport = &transport{base: base, deprecations: newDeprecations(cfg.onDeprecation)}
 
+	// The streaming client waits at most hc.Timeout for the response headers,
+	// then lets the body run as long as ctx allows.
+	stream := *hc
+	stream.Timeout = 0
+	stream.Transport = &headerTimeout{base: hc.Transport, timeout: hc.Timeout}
+
 	header := http.Header{}
 	header.Set("X-Rendobar-Client", clientHeader(cfg.app))
 	coreOpts := []option.RequestOption{
@@ -174,7 +184,17 @@ func New(opts ...Option) *Client {
 	if cfg.apiKey != "" {
 		coreOpts = append(coreOpts, option.WithToken(cfg.apiKey))
 	}
-	c := &Client{core: apiclient.NewClient(coreOpts...), keyErr: checkKey(cfg.apiKey)}
+	streamHeader := header.Clone()
+	if cfg.apiKey != "" {
+		streamHeader.Set("Authorization", "Bearer "+cfg.apiKey)
+	}
+	c := &Client{
+		core:    apiclient.NewClient(coreOpts...),
+		keyErr:  checkKey(cfg.apiKey),
+		baseURL: cfg.baseURL,
+		header:  streamHeader,
+		stream:  &retrier{client: &stream, maxRetries: cfg.maxRetries},
+	}
 	c.Jobs = &Jobs{client: c}
 	c.Account = &Account{client: c}
 	return c

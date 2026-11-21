@@ -13,35 +13,70 @@ import (
 	"github.com/rendobar/rendobar-go/webhooks"
 )
 
+const sample = "https://cdn.rendobar.com/assets/examples/sample.mp4"
+
 // Run an ffmpeg job and read the URL of the file it wrote.
 func Example() {
 	rb := rendobar.New() // reads RENDOBAR_API_KEY
 	job, err := rb.Jobs.Run(context.Background(), rendobar.CreateParams{
-		Type:   "ffmpeg",
-		Params: map[string]any{"command": "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4"},
+		Params: rendobar.FfmpegParams{Command: "ffmpeg -i " + sample + " -vf scale=1280:-2 out.mp4"},
 	}, nil)
 	if err != nil {
 		var failed *rendobar.JobFailedError
 		if errors.As(err, &failed) {
-			fmt.Println("job failed:", failed)
+			fmt.Println("job failed:", failed.Code)
 		}
 		return
 	}
 	fmt.Println(job.Complete.Output.File.URL)
 }
 
-// Probe a file. ffprobe returns data and writes no file, so read Output.Data.
+// Probe a file. ffprobe returns data and writes no file, so read it with Ffprobe.
 func Example_probe() {
 	rb := rendobar.New()
 	job, err := rb.Jobs.Run(context.Background(), rendobar.CreateParams{
-		Type:   "ffprobe",
-		Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
+		Params: rendobar.FfprobeParams{Command: sample},
 	}, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(job.Complete.Output.Data)
+	probe, err := job.Complete.Ffprobe()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if s := probe.Summary; s != nil && s.Video != nil {
+		fmt.Println(s.Duration, s.Video.Width, s.Video.Height, s.Video.Codec)
+	}
+}
+
+// Submit a job type this SDK predates. CustomParams is the one way to do it.
+func ExampleCustomParams() {
+	rb := rendobar.New()
+	created, err := rb.Jobs.Create(context.Background(), rendobar.CreateParams{
+		Params: rendobar.CustomParams{Type: "compose", Fields: map[string]any{"timeline": map[string]any{}}},
+	})
+	fmt.Println(created, err)
+}
+
+// Stream an output file to disk. Close the body when done.
+func ExampleJobs_Download() {
+	rb := rendobar.New()
+	d, err := rb.Jobs.Download(context.Background(), "job_abc123")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer d.Body.Close()
+	f, err := os.Create("out.mp4")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+	n, err := io.Copy(f, d.Body)
+	fmt.Println(n, err)
 }
 
 // Wait for a job you submitted earlier. Wait returns a failed or cancelled
@@ -77,10 +112,7 @@ func ExampleContextError() {
 	rb := rendobar.New()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	params := rendobar.CreateParams{
-		Type:   "ffprobe",
-		Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
-	}
+	params := rendobar.CreateParams{Params: rendobar.FfprobeParams{Command: sample}}
 	_, err := rb.Jobs.Run(ctx, params, nil)
 	var stopped *rendobar.ContextError
 	var cutOff *rendobar.SubmitError
@@ -97,24 +129,41 @@ func ExampleContextError() {
 	}
 }
 
-// Tell a missing job from other errors, and quote the request id to support.
+// Check an error by its code, and quote the request id to support.
 func ExampleError() {
 	rb := rendobar.New()
 	_, err := rb.Jobs.Get(context.Background(), "job_missing")
 	var apiErr *rendobar.Error
 	if errors.As(err, &apiErr) {
-		fmt.Println(apiErr.Code, apiErr.StatusCode, apiErr.RequestID)
+		switch apiErr.Code {
+		case rendobar.CodeNotFound:
+			fmt.Println("no such job")
+		case rendobar.CodeRateLimited:
+			fmt.Println("retry after", apiErr.RetryAfter)
+		default:
+			fmt.Println(apiErr.Code, apiErr.StatusCode, apiErr.RequestID)
+		}
 	}
 }
 
-// Verify a webhook delivery in a net/http handler.
-func Example_verifyWebhook() {
+// Verify and read a webhook delivery in a net/http handler.
+func Example_webhook() {
 	secret := os.Getenv("RENDOBAR_WEBHOOK_SECRET")
 	http.HandleFunc("/rendobar-webhook", func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body) // the exact bytes the signature covers
-		if !webhooks.Verify(body, r.Header, secret) {
+		event, err := webhooks.Parse(body, r.Header, secret)
+		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
+		}
+		switch event.Type {
+		case webhooks.JobCompleted, webhooks.JobFailed:
+			job, err := event.Job()
+			if err == nil {
+				fmt.Println(job.JobID, job.Status)
+			}
+		default:
+			// An event this handler ignores, or one newer than this SDK.
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})

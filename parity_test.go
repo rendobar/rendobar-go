@@ -1,7 +1,8 @@
 package rendobar
 
 // Shared conformance scenarios C19 to C39 (rendobar/openapi conformance/SCENARIOS.md).
-// They need a mock that serves /__requests. Against an older mock they skip.
+// They need a mock that serves /__requests. Against an older mock they skip,
+// unless RENDOBAR_CONFORMANCE_REQUIRE=1 makes every skip a failure.
 
 import (
 	"context"
@@ -31,7 +32,11 @@ func parity(t *testing.T, query string) {
 	}
 	res.Body.Close()
 	if res.StatusCode == http.StatusNotFound {
-		t.Skip("the conformance mock predates scenarios C19 to C39")
+		const why = "the conformance mock has no /__requests: it predates scenarios C19 to C39"
+		if os.Getenv("RENDOBAR_CONFORMANCE_REQUIRE") == "1" {
+			t.Fatal(why) // CI sets this once rendobar/openapi ships the new mock
+		}
+		t.Skip("SKIPPED, NOT PASSED: " + why + ". Set RENDOBAR_CONFORMANCE_REQUIRE=1 to fail instead.")
 	}
 	reset(t, query)
 }
@@ -101,7 +106,7 @@ func TestC21TrailingSlashBaseURL(t *testing.T) {
 
 func TestC22CutOffSubmitCarriesTheKey(t *testing.T) {
 	parity(t, "?stall_submit=1")
-	p := CreateParams{Type: "ffprobe", Params: map[string]any{"command": "https://example.com/a.mp4"}}
+	p := CreateParams{Params: FfprobeParams{Command: "https://example.com/a.mp4"}}
 	_, err := client(WithTimeout(2*time.Second)).Jobs.Create(context.Background(), p)
 	var se *SubmitError
 	if !errors.As(err, &se) || se.IdempotencyKey == "" {
@@ -117,13 +122,13 @@ func TestC22CutOffSubmitCarriesTheKey(t *testing.T) {
 func TestC23SameKeyDifferentParamsIsAConflict(t *testing.T) {
 	parity(t, "")
 	c := client()
-	p := CreateParams{Type: "ffprobe", Params: map[string]any{"command": "a"}, IdempotencyKey: "key_c23"}
+	p := CreateParams{Params: FfprobeParams{Command: "a"}, IdempotencyKey: "key_c23"}
 	if _, err := c.Jobs.Create(context.Background(), p); err != nil {
 		t.Fatal(err)
 	}
-	p.Params = map[string]any{"command": "b"}
+	p.Params = FfprobeParams{Command: "b"}
 	_, err := c.Jobs.Create(context.Background(), p)
-	if !IsConflict(err) || codeOf(err) != "CONFLICT" || len(requests(t)) != 2 {
+	if codeOf(err) != CodeConflict || len(requests(t)) != 2 {
 		t.Fatalf("got %v after %d requests", err, len(requests(t)))
 	}
 }
@@ -131,7 +136,7 @@ func TestC23SameKeyDifferentParamsIsAConflict(t *testing.T) {
 func TestC24SameKeySameParamsIsAReplay(t *testing.T) {
 	parity(t, "")
 	c := client()
-	p := CreateParams{Type: "ffprobe", Params: map[string]any{"command": "a"}, IdempotencyKey: "key_c24"}
+	p := CreateParams{Params: FfprobeParams{Command: "a"}, IdempotencyKey: "key_c24"}
 	first, err1 := c.Jobs.Create(context.Background(), p)
 	again, err2 := c.Jobs.Create(context.Background(), p)
 	if err1 != nil || err2 != nil || first.Replayed || !again.Replayed || again.ID != first.ID {
@@ -240,7 +245,7 @@ func TestC32BadIDsFailLocally(t *testing.T) {
 
 func TestC33ValidationProblems(t *testing.T) {
 	parity(t, "")
-	_, err := client().Jobs.Create(context.Background(), CreateParams{Type: "no_such_type"})
+	_, err := client().Jobs.Create(context.Background(), CreateParams{Params: CustomParams{Type: "no_such_type"}})
 	var apiErr *Error
 	if !errors.As(err, &apiErr) || apiErr.Code != "VALIDATION_ERROR" || len(apiErr.Problems) == 0 ||
 		apiErr.Problems[0].Path == "" || apiErr.Problems[0].Message == "" {
@@ -263,7 +268,7 @@ func TestC35WaitReturnsACancelledJobAndRunRaises(t *testing.T) {
 	if err != nil || job.Status() != StatusCancelled || job.Cancelled == nil {
 		t.Fatalf("wait: %v, %v", job, err)
 	}
-	_, err = client().Jobs.Run(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "a"}},
+	_, err = client().Jobs.Run(context.Background(), CreateParams{Params: FfprobeParams{Command: "a"}},
 		&WaitOptions{Interval: 100 * time.Millisecond})
 	var failed *JobFailedError
 	if !errors.As(err, &failed) || failed.Code != "JOB_CANCELLED" || failed.Job == nil {
