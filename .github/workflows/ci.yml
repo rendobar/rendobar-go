@@ -14,7 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ["oldstable", "stable"]
+        # "go.mod" tests the oldest Go this module claims to support.
+        go: ["go.mod", "oldstable", "stable"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,11 +26,18 @@ jobs:
           path: .openapi
       - uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go }}
+          go-version: ${{ matrix.go != 'go.mod' && matrix.go || '' }}
+          go-version-file: ${{ matrix.go == 'go.mod' && 'go.mod' || '' }}
       - name: Start the conformance mock
+        # The mock serves fern/openapi.json, the spec this core was generated from,
+        # so a newer spec in rendobar/openapi cannot fail CI before the core is regenerated.
         run: |
-          python3 -I .openapi/conformance/mock_server.py .openapi/openapi.json 4100 requests.jsonl &
-          for i in $(seq 1 20); do curl -sf -X POST http://127.0.0.1:4100/__reset && break; sleep 0.5; done
+          python3 -I .openapi/conformance/mock_server.py fern/openapi.json 4100 requests.jsonl > mock.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -X POST http://127.0.0.1:4100/__reset; then echo "mock is up"; exit 0; fi
+            sleep 0.5
+          done
+          echo "The conformance mock did not come up:"; cat mock.log; exit 1
       - run: go vet ./...
       - name: Tests (conformance scenarios, webhook vectors, examples)
         run: go test -count=1 ./...

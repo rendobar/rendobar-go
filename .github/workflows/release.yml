@@ -19,6 +19,8 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          # A PAT lets the release PR trigger CI; GITHUB_TOKEN is the fallback.
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
   index:
     needs: release-please
     if: needs.release-please.outputs.released == 'true'

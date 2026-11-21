@@ -30,6 +30,25 @@ jobs:
         if: steps.spec.outputs.changed == 'true'
         with:
           go-version: stable
+      - name: Check the spec change for breaking changes
+        id: breaking
+        if: steps.spec.outputs.changed == 'true'
+        run: |
+          # Compare before fern/openapi.json is overwritten. A breaking change still
+          # opens the PR, flagged, so a person decides; it never merges silently.
+          set +e
+          docker run --rm -v "$PWD:/a" -v /tmp:/t tufin/oasdiff:v1.38.0 breaking /a/fern/openapi.json /t/live.json --fail-on ERR | tee /tmp/breaking.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" = "0" ]; then
+            echo "title=fix: regenerate from the published spec" >> "$GITHUB_OUTPUT"
+            echo "note=No breaking change in the spec." >> "$GITHUB_OUTPUT"
+          elif [ "$code" = "1" ]; then
+            echo "title=fix: regenerate from the published spec (BREAKING SPEC CHANGE)" >> "$GITHUB_OUTPUT"
+            echo "note=BREAKING SPEC CHANGE: oasdiff reports breaking changes. Read them before merging." >> "$GITHUB_OUTPUT"
+          else
+            echo "oasdiff failed to run (exit $code)"; exit 1
+          fi
       - name: Regenerate the core
         if: steps.spec.outputs.changed == 'true'
         run: |
@@ -38,13 +57,16 @@ jobs:
           # The generator writes its own module files and docs. This repo is one module.
           git rm -q --ignore-unmatch internal/api/go.mod internal/api/go.sum internal/api/README.md internal/api/CONTRIBUTING.md internal/api/reference.md
           rm -f internal/api/go.mod internal/api/go.sum internal/api/README.md internal/api/CONTRIBUTING.md internal/api/reference.md
-          go mod tidy && go build ./...
+          go mod tidy && go build ./... && go vet ./...
       - name: Open the regeneration PR
         if: steps.spec.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.REGEN_TOKEN }}  # a token that triggers CI on the PR (GITHUB_TOKEN would not)
           branch: regenerate/spec
-          commit-message: "feat: regenerate from the published spec"
-          title: "feat: regenerate from the published spec"
-          body: "The published OpenAPI document changed. CI runs the conformance scenarios before this can merge."
+          commit-message: "fix: regenerate from the published spec"
+          title: ${{ steps.breaking.outputs.title }}
+          body: |
+            The published OpenAPI document changed. CI runs the conformance scenarios before this can merge.
+
+            ${{ steps.breaking.outputs.note }}
