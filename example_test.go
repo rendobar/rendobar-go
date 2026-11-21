@@ -44,6 +44,22 @@ func Example_probe() {
 	fmt.Println(job.Complete.Output.Data)
 }
 
+// Wait for a job you submitted earlier. Wait returns a failed or cancelled
+// job with a nil error, so check its status before reading the output.
+func ExampleJobs_Wait() {
+	rb := rendobar.New()
+	job, err := rb.Jobs.Wait(context.Background(), "job_abc123", nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if job.Status() != rendobar.StatusComplete {
+		fmt.Println("job ended", job.Status())
+		return
+	}
+	fmt.Println(job.Complete.Output.File.URL)
+}
+
 // List recent jobs. The accessors read what every status shares.
 func ExampleJobs_All() {
 	rb := rendobar.New()
@@ -56,7 +72,7 @@ func ExampleJobs_All() {
 	}
 }
 
-// Stop waiting when ctx ends, and keep the job id to pick the job up later.
+// Stop when ctx ends, and keep the job id or the idempotency key to pick the job up later.
 func ExampleContextError() {
 	rb := rendobar.New()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -67,7 +83,13 @@ func ExampleContextError() {
 	}, nil)
 	var stopped *rendobar.ContextError
 	if errors.As(err, &stopped) {
-		fmt.Println("still running:", stopped.JobID, errors.Is(err, context.DeadlineExceeded))
+		if stopped.JobID != "" {
+			fmt.Println("still running:", stopped.JobID, errors.Is(err, context.DeadlineExceeded))
+			return
+		}
+		// The submit itself was cut off. Resubmitting with the same key returns
+		// the job the API may have created, never a second one.
+		fmt.Println("resubmit with idempotency key", stopped.IdempotencyKey)
 	}
 }
 
