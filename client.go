@@ -1,15 +1,32 @@
 // Package rendobar is the Go client for the Rendobar API: media processing and AI generation.
 //
+// An ffprobe job reads a file and returns data. Its result is in
+// Output.Data, and it writes no file, so Output.File is nil:
+//
 //	rb := rendobar.New() // reads RENDOBAR_API_KEY
 //	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
 //		Type:   "ffprobe",
 //		Params: map[string]any{"command": "https://cdn.rendobar.com/assets/examples/sample.mp4"},
 //	}, nil)
+//	if err != nil {
+//		return err
+//	}
+//	fmt.Println(job.Complete.Output.Data)
 //
-// The generated core under internal/api is built from the published OpenAPI
-// document. This package adds what every Rendobar SDK promises on top: keyed
-// submits that a retry cannot duplicate, waiting for a job, typed errors with
-// the request id, deprecation notices, and the environment key.
+// An ffmpeg job writes files. Output.File is the one it wrote:
+//
+//	job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
+//		Type:   "ffmpeg",
+//		Params: map[string]any{"command": "ffmpeg -i https://cdn.rendobar.com/assets/examples/sample.mp4 -vf scale=1280:-2 out.mp4"},
+//	}, nil)
+//	if err != nil {
+//		return err
+//	}
+//	fmt.Println(job.Complete.Output.File.URL)
+//
+// On top of the API calls, the client sends keyed submits that a retry cannot
+// duplicate, waits for jobs, returns typed errors with the request id, reports
+// deprecated endpoints and reads RENDOBAR_API_KEY.
 package rendobar
 
 import (
@@ -65,7 +82,8 @@ type Option func(*config)
 // WithAPIKey sets the API key. Without it, the client reads RENDOBAR_API_KEY.
 func WithAPIKey(key string) Option { return func(c *config) { c.apiKey = key } }
 
-// WithBaseURL points the client at another API host, such as a test server.
+// WithBaseURL points the client at another API host, such as a test server
+// or another Rendobar environment. The default is DefaultBaseURL.
 func WithBaseURL(url string) Option {
 	return func(c *config) { c.baseURL = strings.TrimRight(url, "/") }
 }
