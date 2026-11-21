@@ -39,8 +39,8 @@ jobs:
           done
           echo "The conformance mock did not come up:"; cat mock.log; exit 1
       - run: go vet ./...
-      - name: Generated params match fern/openapi.json
-        run: go generate ./... && git diff --exit-code -- params_gen.go
+      - name: Generated types match fern/openapi.json
+        run: go generate ./... && git diff --exit-code -- spec_gen.go webhooks/events_gen.go
       - name: staticcheck (hand-written packages; internal/api is generated)
         if: matrix.go == 'stable'
         run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 . ./webhooks ./internal/cmd/...

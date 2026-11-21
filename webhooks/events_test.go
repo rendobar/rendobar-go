@@ -10,65 +10,87 @@ import (
 
 const at = 1700000000
 
-func parse(t *testing.T, body string) (*Event, error) {
+func parse(t *testing.T, body string) *Event {
 	t.Helper()
-	return ParseWith([]byte(body), signedHeader("whsec_x", at, body), "whsec_x", Options{Now: time.Unix(at, 0)})
-}
-
-func TestParseReadsAJobCompletedEvent(t *testing.T) {
-	body := `{"version":"1","event":"job.completed","deliveryId":"whd_1","timestamp":1700000000123,"orgId":"org_1",
-"data":{"jobId":"job_1","jobType":"ffmpeg","status":"complete","output":{"data":null,"file":{"url":"https://cdn.example/o.mp4",
-"path":"o.mp4","type":"video","size":10},"files":[],"expiresAt":1700003600000},"cost":{"amount":1000000,"currency":"USD",
-"formatted":"$0.0010","breakdown":"x"},"timing":{"createdAt":1700000000000,"completedAt":1700000005000}}}`
-	e, err := parse(t, body)
+	e, err := ParseWith([]byte(body), signedHeader("whsec_x", at, body), "whsec_x", Options{Now: time.Unix(at, 0)})
 	if err != nil {
 		t.Fatal(err)
 	}
+	return e
+}
+
+func TestPayloadReadsAJobCompletedEvent(t *testing.T) {
+	e := parse(t, `{"version":"1","event":"job.completed","deliveryId":"whd_1","timestamp":1700000000123,"orgId":"org_1",
+"data":{"jobId":"job_1","jobType":"ffmpeg","status":"complete","output":{"data":null,"file":{"url":"https://cdn.example/o.mp4",
+"path":"o.mp4","type":"video","size":10,"sha256":null},"files":[],"expiresAt":1700003600000},"cost":{"amount":1000000,"currency":"USD",
+"formatted":"$0.0010","breakdown":"x"},"timing":{"createdAt":1700000000000,"completedAt":1700000005000}}}`)
 	if e.Version != "1" || e.Type != JobCompleted || e.ID != "whd_1" || e.OrgID != "org_1" || e.SentAt.UnixMilli() != 1700000000123 {
 		t.Fatalf("event %+v", e)
 	}
-	job, err := e.Job()
+	payload, err := e.Payload()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.JobID != "job_1" || job.Status != rendobar.StatusComplete || job.Output == nil || job.Output.File.URL != "https://cdn.example/o.mp4" ||
-		job.Cost.Nanodollars != 1000000 || job.CompletedAt.Sub(job.CreatedAt) != 5*time.Second {
-		t.Fatalf("job %+v", job)
+	data, ok := payload.(*JobCompletedData)
+	if !ok {
+		t.Fatalf("payload %T", payload)
 	}
-	if _, err := e.Balance(); err == nil {
-		t.Fatal("a job event read as a balance event")
+	if data.JobID != "job_1" || data.Output.File.URL != "https://cdn.example/o.mp4" || data.Cost.Amount != 1000000 ||
+		data.Cost.Currency != rendobar.CurrencyUSD || data.Cost.Breakdown != "x" ||
+		data.Timing.CompletedAt.Time().Sub(data.Timing.CreatedAt.Time()) != 5*time.Second {
+		t.Fatalf("data %+v", data)
 	}
 }
 
-func TestParseOtherEvents(t *testing.T) {
-	e, err := parse(t, `{"version":"1","event":"job.delivery_failed","deliveryId":"whd_2","timestamp":1,"orgId":"org_1",
-"data":{"jobId":"job_1","storageId":"st_1","status":"failed","reason":"destination_denied"}}`)
-	if err != nil {
-		t.Fatal(err)
+func TestPayloadReadsEveryKnownEvent(t *testing.T) {
+	for body, want := range map[string]string{
+		`{"event":"job.delivery_failed","data":{"jobId":"job_1","storageId":"st_1","status":"failed","reason":"destination_denied"}}`: "*webhooks.JobDeliveryFailedData",
+		`{"event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"delivered"}]}}`:        "*webhooks.JobDeliveriesSettledData",
+		`{"event":"balance.low","data":{"balance":500000000,"threshold":1000000000,"triggeredByJobId":"job_9"}}`:                      "*webhooks.BalanceLowData",
+		`{"event":"test","data":{"message":"hello","endpointId":"we_1"}}`:                                                             "*webhooks.TestEventData",
+	} {
+		payload, err := parse(t, body).Payload()
+		if err != nil || typeName(payload) != want {
+			t.Fatalf("%s: %T %v", body, payload, err)
+		}
 	}
-	d, err := e.Delivery()
-	if err != nil || d.JobID != "job_1" || d.Delivery == nil || d.Delivery.Reason != rendobar.DeliveryReasonDestinationDenied {
-		t.Fatalf("%+v %v", d, err)
+	settled, _ := parse(t, `{"event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"failed","reason":"already_exists"}]}}`).Payload()
+	if d := settled.(*JobDeliveriesSettledData).Deliveries[0]; d.Reason != rendobar.DeliveryReasonAlreadyExists || d.Status != rendobar.DeliveryStatusFailed {
+		t.Fatalf("delivery %+v", d)
 	}
-	e, err = parse(t, `{"version":"1","event":"balance.low","deliveryId":"whd_3","timestamp":1,"orgId":"org_1",
-"data":{"balance":500000000,"balanceFormatted":"$0.50","threshold":1000000000,"thresholdFormatted":"$1.00",
-"triggeredByJobId":"job_9","triggeredByJobType":"ffmpeg"}}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, err := e.Balance()
-	if err != nil || b.Nanodollars != 500000000 || b.ThresholdNanodollars != 1000000000 || b.TriggeredByJobID != "job_9" {
-		t.Fatalf("%+v %v", b, err)
+	low, _ := parse(t, `{"event":"balance.low","data":{"balance":500000000,"threshold":1000000000}}`).Payload()
+	if b := low.(*BalanceLowData); b.Balance != 500000000 || b.Threshold != 1000000000 {
+		t.Fatalf("balance %+v", b)
 	}
 }
 
-func TestParseKeepsAnUnknownEventAndVersion(t *testing.T) {
-	e, err := parse(t, `{"version":"2","event":"job.teleported","deliveryId":"whd_4","timestamp":1,"orgId":"org_1","data":{"to":"mars"}}`)
-	if err != nil || e.Type != "job.teleported" || e.Version != "2" || string(e.Data) != `{"to":"mars"}` {
-		t.Fatalf("%+v %v", e, err)
+func typeName(v any) string {
+	switch v.(type) {
+	case *JobDeliveryFailedData:
+		return "*webhooks.JobDeliveryFailedData"
+	case *JobDeliveriesSettledData:
+		return "*webhooks.JobDeliveriesSettledData"
+	case *BalanceLowData:
+		return "*webhooks.BalanceLowData"
+	case *TestEventData:
+		return "*webhooks.TestEventData"
 	}
-	if _, err := e.Job(); err == nil {
-		t.Fatal("an unknown event read as a job event")
+	return "other"
+}
+
+func TestPayloadKeepsAnUnknownEventAndVersion(t *testing.T) {
+	e := parse(t, `{"version":"2","event":"job.teleported","deliveryId":"whd_4","timestamp":1,"orgId":"org_1","data":{"to":"mars"}}`)
+	payload, err := e.Payload()
+	unknown, ok := payload.(*UnknownPayload)
+	if err != nil || !ok || unknown.Type != "job.teleported" || string(unknown.Data) != `{"to":"mars"}` || e.Version != "2" {
+		t.Fatalf("%+v %v", payload, err)
+	}
+}
+
+func TestPayloadNamesUnreadableData(t *testing.T) {
+	_, err := parse(t, `{"event":"job.completed","data":{"jobId":42}}`).Payload()
+	if !errors.Is(err, ErrPayload) {
+		t.Fatalf("got %v", err)
 	}
 }
 

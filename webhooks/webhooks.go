@@ -7,10 +7,10 @@
 //		w.WriteHeader(http.StatusUnauthorized)
 //		return
 //	}
-//	switch event.Type {
-//	case webhooks.JobCompleted:
-//		job, err := event.Job()
-//		...
+//	payload, err := event.Payload()
+//	switch data := payload.(type) {
+//	case *webhooks.JobCompletedData:
+//		fmt.Println(data.JobID, data.Output.File.URL)
 //	default:
 //		// an event this code does not handle, or one newer than this SDK
 //	}
@@ -113,27 +113,25 @@ func matches(signed []byte, signature, secret string) bool {
 	return hmac.Equal(expected, mac.Sum(nil)) // constant time
 }
 
-// EventType names a webhook event. The API may add events: an unknown one
-// still parses, with its own Type, so keep a default branch.
+// EventType names a webhook event. The constants, generated from the API's
+// spec, are the events this SDK knows.
 type EventType string
 
-// The events this SDK knows.
-const (
-	JobCreated           EventType = "job.created"
-	JobStarted           EventType = "job.started"
-	JobCompleted         EventType = "job.completed"
-	JobFailed            EventType = "job.failed"
-	JobCancelled         EventType = "job.cancelled"
-	JobDeliverySucceeded EventType = "job.delivery_succeeded"
-	JobDeliveryFailed    EventType = "job.delivery_failed"
-	JobDeliveriesSettled EventType = "job.deliveries_settled"
-	BalanceLow           EventType = "balance.low"
-	BalanceDepleted      EventType = "balance.depleted"
-	Test                 EventType = "test" // sent by the dashboard's test button
-)
+// Payload is the data of one event: a *<Event>Data type such as
+// *JobCompletedData, or *UnknownPayload for an event newer than this SDK.
+// Read it with a type switch that keeps a default branch.
+type Payload interface{ isPayload() }
+
+// UnknownPayload is the data of an event this SDK does not know yet.
+type UnknownPayload struct {
+	Type EventType
+	Data json.RawMessage
+}
+
+func (*UnknownPayload) isPayload() {}
 
 // Event is one delivery: the envelope every event shares. Data is the
-// event's payload. Job, Delivery and Balance read it for their events.
+// event's payload as JSON. Payload reads it as the type for Type.
 type Event struct {
 	// Version is the envelope version, "1" today. A newer version still
 	// parses as far as the fields below go.
@@ -177,16 +175,4 @@ func ParseWith(body []byte, header http.Header, secret string, o Options) (*Even
 		e.SentAt = time.UnixMilli(int64(*w.Timestamp))
 	}
 	return e, nil
-}
-
-func (e *Event) decode(v any, types ...EventType) error {
-	for _, t := range types {
-		if e.Type == t {
-			if err := json.Unmarshal(e.Data, v); err != nil {
-				return fmt.Errorf("%w: %s data: %v", ErrPayload, e.Type, err)
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("webhooks: a %s event has no data of this kind", e.Type)
 }

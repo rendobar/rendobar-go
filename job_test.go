@@ -2,6 +2,8 @@ package rendobar
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -126,18 +128,19 @@ func TestPublicTypesReadEveryGeneratedField(t *testing.T) {
 		{api.JobComplete{}, reflect.TypeOf(wireJob{})},
 		{api.JobFailed{}, reflect.TypeOf(wireJob{})},
 		{api.JobCancelled{}, reflect.TypeOf(wireJob{})},
-		{api.JobCompleteCost{}, reflect.TypeOf(wireCost{})},
-		{api.JobCompleteStepsItem{}, reflect.TypeOf(wireStep{})},
-		{api.JobCompleteDeliveriesItem{}, reflect.TypeOf(wireDelivery{})},
-		{api.JobCompleteCallback{}, reflect.TypeOf(wireJob{}.Callback).Elem()},
+		{api.JobCost{}, reflect.TypeOf(wireCost{})},
+		{api.JobStep{}, reflect.TypeOf(wireStep{})},
+		{api.JobDelivery{}, reflect.TypeOf(wireDelivery{})},
+		{api.CallbackStatus{}, reflect.TypeOf(wireJob{}.Callback).Elem()},
 
 		{api.JobDispatchedBootState{}, reflect.TypeOf(wireBootState{})},
-		{api.JobCompleteOutput{}, reflect.TypeOf(wireOutput{})},
-		{api.JobCompleteOutputFile{}, reflect.TypeOf(wireFile{})},
-		{api.JobCompleteOutputFilesItem{}, reflect.TypeOf(wireFile{})},
-		{api.JobCompleteOutputFileMeta{}, reflect.TypeOf(wireFile{}.Meta).Elem()},
+		{api.JobOutput{}, reflect.TypeOf(wireOutput{})},
+		{api.JobOutputFile{}, reflect.TypeOf(wireFile{})},
+		{api.OutputFile{}, reflect.TypeOf(wireFile{})},
+		{api.OutputFileMeta{}, reflect.TypeOf(wireFile{}.Meta).Elem()},
+		{api.JobOutputFileMeta{}, reflect.TypeOf(wireFile{}.Meta).Elem()},
 
-		{api.JobFailedError{}, reflect.TypeOf(wireJobError{})},
+		{api.JobError{}, reflect.TypeOf(wireJobError{})},
 		{api.JobType{}, reflect.TypeOf(JobType{})},
 		{api.GetJobTypeSchemaResponseData{}, reflect.TypeOf(JobTypeSchema{})},
 		{api.GetJobTypeSchemaResponseDataInputs{}, reflect.TypeOf(SchemaInputs{})},
@@ -193,18 +196,31 @@ func TestFfprobeReadsTheSummary(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := probe.Summary
-	if s == nil || s.Kind != ProbeKindVideo || s.Duration != 5013*time.Millisecond || s.SizeBytes != 352121 ||
-		s.StreamCounts.Audio != 1 || s.Tags["encoder"] != "Lavf62.3.100" {
+	if s == nil || s.Kind != FfprobeSummaryKindVideo || s.Video == nil || s.Audio != nil {
 		t.Fatalf("summary %+v", s)
 	}
-	if v := s.Video; v == nil || v.Width != 1280 || v.FPS != 24 || v.Codec != "h264" || v.Language != "" {
-		t.Fatalf("video %+v", v)
+	v := s.Video
+	if *v.DurationSec != 5.013 || *v.SizeBytes != 352121 || v.StreamCounts.Audio != 1 || v.Tags["encoder"] != "Lavf62.3.100" {
+		t.Fatalf("video summary %+v", v)
 	}
-	if a := s.Audio; a == nil || a.SampleRate != 48000 || a.Channels != 2 {
-		t.Fatalf("audio %+v", a)
+	if *v.Video.Width != 1280 || *v.Video.FPS != 24 || v.Video.Codec != "h264" || v.Video.Language != "" {
+		t.Fatalf("video stream %+v", v.Video)
 	}
-	if string(probe.Format) != `{"format_name":"mov,mp4"}` || probe.Chapters != nil {
-		t.Fatalf("raw sections %s %s", probe.Format, probe.Chapters)
+	if v.Audio == nil || *v.Audio.SampleRate != 48000 || *v.Audio.Channels != 2 {
+		t.Fatalf("audio %+v", v.Audio)
+	}
+	if probe.Format == nil || probe.Format.FormatName != "mov,mp4" || probe.Chapters != nil {
+		t.Fatalf("format %+v, chapters %v", probe.Format, probe.Chapters)
+	}
+}
+
+func TestFfprobeToleratesANewSummaryKind(t *testing.T) {
+	var s FfprobeSummary
+	if err := json.Unmarshal([]byte(`{"kind":"hologram","depth":3}`), &s); err != nil {
+		t.Fatal(err)
+	}
+	if s.Kind != "hologram" || s.Video != nil || s.Audio != nil || s.Image != nil || s.Other != nil {
+		t.Fatalf("%+v", s)
 	}
 }
 
@@ -219,11 +235,38 @@ func TestFfprobeRefusesAnotherJobType(t *testing.T) {
 	}
 }
 
-func TestStatusIsTerminal(t *testing.T) {
-	for s, want := range map[JobStatus]bool{StatusComplete: true, StatusFailed: true, StatusCancelled: true,
-		StatusRunning: false, StatusWaiting: false, "paused": false} {
-		if s.IsTerminal() != want {
-			t.Fatalf("%s: %v", s, !want)
+func TestIsTerminalReadsTheAPIsFlag(t *testing.T) {
+	for body, want := range map[string]bool{
+		`{"id":"job_1","status":"complete","terminal":true}`: true,
+		`{"id":"job_1","status":"running","terminal":false}`: false,
+		`{"id":"job_1","status":"expired","terminal":true}`:  true, // a status newer than this SDK
+		`{"id":"job_1","status":"paused","terminal":false}`:  false,
+		`{"id":"job_1","status":"failed"}`:                   true, // an API without the flag
+		`{"id":"job_1","status":"paused"}`:                   false,
+	} {
+		var job Job
+		if err := json.Unmarshal([]byte(body), &job); err != nil || job.IsTerminal() != want {
+			t.Fatalf("%s: %v %v", body, job.IsTerminal(), err)
 		}
+	}
+}
+
+func TestWaitStopsOnAnUnknownTerminalStatus(t *testing.T) {
+	c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			w.WriteHeader(201)
+			fmt.Fprint(w, `{"data":{"id":"job_t","status":"waiting"}}`)
+			return
+		}
+		fmt.Fprint(w, `{"data":{"id":"job_t","status":"expired","terminal":true}}`)
+	})
+	job, err := c.Jobs.Wait(context.Background(), "job_t", &WaitOptions{Interval: 10 * time.Millisecond})
+	if err != nil || job.Status() != "expired" || hits.Load() != 1 {
+		t.Fatalf("%v %v after %d polls", job, err, hits.Load())
+	}
+	_, err = c.Jobs.Run(context.Background(), CreateParams{Params: FfprobeParams{Command: "x"}}, &WaitOptions{Interval: 10 * time.Millisecond})
+	var failed *JobFailedError
+	if !errors.As(err, &failed) || failed.Job.Status() != "expired" {
+		t.Fatalf("run: %v", err)
 	}
 }

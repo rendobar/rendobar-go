@@ -46,8 +46,11 @@ func Example_probe() {
 		fmt.Println(err)
 		return
 	}
-	if s := probe.Summary; s != nil && s.Video != nil {
-		fmt.Println(s.Duration, s.Video.Width, s.Video.Height, s.Video.Codec)
+	// The summary holds one variant per kind of media. A kind newer than this
+	// SDK sets Kind and leaves every variant nil.
+	if s := probe.Summary; s != nil && s.Video != nil && s.Video.Video != nil {
+		v := s.Video.Video
+		fmt.Println(v.Codec, *v.Width, *v.Height)
 	}
 }
 
@@ -156,12 +159,16 @@ func Example_webhook() {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		switch event.Type {
-		case webhooks.JobCompleted, webhooks.JobFailed:
-			job, err := event.Job()
-			if err == nil {
-				fmt.Println(job.JobID, job.Status)
-			}
+		payload, err := event.Payload()
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		switch data := payload.(type) {
+		case *webhooks.JobCompletedData:
+			fmt.Println(data.JobID, data.Output.File.URL)
+		case *webhooks.JobFailedData:
+			fmt.Println(data.JobID, data.Error.Code)
 		default:
 			// An event this handler ignores, or one newer than this SDK.
 		}

@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+// UnixMillis is a timestamp as the API sends it: milliseconds since the Unix
+// epoch. 0 means the API did not send one.
+type UnixMillis int64
+
+// Time returns the timestamp, or the zero time.Time for 0.
+func (u UnixMillis) Time() time.Time {
+	if u == 0 {
+		return time.Time{}
+	}
+	return time.UnixMilli(int64(u))
+}
+
 // StepStatus is where a job step is. The API documents these values in prose,
 // not as a schema enum, so the list is kept here. New values may appear.
 type StepStatus string
@@ -93,8 +105,8 @@ type SchemaField struct {
 	Options     []SchemaOption  `json:"options"`   // the allowed values when Type is options
 	Min         *float64        `json:"min"`       // smallest number, or nil
 	Max         *float64        `json:"max"`       // largest number, or nil
-	MinLength   *float64        `json:"minLength"` // shortest string, or nil
-	MaxLength   *float64        `json:"maxLength"` // longest string, or nil
+	MinLength   *int64          `json:"minLength"` // shortest string, or nil
+	MaxLength   *int64          `json:"maxLength"` // longest string, or nil
 	// Advanced marks a field a form can tuck behind an Advanced section.
 	Advanced bool `json:"advanced"`
 	// ShowWhen is set on a field that belongs to one branch of a union, or nil.
@@ -149,23 +161,22 @@ type Limits struct {
 }
 
 type wireLimits struct {
-	ConcurrentJobs           float64 `json:"concurrentJobs"`
-	MaxQueuedJobs            float64 `json:"maxQueuedJobs"`
-	APIRequestsPerMinute     float64 `json:"apiRequestsPerMinute"`
-	MaxJobTimeout            float64 `json:"maxJobTimeout"`
-	MaxInputFileSize         float64 `json:"maxInputFileSize"`
-	StorageQuota             float64 `json:"storageQuota"`
-	OutputRetentionDays      float64 `json:"outputRetentionDays"`
-	MaxUploadSessionFiles    float64 `json:"maxUploadSessionFiles"`
-	TeamMembers              float64 `json:"teamMembers"`
-	ComposeMaxPixels         float64 `json:"composeMaxPixels"`
-	ComposeMaxFps            float64 `json:"composeMaxFps"`
-	ComposeAnimatedMaxPixels float64 `json:"composeAnimatedMaxPixels"`
-	ComposeAnimatedMaxFps    float64 `json:"composeAnimatedMaxFps"`
+	ConcurrentJobs           int64 `json:"concurrentJobs"`
+	MaxQueuedJobs            int64 `json:"maxQueuedJobs"`
+	APIRequestsPerMinute     int64 `json:"apiRequestsPerMinute"`
+	MaxJobTimeout            int64 `json:"maxJobTimeout"`
+	MaxInputFileSize         int64 `json:"maxInputFileSize"`
+	StorageQuota             int64 `json:"storageQuota"`
+	OutputRetentionDays      int64 `json:"outputRetentionDays"`
+	MaxUploadSessionFiles    int64 `json:"maxUploadSessionFiles"`
+	TeamMembers              int64 `json:"teamMembers"`
+	ComposeMaxPixels         int64 `json:"composeMaxPixels"`
+	ComposeMaxFps            int64 `json:"composeMaxFps"`
+	ComposeAnimatedMaxPixels int64 `json:"composeAnimatedMaxPixels"`
+	ComposeAnimatedMaxFps    int64 `json:"composeAnimatedMaxFps"`
 }
 
-// UnmarshalJSON reads the limits, which the API sends as JSON numbers that
-// may carry a fraction.
+// UnmarshalJSON reads the limits, turning the timeout from seconds into a Duration.
 func (l *Limits) UnmarshalJSON(b []byte) error {
 	var w wireLimits
 	if err := json.Unmarshal(b, &w); err != nil {
@@ -175,7 +186,7 @@ func (l *Limits) UnmarshalJSON(b []byte) error {
 		ConcurrentJobs:           int(w.ConcurrentJobs),
 		MaxQueuedJobs:            int(w.MaxQueuedJobs),
 		APIRequestsPerMinute:     int(w.APIRequestsPerMinute),
-		MaxJobTimeout:            time.Duration(w.MaxJobTimeout * float64(time.Second)),
+		MaxJobTimeout:            time.Duration(w.MaxJobTimeout) * time.Second,
 		MaxInputFileSize:         int64(w.MaxInputFileSize),
 		StorageQuota:             int64(w.StorageQuota),
 		OutputRetentionDays:      int(w.OutputRetentionDays),

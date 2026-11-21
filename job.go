@@ -9,16 +9,6 @@ import (
 	"github.com/rendobar/rendobar-go/internal/api"
 )
 
-// IsTerminal reports whether a job in this status has finished: complete,
-// failed or cancelled. An unknown status is not terminal.
-func (s JobStatus) IsTerminal() bool {
-	switch s {
-	case StatusComplete, StatusFailed, StatusCancelled:
-		return true
-	}
-	return false
-}
-
 // Job is a job in any status. Exactly one of Waiting, Dispatched, Running,
 // Complete, Failed or Cancelled is set, matching Status. A status newer than
 // this SDK leaves all six nil, and the methods still answer.
@@ -40,9 +30,15 @@ type Job struct {
 	Failed     *JobFailed
 	Cancelled  *JobCancelled
 
-	status JobStatus
-	info   JobInfo
+	status   JobStatus
+	terminal bool
+	info     JobInfo
 }
+
+// IsTerminal reports whether the job has finished and will not change
+// status again. For a status newer than this SDK it reads the terminal flag
+// the API sends on every job, so Wait stops on a final status it does not know.
+func (j *Job) IsTerminal() bool { return j.terminal }
 
 // ID is the job id, such as job_abc123.
 func (j *Job) ID() string { return j.info.ID }
@@ -255,7 +251,7 @@ func (c *Cost) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &w); err != nil {
 		return err
 	}
-	*c = Cost{Nanodollars: int64(w.Amount), Currency: Currency(w.Currency), Formatted: w.Formatted}
+	*c = Cost{Nanodollars: w.Amount, Currency: Currency(w.Currency), Formatted: w.Formatted}
 	return nil
 }
 
@@ -329,6 +325,7 @@ type wireJob struct {
 	OrgID              string          `json:"orgId"`
 	Type               string          `json:"type"`
 	Status             string          `json:"status"`
+	Terminal           *bool           `json:"terminal"`
 	Label              *string         `json:"label"`
 	Source             string          `json:"source"`
 	Client             *string         `json:"client"`
@@ -339,7 +336,7 @@ type wireJob struct {
 	OutputCategory     string          `json:"outputCategory"`
 	Model              *string         `json:"model"`
 	Region             *string         `json:"region"`
-	TimeoutMs          *float64        `json:"timeoutMs"`
+	TimeoutMs          *int64          `json:"timeoutMs"`
 	Cost               *Cost           `json:"cost"`
 	RetryCount         int             `json:"retryCount"`
 	Steps              []JobStep       `json:"steps"`
@@ -350,12 +347,12 @@ type wireJob struct {
 	} `json:"callback"`
 	Deliveries         []Delivery `json:"deliveries"`
 	WebURL             string     `json:"webUrl"`
-	CreatedAt          *float64   `json:"createdAt"`
-	DispatchedAt       *float64   `json:"dispatchedAt"`
-	StartedAt          *float64   `json:"startedAt"`
-	CompletedAt        *float64   `json:"completedAt"`
-	SettledAt          *float64   `json:"settledAt"`
-	RetentionExpiresAt *float64   `json:"retentionExpiresAt"`
+	CreatedAt          *int64     `json:"createdAt"`
+	DispatchedAt       *int64     `json:"dispatchedAt"`
+	StartedAt          *int64     `json:"startedAt"`
+	CompletedAt        *int64     `json:"completedAt"`
+	SettledAt          *int64     `json:"settledAt"`
+	RetentionExpiresAt *int64     `json:"retentionExpiresAt"`
 
 	Progress  *float64       `json:"progress"`
 	Eta       *float64       `json:"eta"`
@@ -365,9 +362,9 @@ type wireJob struct {
 }
 
 type wireCost struct {
-	Amount    float64 `json:"amount"`
-	Currency  string  `json:"currency"`
-	Formatted string  `json:"formatted"`
+	Amount    int64  `json:"amount"`
+	Currency  string `json:"currency"`
+	Formatted string `json:"formatted"`
 }
 
 type wireStep struct {
@@ -376,9 +373,9 @@ type wireStep struct {
 	Status      string          `json:"status"`
 	Error       *string         `json:"error"`
 	Meta        json.RawMessage `json:"meta"`
-	StartedAt   *float64        `json:"startedAt"`
-	CompletedAt *float64        `json:"completedAt"`
-	DurationMs  *float64        `json:"durationMs"`
+	StartedAt   *int64          `json:"startedAt"`
+	CompletedAt *int64          `json:"completedAt"`
+	DurationMs  *int64          `json:"durationMs"`
 }
 
 type wireDelivery struct {
@@ -391,32 +388,32 @@ type wireDelivery struct {
 }
 
 type wireBootState struct {
-	Phase     string   `json:"phase"`
-	Detail    string   `json:"detail"`
-	ElapsedMs float64  `json:"elapsedMs"`
-	TypicalMs *float64 `json:"typicalMs"`
-	EtaMs     *float64 `json:"etaMs"`
+	Phase     string `json:"phase"`
+	Detail    string `json:"detail"`
+	ElapsedMs int64  `json:"elapsedMs"`
+	TypicalMs *int64 `json:"typicalMs"`
+	EtaMs     *int64 `json:"etaMs"`
 }
 
 type wireOutput struct {
 	Data      json.RawMessage `json:"data"`
 	File      *wireFile       `json:"file"`
 	Files     []wireFile      `json:"files"`
-	ExpiresAt *float64        `json:"expiresAt"`
+	ExpiresAt *int64          `json:"expiresAt"`
 }
 
 type wireFile struct {
 	URL    string  `json:"url"`
 	Path   string  `json:"path"`
 	Type   string  `json:"type"`
-	Size   float64 `json:"size"`
+	Size   int64   `json:"size"`
 	Sha256 *string `json:"sha256"`
 	Meta   *struct {
-		Format     *string  `json:"format"`
-		Width      *float64 `json:"width"`
-		Height     *float64 `json:"height"`
-		DurationMs *float64 `json:"durationMs"`
-		Seed       *float64 `json:"seed"`
+		Format     *string `json:"format"`
+		Width      *int64  `json:"width"`
+		Height     *int64  `json:"height"`
+		DurationMs *int64  `json:"durationMs"`
+		Seed       *int64  `json:"seed"`
 	} `json:"meta"`
 }
 
@@ -480,6 +477,15 @@ func (w *wireJob) job() *Job {
 
 	job := &Job{status: JobStatus(w.Status), info: info}
 	switch job.status {
+	case StatusComplete, StatusFailed, StatusCancelled:
+		job.terminal = true
+	case StatusWaiting, StatusDispatched, StatusRunning:
+		job.terminal = false
+	default:
+		// A status newer than this SDK: only the API knows whether it is final.
+		job.terminal = w.Terminal != nil && *w.Terminal
+	}
+	switch job.status {
 	case StatusWaiting:
 		job.Waiting = &JobWaiting{JobInfo: info}
 	case StatusDispatched:
@@ -511,13 +517,13 @@ func (w *wireJob) job() *Job {
 }
 
 func (f wireFile) file() OutputFile {
-	out := OutputFile{URL: f.URL, Path: f.Path, Type: FileType(f.Type), Size: int64(f.Size), SHA256: str(f.Sha256)}
+	out := OutputFile{URL: f.URL, Path: f.Path, Type: FileType(f.Type), Size: f.Size, SHA256: str(f.Sha256)}
 	if m := f.Meta; m != nil {
 		out.Format = str(m.Format)
-		out.Width = int(num(m.Width))
-		out.Height = int(num(m.Height))
+		out.Width = int(integer(m.Width))
+		out.Height = int(integer(m.Height))
 		out.Duration = ms(m.DurationMs)
-		out.Seed = int64(num(m.Seed))
+		out.Seed = integer(m.Seed)
 	}
 	return out
 }
@@ -544,14 +550,21 @@ func num(p *float64) float64 {
 	return *p
 }
 
-func ms(p *float64) time.Duration { return time.Duration(num(p) * float64(time.Millisecond)) }
+func integer(p *int64) int64 {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
+
+func ms(p *int64) time.Duration { return time.Duration(integer(p)) * time.Millisecond }
 
 func secs(p *float64) time.Duration { return time.Duration(num(p) * float64(time.Second)) }
 
 // unixMs reads a Unix-milliseconds timestamp. nil is the zero time.
-func unixMs(p *float64) time.Time {
+func unixMs(p *int64) time.Time {
 	if p == nil {
 		return time.Time{}
 	}
-	return time.UnixMilli(int64(*p))
+	return time.UnixMilli(*p)
 }

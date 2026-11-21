@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-//go:generate go run ./internal/cmd/genparams -spec fern/openapi.json -out params_gen.go
+//go:generate go run ./internal/cmd/genparams -spec fern/openapi.json -out spec_gen.go -webhooks webhooks/events_gen.go
 
 // JobParams are the params of one job type. Each job type the SDK knows has
 // its own struct, such as FfmpegParams or ImageUpscaleParams, generated from

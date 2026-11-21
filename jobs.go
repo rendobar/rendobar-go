@@ -378,7 +378,7 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 		if o.OnProgress != nil {
 			o.OnProgress(job)
 		}
-		if job.Status().IsTerminal() {
+		if job.IsTerminal() {
 			return job, nil
 		}
 		if limit := job.info.Timeout; !adopted && limit > 0 {
