@@ -4,7 +4,6 @@ package jobs
 
 import (
 	context "context"
-	io "io"
 
 	api "github.com/rendobar/rendobar-go/internal/api"
 	core "github.com/rendobar/rendobar-go/internal/api/core"
@@ -191,33 +190,6 @@ func (c *Client) CancelJob(
 	opts ...option.RequestOption,
 ) (*api.CancelJobResponse, error) {
 	response, err := c.WithRawResponse.CancelJob(
-		ctx,
-		request,
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.Body, nil
-}
-
-// Stream the output file of a completed job. Only available for jobs with status 'complete' and an output file.
-//
-// Example:
-//
-//	request := &api.DownloadJobOutputRequest{
-//	    ID: "id",
-//	}
-//	_, err := client.Jobs.DownloadJobOutput(
-//	    context.TODO(),
-//	    request,
-//	)
-func (c *Client) DownloadJobOutput(
-	ctx context.Context,
-	request *api.DownloadJobOutputRequest,
-	opts ...option.RequestOption,
-) (io.Reader, error) {
-	response, err := c.WithRawResponse.DownloadJobOutput(
 		ctx,
 		request,
 		opts...,

@@ -3,9 +3,7 @@
 package jobs
 
 import (
-	bytes "bytes"
 	context "context"
-	io "io"
 	http "net/http"
 
 	api "github.com/rendobar/rendobar-go/internal/api"
@@ -296,51 +294,6 @@ func (r *RawClient) CancelJob(
 		return nil, err
 	}
 	return &core.Response[*api.CancelJobResponse]{
-		StatusCode: raw.StatusCode,
-		Header:     raw.Header,
-		Body:       response,
-	}, nil
-}
-
-func (r *RawClient) DownloadJobOutput(
-	ctx context.Context,
-	request *api.DownloadJobOutputRequest,
-	opts ...option.RequestOption,
-) (*core.Response[io.Reader], error) {
-	options := core.NewRequestOptions(opts...)
-	baseURL := internal.ResolveBaseURL(
-		options.BaseURL,
-		r.baseURL,
-		"https://api.rendobar.com",
-	)
-	endpointURL := internal.EncodeURL(
-		baseURL+"/jobs/%v/download",
-		request.ID,
-	)
-	headers := internal.MergeHeaders(
-		r.options.ToHeader(),
-		options.ToHeader(),
-	)
-	response := bytes.NewBuffer(nil)
-	raw, err := r.caller.Call(
-		ctx,
-		&internal.CallParams{
-			URL:             endpointURL,
-			Method:          http.MethodGet,
-			Headers:         headers,
-			MaxAttempts:     options.MaxAttempts,
-			DisableRetries:  options.DisableRetries,
-			BodyProperties:  options.BodyProperties,
-			QueryParameters: options.QueryParameters,
-			Client:          options.HTTPClient,
-			Response:        response,
-			ErrorDecoder:    internal.NewErrorDecoder(api.ErrorCodes),
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &core.Response[io.Reader]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,

@@ -38,34 +38,6 @@ func (c *CancelJobRequest) SetID(id string) {
 }
 
 var (
-	downloadJobOutputRequestFieldID = big.NewInt(1 << 0)
-)
-
-type DownloadJobOutputRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (d *DownloadJobOutputRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DownloadJobOutputRequest) SetID(id string) {
-	d.ID = id
-	d.require(downloadJobOutputRequestFieldID)
-}
-
-var (
 	getJobRequestFieldID = big.NewInt(1 << 0)
 )
 
