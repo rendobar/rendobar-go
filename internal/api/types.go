@@ -10,6 +10,556 @@ import (
 )
 
 var (
+	aPIKeyFieldID         = big.NewInt(1 << 0)
+	aPIKeyFieldName       = big.NewInt(1 << 1)
+	aPIKeyFieldPrefix     = big.NewInt(1 << 2)
+	aPIKeyFieldEnabled    = big.NewInt(1 << 3)
+	aPIKeyFieldCreatedAt  = big.NewInt(1 << 4)
+	aPIKeyFieldLastUsedAt = big.NewInt(1 << 5)
+	aPIKeyFieldExpiresAt  = big.NewInt(1 << 6)
+	aPIKeyFieldScopes     = big.NewInt(1 << 7)
+	aPIKeyFieldCreatedBy  = big.NewInt(1 << 8)
+	aPIKeyFieldManageable = big.NewInt(1 << 9)
+	aPIKeyFieldDisabledBy = big.NewInt(1 << 10)
+	aPIKeyFieldDisabledAt = big.NewInt(1 << 11)
+)
+
+// aPIKeyNullableFields maps the wire names of APIKey's nullable fields (required or optional) to their field bits.
+var aPIKeyNullableFields = map[string]*big.Int{
+	"lastUsedAt": aPIKeyFieldLastUsedAt,
+	"expiresAt":  aPIKeyFieldExpiresAt,
+	"createdBy":  aPIKeyFieldCreatedBy,
+	"disabledBy": aPIKeyFieldDisabledBy,
+	"disabledAt": aPIKeyFieldDisabledAt,
+}
+
+type APIKey struct {
+	ID   string `json:"id" url:"id"`
+	Name string `json:"name" url:"name"`
+	// Key prefix (rb_xxx)
+	Prefix string `json:"prefix" url:"prefix"`
+	// False when the key is disabled (soft-revoked)
+	Enabled bool `json:"enabled" url:"enabled"`
+	// Unix ms
+	CreatedAt  int  `json:"createdAt" url:"createdAt"`
+	LastUsedAt *int `json:"lastUsedAt,omitempty" url:"lastUsedAt,omitempty"`
+	ExpiresAt  *int `json:"expiresAt,omitempty" url:"expiresAt,omitempty"`
+	// What the key may do, `write` including `read`. Set when the key is created and never changed by its creator's role. Never keys:write.
+	Scopes []string `json:"scopes" url:"scopes"`
+	// Who created the key. Null when that account no longer exists.
+	CreatedBy *APIKeyCreatedBy `json:"createdBy,omitempty" url:"createdBy,omitempty"`
+	// Whether the caller may rename, disable or revoke this key.
+	Manageable bool `json:"manageable" url:"manageable"`
+	// Who disabled the key. Null when it is enabled, or was disabled before this was recorded.
+	DisabledBy *APIKeyDisabledBy `json:"disabledBy,omitempty" url:"disabledBy,omitempty"`
+	// Unix ms the key was disabled, when recorded.
+	DisabledAt *int `json:"disabledAt,omitempty" url:"disabledAt,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *APIKey) GetID() string {
+	if a == nil {
+		return ""
+	}
+	return a.ID
+}
+
+func (a *APIKey) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *APIKey) GetPrefix() string {
+	if a == nil {
+		return ""
+	}
+	return a.Prefix
+}
+
+func (a *APIKey) GetEnabled() bool {
+	if a == nil {
+		return false
+	}
+	return a.Enabled
+}
+
+func (a *APIKey) GetCreatedAt() int {
+	if a == nil {
+		return 0
+	}
+	return a.CreatedAt
+}
+
+func (a *APIKey) GetLastUsedAt() *int {
+	if a == nil {
+		return nil
+	}
+	return a.LastUsedAt
+}
+
+func (a *APIKey) GetExpiresAt() *int {
+	if a == nil {
+		return nil
+	}
+	return a.ExpiresAt
+}
+
+func (a *APIKey) GetScopes() []string {
+	if a == nil {
+		return nil
+	}
+	return a.Scopes
+}
+
+func (a *APIKey) GetCreatedBy() *APIKeyCreatedBy {
+	if a == nil {
+		return nil
+	}
+	return a.CreatedBy
+}
+
+func (a *APIKey) GetManageable() bool {
+	if a == nil {
+		return false
+	}
+	return a.Manageable
+}
+
+func (a *APIKey) GetDisabledBy() *APIKeyDisabledBy {
+	if a == nil {
+		return nil
+	}
+	return a.DisabledBy
+}
+
+func (a *APIKey) GetDisabledAt() *int {
+	if a == nil {
+		return nil
+	}
+	return a.DisabledAt
+}
+
+func (a *APIKey) GetExtraProperties() map[string]interface{} {
+	if a == nil {
+		return nil
+	}
+	return a.extraProperties
+}
+
+func (a *APIKey) require(field *big.Int) {
+	next := new(big.Int)
+	if a.explicitFields != nil {
+		next.Set(a.explicitFields)
+	}
+	next.Or(next, field)
+	a.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetID(id string) {
+	a.ID = id
+	a.require(aPIKeyFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetName(name string) {
+	a.Name = name
+	a.require(aPIKeyFieldName)
+}
+
+// SetPrefix sets the Prefix field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetPrefix(prefix string) {
+	a.Prefix = prefix
+	a.require(aPIKeyFieldPrefix)
+}
+
+// SetEnabled sets the Enabled field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetEnabled(enabled bool) {
+	a.Enabled = enabled
+	a.require(aPIKeyFieldEnabled)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetCreatedAt(createdAt int) {
+	a.CreatedAt = createdAt
+	a.require(aPIKeyFieldCreatedAt)
+}
+
+// SetLastUsedAt sets the LastUsedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetLastUsedAt(lastUsedAt *int) {
+	a.LastUsedAt = lastUsedAt
+	a.require(aPIKeyFieldLastUsedAt)
+}
+
+// SetExpiresAt sets the ExpiresAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetExpiresAt(expiresAt *int) {
+	a.ExpiresAt = expiresAt
+	a.require(aPIKeyFieldExpiresAt)
+}
+
+// SetScopes sets the Scopes field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetScopes(scopes []string) {
+	a.Scopes = scopes
+	a.require(aPIKeyFieldScopes)
+}
+
+// SetCreatedBy sets the CreatedBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetCreatedBy(createdBy *APIKeyCreatedBy) {
+	a.CreatedBy = createdBy
+	a.require(aPIKeyFieldCreatedBy)
+}
+
+// SetManageable sets the Manageable field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetManageable(manageable bool) {
+	a.Manageable = manageable
+	a.require(aPIKeyFieldManageable)
+}
+
+// SetDisabledBy sets the DisabledBy field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetDisabledBy(disabledBy *APIKeyDisabledBy) {
+	a.DisabledBy = disabledBy
+	a.require(aPIKeyFieldDisabledBy)
+}
+
+// SetDisabledAt sets the DisabledAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKey) SetDisabledAt(disabledAt *int) {
+	a.DisabledAt = disabledAt
+	a.require(aPIKeyFieldDisabledAt)
+}
+
+func (a *APIKey) UnmarshalJSON(data []byte) error {
+	type unmarshaler APIKey
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = APIKey(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, aPIKeyNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		a.require(presentFields)
+	}
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *APIKey) MarshalJSON() ([]byte, error) {
+	type embed APIKey
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *APIKey) String() string {
+	if a == nil {
+		return "<nil>"
+	}
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
+	aPIKeyCreatedByFieldName        = big.NewInt(1 << 0)
+	aPIKeyCreatedByFieldInWorkspace = big.NewInt(1 << 1)
+	aPIKeyCreatedByFieldEmail       = big.NewInt(1 << 2)
+	aPIKeyCreatedByFieldRole        = big.NewInt(1 << 3)
+)
+
+// aPIKeyCreatedByNullableFields maps the wire names of APIKeyCreatedBy's nullable fields (required or optional) to their field bits.
+var aPIKeyCreatedByNullableFields = map[string]*big.Int{
+	"email": aPIKeyCreatedByFieldEmail,
+	"role":  aPIKeyCreatedByFieldRole,
+}
+
+// Who created the key. Null when that account no longer exists.
+type APIKeyCreatedBy struct {
+	Name string `json:"name" url:"name"`
+	// False once the creator has left the workspace. The key stays.
+	InWorkspace bool `json:"inWorkspace" url:"inWorkspace"`
+	// The creator's email, as the Team page shows it. Null once they have left, or when the caller cannot read the team.
+	Email *string `json:"email,omitempty" url:"email,omitempty"`
+	// The creator's role in this workspace now. Null once they have left, or when the caller cannot read the team.
+	Role *APIKeyCreatedByRole `json:"role,omitempty" url:"role,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *APIKeyCreatedBy) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *APIKeyCreatedBy) GetInWorkspace() bool {
+	if a == nil {
+		return false
+	}
+	return a.InWorkspace
+}
+
+func (a *APIKeyCreatedBy) GetEmail() *string {
+	if a == nil {
+		return nil
+	}
+	return a.Email
+}
+
+func (a *APIKeyCreatedBy) GetRole() *APIKeyCreatedByRole {
+	if a == nil {
+		return nil
+	}
+	return a.Role
+}
+
+func (a *APIKeyCreatedBy) GetExtraProperties() map[string]interface{} {
+	if a == nil {
+		return nil
+	}
+	return a.extraProperties
+}
+
+func (a *APIKeyCreatedBy) require(field *big.Int) {
+	next := new(big.Int)
+	if a.explicitFields != nil {
+		next.Set(a.explicitFields)
+	}
+	next.Or(next, field)
+	a.explicitFields = next
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKeyCreatedBy) SetName(name string) {
+	a.Name = name
+	a.require(aPIKeyCreatedByFieldName)
+}
+
+// SetInWorkspace sets the InWorkspace field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKeyCreatedBy) SetInWorkspace(inWorkspace bool) {
+	a.InWorkspace = inWorkspace
+	a.require(aPIKeyCreatedByFieldInWorkspace)
+}
+
+// SetEmail sets the Email field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKeyCreatedBy) SetEmail(email *string) {
+	a.Email = email
+	a.require(aPIKeyCreatedByFieldEmail)
+}
+
+// SetRole sets the Role field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKeyCreatedBy) SetRole(role *APIKeyCreatedByRole) {
+	a.Role = role
+	a.require(aPIKeyCreatedByFieldRole)
+}
+
+func (a *APIKeyCreatedBy) UnmarshalJSON(data []byte) error {
+	type unmarshaler APIKeyCreatedBy
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = APIKeyCreatedBy(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, aPIKeyCreatedByNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		a.require(presentFields)
+	}
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *APIKeyCreatedBy) MarshalJSON() ([]byte, error) {
+	type embed APIKeyCreatedBy
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *APIKeyCreatedBy) String() string {
+	if a == nil {
+		return "<nil>"
+	}
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+// The creator's role in this workspace now. Null once they have left, or when the caller cannot read the team.
+type APIKeyCreatedByRole string
+
+const (
+	APIKeyCreatedByRoleOwner  APIKeyCreatedByRole = "owner"
+	APIKeyCreatedByRoleAdmin  APIKeyCreatedByRole = "admin"
+	APIKeyCreatedByRoleMember APIKeyCreatedByRole = "member"
+)
+
+func NewAPIKeyCreatedByRoleFromString(s string) (APIKeyCreatedByRole, error) {
+	switch s {
+	case "owner":
+		return APIKeyCreatedByRoleOwner, nil
+	case "admin":
+		return APIKeyCreatedByRoleAdmin, nil
+	case "member":
+		return APIKeyCreatedByRoleMember, nil
+	}
+	var t APIKeyCreatedByRole
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a APIKeyCreatedByRole) Ptr() *APIKeyCreatedByRole {
+	return &a
+}
+
+var (
+	aPIKeyDisabledByFieldName = big.NewInt(1 << 0)
+)
+
+// Who disabled the key. Null when it is enabled, or was disabled before this was recorded.
+type APIKeyDisabledBy struct {
+	Name string `json:"name" url:"name"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (a *APIKeyDisabledBy) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
+func (a *APIKeyDisabledBy) GetExtraProperties() map[string]interface{} {
+	if a == nil {
+		return nil
+	}
+	return a.extraProperties
+}
+
+func (a *APIKeyDisabledBy) require(field *big.Int) {
+	next := new(big.Int)
+	if a.explicitFields != nil {
+		next.Set(a.explicitFields)
+	}
+	next.Or(next, field)
+	a.explicitFields = next
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *APIKeyDisabledBy) SetName(name string) {
+	a.Name = name
+	a.require(aPIKeyDisabledByFieldName)
+}
+
+func (a *APIKeyDisabledBy) UnmarshalJSON(data []byte) error {
+	type unmarshaler APIKeyDisabledBy
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*a = APIKeyDisabledBy(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
+	if err != nil {
+		return err
+	}
+	a.extraProperties = extraProperties
+	a.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (a *APIKeyDisabledBy) MarshalJSON() ([]byte, error) {
+	type embed APIKeyDisabledBy
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*a),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (a *APIKeyDisabledBy) String() string {
+	if a == nil {
+		return "<nil>"
+	}
+	if len(a.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(a.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(a); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", a)
+}
+
+var (
 	errorResponseFieldError = big.NewInt(1 << 0)
 )
 
@@ -216,6 +766,554 @@ func (e *ErrorResponseError) String() string {
 	return fmt.Sprintf("%#v", e)
 }
 
+var (
+	genModelFieldID             = big.NewInt(1 << 0)
+	genModelFieldJobs           = big.NewInt(1 << 1)
+	genModelFieldTier           = big.NewInt(1 << 2)
+	genModelFieldUnderReview    = big.NewInt(1 << 3)
+	genModelFieldPriceTier      = big.NewInt(1 << 4)
+	genModelFieldMaxRefImages   = big.NewInt(1 << 5)
+	genModelFieldSteps          = big.NewInt(1 << 6)
+	genModelFieldSupports       = big.NewInt(1 << 7)
+	genModelFieldEnhanceDefault = big.NewInt(1 << 8)
+	genModelFieldStatus         = big.NewInt(1 << 9)
+)
+
+// genModelNullableFields maps the wire names of GenModel's nullable fields (required or optional) to their field bits.
+var genModelNullableFields = map[string]*big.Int{
+	"tier":  genModelFieldTier,
+	"steps": genModelFieldSteps,
+}
+
+type GenModel struct {
+	// Model identifier — pass as params.model
+	ID string `json:"id" url:"id"`
+	// Job types this model supports
+	Jobs []string `json:"jobs" url:"jobs"`
+	// Pricing/quality tier alias, or null for a model with no tier alias
+	Tier *GenModelTier `json:"tier,omitempty" url:"tier,omitempty"`
+	// True while this model is pulled from tier resolution pending a cost/quality re-evaluation. Still listed for transparency, but submitting it (even by exact id) is rejected.
+	UnderReview bool `json:"underReview" url:"underReview"`
+	// Relative price, cheapest ($) to priciest ($$$$). Not a dollar estimate.
+	PriceTier GenModelPriceTier `json:"priceTier" url:"priceTier"`
+	// Max reference images accepted (0 for generate-only models)
+	MaxRefImages int `json:"maxRefImages" url:"maxRefImages"`
+	// Denoising step range, or null when the model has a fixed step count
+	Steps    *GenModelSteps    `json:"steps,omitempty" url:"steps,omitempty"`
+	Supports *GenModelSupports `json:"supports" url:"supports"`
+	// Whether prompt enhancement defaults to on for this model
+	EnhanceDefault bool `json:"enhanceDefault" url:"enhanceDefault"`
+	// Model availability status
+	Status GenModelStatus `json:"status" url:"status"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GenModel) GetID() string {
+	if g == nil {
+		return ""
+	}
+	return g.ID
+}
+
+func (g *GenModel) GetJobs() []string {
+	if g == nil {
+		return nil
+	}
+	return g.Jobs
+}
+
+func (g *GenModel) GetTier() *GenModelTier {
+	if g == nil {
+		return nil
+	}
+	return g.Tier
+}
+
+func (g *GenModel) GetUnderReview() bool {
+	if g == nil {
+		return false
+	}
+	return g.UnderReview
+}
+
+func (g *GenModel) GetPriceTier() GenModelPriceTier {
+	if g == nil {
+		return ""
+	}
+	return g.PriceTier
+}
+
+func (g *GenModel) GetMaxRefImages() int {
+	if g == nil {
+		return 0
+	}
+	return g.MaxRefImages
+}
+
+func (g *GenModel) GetSteps() *GenModelSteps {
+	if g == nil {
+		return nil
+	}
+	return g.Steps
+}
+
+func (g *GenModel) GetSupports() *GenModelSupports {
+	if g == nil {
+		return nil
+	}
+	return g.Supports
+}
+
+func (g *GenModel) GetEnhanceDefault() bool {
+	if g == nil {
+		return false
+	}
+	return g.EnhanceDefault
+}
+
+func (g *GenModel) GetStatus() GenModelStatus {
+	if g == nil {
+		return ""
+	}
+	return g.Status
+}
+
+func (g *GenModel) GetExtraProperties() map[string]interface{} {
+	if g == nil {
+		return nil
+	}
+	return g.extraProperties
+}
+
+func (g *GenModel) require(field *big.Int) {
+	next := new(big.Int)
+	if g.explicitFields != nil {
+		next.Set(g.explicitFields)
+	}
+	next.Or(next, field)
+	g.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetID(id string) {
+	g.ID = id
+	g.require(genModelFieldID)
+}
+
+// SetJobs sets the Jobs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetJobs(jobs []string) {
+	g.Jobs = jobs
+	g.require(genModelFieldJobs)
+}
+
+// SetTier sets the Tier field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetTier(tier *GenModelTier) {
+	g.Tier = tier
+	g.require(genModelFieldTier)
+}
+
+// SetUnderReview sets the UnderReview field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetUnderReview(underReview bool) {
+	g.UnderReview = underReview
+	g.require(genModelFieldUnderReview)
+}
+
+// SetPriceTier sets the PriceTier field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetPriceTier(priceTier GenModelPriceTier) {
+	g.PriceTier = priceTier
+	g.require(genModelFieldPriceTier)
+}
+
+// SetMaxRefImages sets the MaxRefImages field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetMaxRefImages(maxRefImages int) {
+	g.MaxRefImages = maxRefImages
+	g.require(genModelFieldMaxRefImages)
+}
+
+// SetSteps sets the Steps field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetSteps(steps *GenModelSteps) {
+	g.Steps = steps
+	g.require(genModelFieldSteps)
+}
+
+// SetSupports sets the Supports field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetSupports(supports *GenModelSupports) {
+	g.Supports = supports
+	g.require(genModelFieldSupports)
+}
+
+// SetEnhanceDefault sets the EnhanceDefault field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetEnhanceDefault(enhanceDefault bool) {
+	g.EnhanceDefault = enhanceDefault
+	g.require(genModelFieldEnhanceDefault)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModel) SetStatus(status GenModelStatus) {
+	g.Status = status
+	g.require(genModelFieldStatus)
+}
+
+func (g *GenModel) UnmarshalJSON(data []byte) error {
+	type unmarshaler GenModel
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GenModel(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, genModelNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		g.require(presentFields)
+	}
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GenModel) MarshalJSON() ([]byte, error) {
+	type embed GenModel
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GenModel) String() string {
+	if g == nil {
+		return "<nil>"
+	}
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
+// Relative price, cheapest ($) to priciest ($$$$). Not a dollar estimate.
+type GenModelPriceTier string
+
+const (
+	GenModelPriceTierLow     GenModelPriceTier = "$"
+	GenModelPriceTierMedium  GenModelPriceTier = "$$"
+	GenModelPriceTierHigh    GenModelPriceTier = "$$$"
+	GenModelPriceTierHighest GenModelPriceTier = "$$$$"
+)
+
+func NewGenModelPriceTierFromString(s string) (GenModelPriceTier, error) {
+	switch s {
+	case "$":
+		return GenModelPriceTierLow, nil
+	case "$$":
+		return GenModelPriceTierMedium, nil
+	case "$$$":
+		return GenModelPriceTierHigh, nil
+	case "$$$$":
+		return GenModelPriceTierHighest, nil
+	}
+	var t GenModelPriceTier
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (g GenModelPriceTier) Ptr() *GenModelPriceTier {
+	return &g
+}
+
+// Model availability status
+type GenModelStatus string
+
+const (
+	GenModelStatusActive GenModelStatus = "active"
+)
+
+func NewGenModelStatusFromString(s string) (GenModelStatus, error) {
+	switch s {
+	case "active":
+		return GenModelStatusActive, nil
+	}
+	var t GenModelStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (g GenModelStatus) Ptr() *GenModelStatus {
+	return &g
+}
+
+var (
+	genModelStepsFieldDefault = big.NewInt(1 << 0)
+	genModelStepsFieldMin     = big.NewInt(1 << 1)
+	genModelStepsFieldMax     = big.NewInt(1 << 2)
+)
+
+// Denoising step range, or null when the model has a fixed step count
+type GenModelSteps struct {
+	Default int `json:"default" url:"default"`
+	Min     int `json:"min" url:"min"`
+	Max     int `json:"max" url:"max"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GenModelSteps) GetDefault() int {
+	if g == nil {
+		return 0
+	}
+	return g.Default
+}
+
+func (g *GenModelSteps) GetMin() int {
+	if g == nil {
+		return 0
+	}
+	return g.Min
+}
+
+func (g *GenModelSteps) GetMax() int {
+	if g == nil {
+		return 0
+	}
+	return g.Max
+}
+
+func (g *GenModelSteps) GetExtraProperties() map[string]interface{} {
+	if g == nil {
+		return nil
+	}
+	return g.extraProperties
+}
+
+func (g *GenModelSteps) require(field *big.Int) {
+	next := new(big.Int)
+	if g.explicitFields != nil {
+		next.Set(g.explicitFields)
+	}
+	next.Or(next, field)
+	g.explicitFields = next
+}
+
+// SetDefault sets the Default field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModelSteps) SetDefault(default_ int) {
+	g.Default = default_
+	g.require(genModelStepsFieldDefault)
+}
+
+// SetMin sets the Min field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModelSteps) SetMin(min int) {
+	g.Min = min
+	g.require(genModelStepsFieldMin)
+}
+
+// SetMax sets the Max field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModelSteps) SetMax(max int) {
+	g.Max = max
+	g.require(genModelStepsFieldMax)
+}
+
+func (g *GenModelSteps) UnmarshalJSON(data []byte) error {
+	type unmarshaler GenModelSteps
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GenModelSteps(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GenModelSteps) MarshalJSON() ([]byte, error) {
+	type embed GenModelSteps
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GenModelSteps) String() string {
+	if g == nil {
+		return "<nil>"
+	}
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
+var (
+	genModelSupportsFieldNegativePrompt = big.NewInt(1 << 0)
+	genModelSupportsFieldGuidance       = big.NewInt(1 << 1)
+)
+
+type GenModelSupports struct {
+	NegativePrompt bool `json:"negativePrompt" url:"negativePrompt"`
+	Guidance       bool `json:"guidance" url:"guidance"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GenModelSupports) GetNegativePrompt() bool {
+	if g == nil {
+		return false
+	}
+	return g.NegativePrompt
+}
+
+func (g *GenModelSupports) GetGuidance() bool {
+	if g == nil {
+		return false
+	}
+	return g.Guidance
+}
+
+func (g *GenModelSupports) GetExtraProperties() map[string]interface{} {
+	if g == nil {
+		return nil
+	}
+	return g.extraProperties
+}
+
+func (g *GenModelSupports) require(field *big.Int) {
+	next := new(big.Int)
+	if g.explicitFields != nil {
+		next.Set(g.explicitFields)
+	}
+	next.Or(next, field)
+	g.explicitFields = next
+}
+
+// SetNegativePrompt sets the NegativePrompt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModelSupports) SetNegativePrompt(negativePrompt bool) {
+	g.NegativePrompt = negativePrompt
+	g.require(genModelSupportsFieldNegativePrompt)
+}
+
+// SetGuidance sets the Guidance field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GenModelSupports) SetGuidance(guidance bool) {
+	g.Guidance = guidance
+	g.require(genModelSupportsFieldGuidance)
+}
+
+func (g *GenModelSupports) UnmarshalJSON(data []byte) error {
+	type unmarshaler GenModelSupports
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GenModelSupports(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GenModelSupports) MarshalJSON() ([]byte, error) {
+	type embed GenModelSupports
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GenModelSupports) String() string {
+	if g == nil {
+		return "<nil>"
+	}
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
+// Pricing/quality tier alias, or null for a model with no tier alias
+type GenModelTier string
+
+const (
+	GenModelTierEconomy  GenModelTier = "economy"
+	GenModelTierStandard GenModelTier = "standard"
+	GenModelTierPremium  GenModelTier = "premium"
+)
+
+func NewGenModelTierFromString(s string) (GenModelTier, error) {
+	switch s {
+	case "economy":
+		return GenModelTierEconomy, nil
+	case "standard":
+		return GenModelTierStandard, nil
+	case "premium":
+		return GenModelTierPremium, nil
+	}
+	var t GenModelTier
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (g GenModelTier) Ptr() *GenModelTier {
+	return &g
+}
+
 type OauthScope string
 
 const (
@@ -302,4 +1400,279 @@ func NewOauthScopeFromString(s string) (OauthScope, error) {
 
 func (o OauthScope) Ptr() *OauthScope {
 	return &o
+}
+
+var (
+	webhookEndpointFieldID                  = big.NewInt(1 << 0)
+	webhookEndpointFieldName                = big.NewInt(1 << 1)
+	webhookEndpointFieldURL                 = big.NewInt(1 << 2)
+	webhookEndpointFieldSigningSecret       = big.NewInt(1 << 3)
+	webhookEndpointFieldActive              = big.NewInt(1 << 4)
+	webhookEndpointFieldDisabledReason      = big.NewInt(1 << 5)
+	webhookEndpointFieldConsecutiveFailures = big.NewInt(1 << 6)
+	webhookEndpointFieldSubscribedEvents    = big.NewInt(1 << 7)
+	webhookEndpointFieldRotationActive      = big.NewInt(1 << 8)
+	webhookEndpointFieldSecretExpiresAt     = big.NewInt(1 << 9)
+	webhookEndpointFieldCreatedAt           = big.NewInt(1 << 10)
+	webhookEndpointFieldUpdatedAt           = big.NewInt(1 << 11)
+)
+
+// webhookEndpointNullableFields maps the wire names of WebhookEndpoint's nullable fields (required or optional) to their field bits.
+var webhookEndpointNullableFields = map[string]*big.Int{
+	"disabledReason": webhookEndpointFieldDisabledReason,
+}
+
+type WebhookEndpoint struct {
+	ID   string `json:"id" url:"id"`
+	Name string `json:"name" url:"name"`
+	URL  string `json:"url" url:"url"`
+	// Masked signing secret
+	SigningSecret       string   `json:"signingSecret" url:"signingSecret"`
+	Active              bool     `json:"active" url:"active"`
+	DisabledReason      *string  `json:"disabledReason,omitempty" url:"disabledReason,omitempty"`
+	ConsecutiveFailures float64  `json:"consecutiveFailures" url:"consecutiveFailures"`
+	SubscribedEvents    []string `json:"subscribedEvents" url:"subscribedEvents"`
+	RotationActive      bool     `json:"rotationActive" url:"rotationActive"`
+	SecretExpiresAt     *float64 `json:"secretExpiresAt,omitempty" url:"secretExpiresAt,omitempty"`
+	CreatedAt           float64  `json:"createdAt" url:"createdAt"`
+	UpdatedAt           float64  `json:"updatedAt" url:"updatedAt"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (w *WebhookEndpoint) GetID() string {
+	if w == nil {
+		return ""
+	}
+	return w.ID
+}
+
+func (w *WebhookEndpoint) GetName() string {
+	if w == nil {
+		return ""
+	}
+	return w.Name
+}
+
+func (w *WebhookEndpoint) GetURL() string {
+	if w == nil {
+		return ""
+	}
+	return w.URL
+}
+
+func (w *WebhookEndpoint) GetSigningSecret() string {
+	if w == nil {
+		return ""
+	}
+	return w.SigningSecret
+}
+
+func (w *WebhookEndpoint) GetActive() bool {
+	if w == nil {
+		return false
+	}
+	return w.Active
+}
+
+func (w *WebhookEndpoint) GetDisabledReason() *string {
+	if w == nil {
+		return nil
+	}
+	return w.DisabledReason
+}
+
+func (w *WebhookEndpoint) GetConsecutiveFailures() float64 {
+	if w == nil {
+		return 0
+	}
+	return w.ConsecutiveFailures
+}
+
+func (w *WebhookEndpoint) GetSubscribedEvents() []string {
+	if w == nil {
+		return nil
+	}
+	return w.SubscribedEvents
+}
+
+func (w *WebhookEndpoint) GetRotationActive() bool {
+	if w == nil {
+		return false
+	}
+	return w.RotationActive
+}
+
+func (w *WebhookEndpoint) GetSecretExpiresAt() *float64 {
+	if w == nil {
+		return nil
+	}
+	return w.SecretExpiresAt
+}
+
+func (w *WebhookEndpoint) GetCreatedAt() float64 {
+	if w == nil {
+		return 0
+	}
+	return w.CreatedAt
+}
+
+func (w *WebhookEndpoint) GetUpdatedAt() float64 {
+	if w == nil {
+		return 0
+	}
+	return w.UpdatedAt
+}
+
+func (w *WebhookEndpoint) GetExtraProperties() map[string]interface{} {
+	if w == nil {
+		return nil
+	}
+	return w.extraProperties
+}
+
+func (w *WebhookEndpoint) require(field *big.Int) {
+	next := new(big.Int)
+	if w.explicitFields != nil {
+		next.Set(w.explicitFields)
+	}
+	next.Or(next, field)
+	w.explicitFields = next
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetID(id string) {
+	w.ID = id
+	w.require(webhookEndpointFieldID)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetName(name string) {
+	w.Name = name
+	w.require(webhookEndpointFieldName)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetURL(url string) {
+	w.URL = url
+	w.require(webhookEndpointFieldURL)
+}
+
+// SetSigningSecret sets the SigningSecret field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetSigningSecret(signingSecret string) {
+	w.SigningSecret = signingSecret
+	w.require(webhookEndpointFieldSigningSecret)
+}
+
+// SetActive sets the Active field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetActive(active bool) {
+	w.Active = active
+	w.require(webhookEndpointFieldActive)
+}
+
+// SetDisabledReason sets the DisabledReason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetDisabledReason(disabledReason *string) {
+	w.DisabledReason = disabledReason
+	w.require(webhookEndpointFieldDisabledReason)
+}
+
+// SetConsecutiveFailures sets the ConsecutiveFailures field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetConsecutiveFailures(consecutiveFailures float64) {
+	w.ConsecutiveFailures = consecutiveFailures
+	w.require(webhookEndpointFieldConsecutiveFailures)
+}
+
+// SetSubscribedEvents sets the SubscribedEvents field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetSubscribedEvents(subscribedEvents []string) {
+	w.SubscribedEvents = subscribedEvents
+	w.require(webhookEndpointFieldSubscribedEvents)
+}
+
+// SetRotationActive sets the RotationActive field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetRotationActive(rotationActive bool) {
+	w.RotationActive = rotationActive
+	w.require(webhookEndpointFieldRotationActive)
+}
+
+// SetSecretExpiresAt sets the SecretExpiresAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetSecretExpiresAt(secretExpiresAt *float64) {
+	w.SecretExpiresAt = secretExpiresAt
+	w.require(webhookEndpointFieldSecretExpiresAt)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetCreatedAt(createdAt float64) {
+	w.CreatedAt = createdAt
+	w.require(webhookEndpointFieldCreatedAt)
+}
+
+// SetUpdatedAt sets the UpdatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WebhookEndpoint) SetUpdatedAt(updatedAt float64) {
+	w.UpdatedAt = updatedAt
+	w.require(webhookEndpointFieldUpdatedAt)
+}
+
+func (w *WebhookEndpoint) UnmarshalJSON(data []byte) error {
+	type unmarshaler WebhookEndpoint
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*w = WebhookEndpoint(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *w)
+	if err != nil {
+		return err
+	}
+	w.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, webhookEndpointNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		w.require(presentFields)
+	}
+	w.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (w *WebhookEndpoint) MarshalJSON() ([]byte, error) {
+	type embed WebhookEndpoint
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*w),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, w.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (w *WebhookEndpoint) String() string {
+	if w == nil {
+		return "<nil>"
+	}
+	if len(w.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(w.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(w); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", w)
 }

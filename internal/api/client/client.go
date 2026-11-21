@@ -4,37 +4,17 @@ package client
 
 import (
 	account "github.com/rendobar/rendobar-go/internal/api/account"
-	apikeys "github.com/rendobar/rendobar-go/internal/api/apikeys"
-	assets "github.com/rendobar/rendobar-go/internal/api/assets"
 	billing "github.com/rendobar/rendobar-go/internal/api/billing"
-	compose "github.com/rendobar/rendobar-go/internal/api/compose"
 	core "github.com/rendobar/rendobar-go/internal/api/core"
 	internal "github.com/rendobar/rendobar-go/internal/api/internal"
 	jobs "github.com/rendobar/rendobar-go/internal/api/jobs"
-	models "github.com/rendobar/rendobar-go/internal/api/models"
-	notifications "github.com/rendobar/rendobar-go/internal/api/notifications"
 	option "github.com/rendobar/rendobar-go/internal/api/option"
-	organizations "github.com/rendobar/rendobar-go/internal/api/organizations"
-	storage "github.com/rendobar/rendobar-go/internal/api/storage"
-	team "github.com/rendobar/rendobar-go/internal/api/team"
-	uploadsessions "github.com/rendobar/rendobar-go/internal/api/uploadsessions"
-	webhooks "github.com/rendobar/rendobar-go/internal/api/webhooks"
 )
 
 type Client struct {
-	Jobs           *jobs.Client
-	Models         *models.Client
-	Compose        *compose.Client
-	Billing        *billing.Client
-	Notifications  *notifications.Client
-	Organizations  *organizations.Client
-	Account        *account.Client
-	APIKeys        *apikeys.Client
-	Assets         *assets.Client
-	Team           *team.Client
-	Webhooks       *webhooks.Client
-	Storage        *storage.Client
-	UploadSessions *uploadsessions.Client
+	Jobs    *jobs.Client
+	Billing *billing.Client
+	Account *account.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -44,21 +24,11 @@ type Client struct {
 func NewClient(opts ...option.RequestOption) *Client {
 	options := core.NewRequestOptions(opts...)
 	return &Client{
-		Jobs:           jobs.NewClient(options),
-		Models:         models.NewClient(options),
-		Compose:        compose.NewClient(options),
-		Billing:        billing.NewClient(options),
-		Notifications:  notifications.NewClient(options),
-		Organizations:  organizations.NewClient(options),
-		Account:        account.NewClient(options),
-		APIKeys:        apikeys.NewClient(options),
-		Assets:         assets.NewClient(options),
-		Team:           team.NewClient(options),
-		Webhooks:       webhooks.NewClient(options),
-		Storage:        storage.NewClient(options),
-		UploadSessions: uploadsessions.NewClient(options),
-		options:        options,
-		baseURL:        options.BaseURL,
+		Jobs:    jobs.NewClient(options),
+		Billing: billing.NewClient(options),
+		Account: account.NewClient(options),
+		options: options,
+		baseURL: options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:         options.HTTPClient,
