@@ -9,8 +9,10 @@ For coding agents changing this SDK. Users of the SDK want the README.
   A new public method needs its endpoint added there and a regeneration. `POST /billing/checkout/pro` is
   listed only because conformance scenario C14 needs a deprecated route.
 - Hand-written code is the root package (`client.go`, `jobs.go`, `job.go`, `types.go`, `errors.go`, `retry.go`, the tests) and `webhooks/`.
-- Retries belong to `retry.go`, not the core (the core runs with `option.WithoutRetries`): 429, 5xx and
-  connection errors only, honouring `Retry-After`. The core's own retrier would also retry 408.
+- Retries belong to `retry.go`, not the core (the core runs with `option.WithoutRetries`): 429, 500, 502,
+  503, 504 and connection errors only, honouring `Retry-After` up to 60 s. The core's own retrier would also retry 408.
+- Behaviour follows the cross-SDK standard that the shared conformance scenarios encode. C19 to C39 live
+  in `parity_test.go` and skip against a mock that predates them.
 - Users never import `internal/api`, and no generated type is part of the public API. The root package
   defines its own types (`job.go`, `types.go`) and builds them from the JSON of the core's responses, so
   a regeneration cannot change the public API. A new spec field users need is added there by hand.
