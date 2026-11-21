@@ -43,7 +43,7 @@ jobs:
         run: go generate ./... && git diff --exit-code -- params_gen.go
       - name: staticcheck (hand-written packages; internal/api is generated)
         if: matrix.go == 'stable'
-        run: go run honnef.co/go/tools/cmd/staticcheck@2024.1.1 . ./webhooks ./internal/cmd/...
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 . ./webhooks ./internal/cmd/...
       - name: Tests (conformance scenarios, webhook vectors, examples)
         # Scenarios C19 to C39 skip, loudly, against a mock without /__requests.
         # Set this to "1" once rendobar/openapi PR #2 (the new mock) merges, so a skip fails CI.
