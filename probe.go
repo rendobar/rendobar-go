@@ -9,7 +9,7 @@ import (
 // API's spec describes. It fails when the job is another type or its data is
 // not an ffprobe result.
 func (c *JobComplete) Ffprobe() (*FfprobeResult, error) {
-	if c.Type != (FfprobeParams{}).JobType() {
+	if c.Type != JobTypeFfprobe {
 		return nil, fmt.Errorf("rendobar: job %s is a %s job, not ffprobe", c.ID, c.Type)
 	}
 	if c.Output.Data == nil {

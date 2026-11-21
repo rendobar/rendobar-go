@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/rendobar/rendobar-go/internal/api"
 )
 
 // Job is a job in any status. Exactly one of Waiting, Dispatched, Running,
@@ -43,8 +41,8 @@ func (j *Job) IsTerminal() bool { return j.terminal }
 // ID is the job id, such as job_abc123.
 func (j *Job) ID() string { return j.info.ID }
 
-// Type is the job type, such as ffmpeg or ffprobe.
-func (j *Job) Type() string { return j.info.Type }
+// Type is the job type, such as JobTypeFfmpeg.
+func (j *Job) Type() JobType { return j.info.Type }
 
 // Status is the job's status when it was read.
 func (j *Job) Status() JobStatus { return j.status }
@@ -71,10 +69,10 @@ func (j *Job) UnmarshalJSON(b []byte) error {
 // it, so job.Complete.ID and job.Failed.CreatedAt read it directly. A time
 // the job has not reached yet is the zero time.Time.
 type JobInfo struct {
-	ID    string // job id, such as job_abc123
-	OrgID string // the workspace that owns the job
-	Type  string // job type, such as ffmpeg
-	Label string // the name given at submit, or ""
+	ID    string  // job id, such as job_abc123
+	OrgID string  // the workspace that owns the job
+	Type  JobType // job type, such as ffmpeg
+	Label string  // the name given at submit, or ""
 
 	Source         string          // how the job was created: api, dashboard, mcp and others
 	Client         string          // the client that sent it, such as sdk, cli or n8n, or ""
@@ -425,27 +423,11 @@ type wireJobError struct {
 	FailedPhase *string `json:"failedPhase"`
 }
 
-// fromAPIJob turns the generated core's job into the public Job, through its JSON.
-func fromAPIJob(in *api.Job) (*Job, error) {
-	if in == nil {
-		return nil, fmt.Errorf("rendobar: response has no job")
-	}
-	raw, err := json.Marshal(in)
-	if err != nil {
-		return nil, fmt.Errorf("rendobar: unreadable job: %w", err)
-	}
-	job := new(Job)
-	if err := job.UnmarshalJSON(raw); err != nil {
-		return nil, err
-	}
-	return job, nil
-}
-
 func (w *wireJob) job() *Job {
 	info := JobInfo{
 		ID:                 w.ID,
 		OrgID:              w.OrgID,
-		Type:               w.Type,
+		Type:               JobType(w.Type),
 		Label:              str(w.Label),
 		Source:             w.Source,
 		Client:             str(w.Client),

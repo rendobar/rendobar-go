@@ -18,7 +18,6 @@ import (
 	"go/format"
 	"io"
 	"log"
-	"math"
 	"os"
 	"regexp"
 	"sort"
@@ -290,17 +289,19 @@ func (n *node) itemsOrNil() []*node {
 
 func isUnion(n *node) bool { return n.has("anyOf") || n.has("oneOf") }
 
-func intType(n *node) string {
-	lo, okLo := n.num("minimum")
-	hi, okHi := n.num("maximum")
-	if !okLo {
-		lo, okLo = n.num("exclusiveMinimum")
-	}
-	if okLo && okHi && lo >= math.MinInt32 && hi <= math.MaxInt32 {
-		return "int"
-	}
-	return "int64"
-}
+// The Go type of a param must not change when the API makes a harmless
+// schema change, such as adding a maximum or making a field optional. So the
+// rules below depend on the JSON type alone, never on bounds or required-ness:
+//
+//   - every integer is int64, every number float64
+//   - an integer, number, boolean or object field is always a pointer, so
+//     "absent" stays expressible whether the field is required or optional
+//   - a string or enum field is always a value: "" is absent
+//   - a union is an interface value: nil is absent
+//   - every JSON tag has omitempty
+//
+// A required field is checked by Validate, not by its Go type.
+func intType(*node) string { return "int64" }
 
 // field is one generated struct field.
 type field struct {
@@ -481,9 +482,7 @@ func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 			if _, null := prop.schemaType(); null || nullable {
 				f.required = false
 			}
-			if !f.required && (f.kind == "int" || f.kind == "number" || f.kind == "bool" || f.kind == "object") {
-				f.pointer = true
-			}
+			f.pointer = f.kind == "int" || f.kind == "number" || f.kind == "bool" || f.kind == "object"
 			fields = append(fields, f)
 		}
 	}
@@ -504,11 +503,7 @@ func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 		if f.pointer {
 			t = "*" + t
 		}
-		tag := f.wire
-		if !f.required {
-			tag += ",omitempty"
-		}
-		g.p("\t%s %s `json:%q`\n", f.goName, t, tag)
+		g.p("\t%s %s `json:%q`\n", f.goName, t, f.wire+",omitempty")
 	}
 	g.p("}\n\n")
 
@@ -517,7 +512,7 @@ func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 		g.p("func (v %s) MarshalJSON() ([]byte, error) {\n\ttype plain %s\n\treturn marshalWith(plain(v), %q, %q)\n}\n\n", name, name, disc, discValue)
 	}
 	if jobType != "" {
-		g.p("// JobType returns %q.\nfunc (%s) JobType() string { return %q }\n\n", jobType, name, jobType)
+		g.p("// JobType returns JobType%s.\nfunc (%s) JobType() JobType { return JobType%s }\n\n", pascal(jobType), name, pascal(jobType))
 		g.p("// Validate checks the params against the job type's schema without sending anything.\n")
 		g.p("// It returns an *Error with code INVALID_ARGUMENT listing each problem.\n")
 		g.p("func (v %s) Validate() error {\n\tvar c check\n\tv.validate(&c, \"\")\n\treturn c.err()\n}\n\n", name)
@@ -542,10 +537,10 @@ func (g *gen) fieldChecks(f field) {
 		}
 		return
 	case "object":
-		if f.pointer {
-			g.p("\tif %s != nil {\n\t\t%s.validate(c, %s)\n\t}\n", ref, ref, path)
+		if f.required {
+			g.p("\tif %s == nil {\n\t\tc.fail(%s, \"is required\")\n\t} else {\n\t\t%s.validate(c, %s)\n\t}\n", ref, path, ref, path)
 		} else {
-			g.p("\t%s.validate(c, %s)\n", ref, path)
+			g.p("\tif %s != nil {\n\t\t%s.validate(c, %s)\n\t}\n", ref, ref, path)
 		}
 		return
 	case "enum":
@@ -567,13 +562,15 @@ func (g *gen) fieldChecks(f field) {
 		}
 		return
 	}
-	if f.pointer {
-		if inner := g.bounds("*"+ref, f.kind, f.schema, path); inner != "" {
-			g.p("\tif %s != nil {\n%s\t}\n", ref, inner)
-		}
-		return
+	inner := g.bounds("*"+ref, f.kind, f.schema, path)
+	switch {
+	case f.required && inner != "":
+		g.p("\tif %s == nil {\n\t\tc.fail(%s, \"is required\")\n\t} else {\n%s\t}\n", ref, path, inner)
+	case f.required:
+		g.p("\tif %s == nil {\n\t\tc.fail(%s, \"is required\")\n\t}\n", ref, path)
+	case inner != "":
+		g.p("\tif %s != nil {\n%s\t}\n", ref, inner)
 	}
-	g.p("%s", g.bounds(ref, f.kind, f.schema, path))
 }
 
 func num(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }
@@ -699,7 +696,7 @@ func main() {
 	if len(statuses) == 0 {
 		log.Fatal("genparams: no job statuses found")
 	}
-	g.p("// JobStatus is where a job is in its life. The API may add statuses later,\n// so treat an unknown one as still in progress.\ntype JobStatus string\n\n")
+	g.p("// JobStatus is where a job is in its life. The API may add statuses, so\n// keep a default branch, and ask Job.IsTerminal whether a job has finished.\ntype JobStatus string\n\n")
 	g.p("// The job statuses this SDK knows.\nconst (\n")
 	for _, s := range statuses {
 		g.p("\tStatus%s JobStatus = %q\n", pascal(s), s)
@@ -707,15 +704,15 @@ func main() {
 	g.p(")\n\n")
 
 	sort.Strings(g.known)
-	g.p("// typedJobTypes maps each job type with a typed params struct to it, so\n// CustomParams can point there instead.\nvar typedJobTypes = map[string]bool{\n")
+	g.p("// The job types with typed params in this SDK. Jobs.Types lists every live\n// type, which may include ones newer than this list.\nconst (\n")
 	for _, k := range g.known {
-		g.p("\t%q: true,\n", k)
+		g.p("\tJobType%s JobType = %q\n", pascal(k), k)
 	}
-	g.p("}\n\n")
+	g.p(")\n\n")
 
 	// Response shapes the spec now names, for readers the hand-written layer
 	// does not model itself: the ffprobe result.
-	root := &resp{schemas: schemas, done: g.types, mapped: map[string]string{}, aliases: map[string]string{}}
+	root := &resp{schemas: schemas, done: g.types, mapped: map[string]string{}, aliases: map[string]string{}, fields: map[string]string{}}
 	root.named("FfprobeResult", schemas.fields["FfprobeResult"])
 	g.out.Write(root.out.Bytes())
 
@@ -727,6 +724,13 @@ func main() {
 			"SettledDeliveryStatus":  "rendobar.DeliveryStatus",
 			"SettledDeliveryReason":  "rendobar.DeliveryReason",
 			"WebhookJobCostCurrency": "rendobar.Currency",
+		},
+		fields: map[string]string{
+			"jobType":                      "rendobar.JobType",
+			"triggeredByJobType":           "rendobar.JobType",
+			"outputCategory":               "rendobar.OutputCategory",
+			"WebhookJobStep.status":        "rendobar.StepStatus",
+			"JobDeliveryFailedData.reason": "rendobar.DeliveryReason",
 		},
 	}
 	writeWebhooks(spec, hooks, *hooksPath)
@@ -773,8 +777,12 @@ func writeWebhooks(spec *node, r *resp, path string) {
 	}
 	type event struct{ name, constant, data string }
 	var events []event
+	version := ""
 	for _, name := range mapping.keys {
 		envelope := r.schemas.fields[strings.TrimPrefix(mapping.fields[name].value.(string), "#/components/schemas/")]
+		if v := envelope.get("properties", "version").strings("enum"); len(v) == 1 {
+			version = v[0]
+		}
 		dataRef := refName(envelope.get("properties", "data"))
 		if dataRef == "" {
 			log.Fatalf("genparams: the %s envelope has no data component", name)
@@ -795,7 +803,12 @@ func writeWebhooks(spec *node, r *resp, path string) {
 		fmt.Fprintf(&head, "func (*%s) isPayload() {}\n\n", e.data)
 	}
 	head.WriteString("// Payload reads Data as the type for Type, such as *JobCompletedData for\n// JobCompleted. An event newer than this SDK gives *UnknownPayload.\n")
-	head.WriteString("func (e *Event) Payload() (Payload, error) {\n\tvar p Payload\n\tswitch e.Type {\n")
+	if version == "" {
+		log.Fatal("genparams: the webhook envelopes name no version")
+	}
+	fmt.Fprintf(&head, "// envelopeVersion is the envelope version the data types below describe.\nconst envelopeVersion = %q\n\n", version)
+	head.WriteString("// An envelope of another version gives *UnknownPayload: its data may have\n// another shape.\n")
+	head.WriteString("func (e *Event) Payload() (Payload, error) {\n\tif e.Version != envelopeVersion {\n\t\treturn &UnknownPayload{Type: e.Type, Data: e.Data}, nil\n\t}\n\tvar p Payload\n\tswitch e.Type {\n")
 	for _, e := range events {
 		fmt.Fprintf(&head, "\tcase %s:\n\t\tp = new(%s)\n", e.constant, e.data)
 	}

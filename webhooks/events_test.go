@@ -44,21 +44,21 @@ func TestPayloadReadsAJobCompletedEvent(t *testing.T) {
 
 func TestPayloadReadsEveryKnownEvent(t *testing.T) {
 	for body, want := range map[string]string{
-		`{"event":"job.delivery_failed","data":{"jobId":"job_1","storageId":"st_1","status":"failed","reason":"destination_denied"}}`: "*webhooks.JobDeliveryFailedData",
-		`{"event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"delivered"}]}}`:        "*webhooks.JobDeliveriesSettledData",
-		`{"event":"balance.low","data":{"balance":500000000,"threshold":1000000000,"triggeredByJobId":"job_9"}}`:                      "*webhooks.BalanceLowData",
-		`{"event":"test","data":{"message":"hello","endpointId":"we_1"}}`:                                                             "*webhooks.TestEventData",
+		`{"version":"1","event":"job.delivery_failed","data":{"jobId":"job_1","storageId":"st_1","status":"failed","reason":"destination_denied"}}`: "*webhooks.JobDeliveryFailedData",
+		`{"version":"1","event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"delivered"}]}}`:        "*webhooks.JobDeliveriesSettledData",
+		`{"version":"1","event":"balance.low","data":{"balance":500000000,"threshold":1000000000,"triggeredByJobId":"job_9"}}`:                      "*webhooks.BalanceLowData",
+		`{"version":"1","event":"test","data":{"message":"hello","endpointId":"we_1"}}`:                                                             "*webhooks.TestEventData",
 	} {
 		payload, err := parse(t, body).Payload()
 		if err != nil || typeName(payload) != want {
 			t.Fatalf("%s: %T %v", body, payload, err)
 		}
 	}
-	settled, _ := parse(t, `{"event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"failed","reason":"already_exists"}]}}`).Payload()
+	settled, _ := parse(t, `{"version":"1","event":"job.deliveries_settled","data":{"jobId":"job_1","deliveries":[{"storageId":"st_1","status":"failed","reason":"already_exists"}]}}`).Payload()
 	if d := settled.(*JobDeliveriesSettledData).Deliveries[0]; d.Reason != rendobar.DeliveryReasonAlreadyExists || d.Status != rendobar.DeliveryStatusFailed {
 		t.Fatalf("delivery %+v", d)
 	}
-	low, _ := parse(t, `{"event":"balance.low","data":{"balance":500000000,"threshold":1000000000}}`).Payload()
+	low, _ := parse(t, `{"version":"1","event":"balance.low","data":{"balance":500000000,"threshold":1000000000}}`).Payload()
 	if b := low.(*BalanceLowData); b.Balance != 500000000 || b.Threshold != 1000000000 {
 		t.Fatalf("balance %+v", b)
 	}
@@ -87,8 +87,15 @@ func TestPayloadKeepsAnUnknownEventAndVersion(t *testing.T) {
 	}
 }
 
+func TestAnotherEnvelopeVersionIsUnknown(t *testing.T) {
+	payload, err := parse(t, `{"version":"2","event":"job.completed","data":{"jobId":{"nested":"differently"}}}`).Payload()
+	if _, ok := payload.(*UnknownPayload); err != nil || !ok {
+		t.Fatalf("%T %v", payload, err)
+	}
+}
+
 func TestPayloadNamesUnreadableData(t *testing.T) {
-	_, err := parse(t, `{"event":"job.completed","data":{"jobId":42}}`).Payload()
+	_, err := parse(t, `{"version":"1","event":"job.completed","data":{"jobId":42}}`).Payload()
 	if !errors.Is(err, ErrPayload) {
 		t.Fatalf("got %v", err)
 	}

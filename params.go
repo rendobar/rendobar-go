@@ -10,42 +10,41 @@ import (
 
 // JobParams are the params of one job type. Each job type the SDK knows has
 // its own struct, such as FfmpegParams or ImageUpscaleParams, generated from
-// the API's published schema, so a misspelt or missing param fails to
-// compile. CustomParams covers a job type this SDK predates.
+// the API's published schema, so a misspelt param or a wrong value type fails
+// to compile. CustomParams is the one unchecked path, for anything the typed
+// structs cannot say yet.
 //
 // The job type to submit comes from JobType, so the type and its params can
 // never disagree. Validate checks the params locally, and Jobs.Create calls it
 // before sending.
 type JobParams interface {
-	// JobType is the job type these params belong to, such as "ffmpeg".
-	JobType() string
+	// JobType is the job type these params belong to, such as JobTypeFfmpeg.
+	JobType() JobType
 	// Validate reports what is wrong with the params as an *Error with code
 	// INVALID_ARGUMENT and one Problem each, or nil.
 	Validate() error
 	isJobParams()
 }
 
-// CustomParams submits a job type this SDK has no struct for yet, such as one
-// the API added after this release. Fields is the job's params as the API
-// documents them (see Jobs.Schema). A job type with a generated struct is
-// refused here: use that struct, so its checks apply.
+// CustomParams is the one unchecked way to submit a job: any job type, with
+// its params as the API documents them (see Jobs.Schema). Use it for a job
+// type this SDK predates, such as compose, or for a param or value the API
+// added to a typed job after this release. The SDK checks only that Type is
+// a job type name. The API checks Fields. Prefer the typed struct when it can
+// say what you need, so its checks apply before sending.
 type CustomParams struct {
-	Type   string
+	Type   JobType
 	Fields map[string]any
 }
 
 // JobType returns Type.
-func (p CustomParams) JobType() string { return p.Type }
+func (p CustomParams) JobType() JobType { return p.Type }
 
-// Validate checks that Type names a job type this SDK has no struct for. The
-// API checks Fields.
+// Validate checks that Type is a job type name. The API checks Fields.
 func (p CustomParams) Validate() error {
 	var c check
-	switch {
-	case !jobTypeName.MatchString(p.Type):
+	if !jobTypeName.MatchString(string(p.Type)) {
 		c.fail("type", "must name a job type, such as compose")
-	case typedJobTypes[p.Type]:
-		c.fail("type", fmt.Sprintf("has typed params in this SDK: use them instead of CustomParams for %s", p.Type))
 	}
 	return c.err()
 }

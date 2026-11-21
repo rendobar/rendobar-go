@@ -50,6 +50,9 @@ jobs:
         env:
           RENDOBAR_CONFORMANCE_REQUIRE: "0"
         run: go test -count=1 ./...
+      - name: Tests on a 32-bit platform (386)
+        if: matrix.go == 'stable'
+        run: GOARCH=386 go test -count=1 . ./webhooks
       - name: Breaking-change check against the last release
         if: matrix.go == 'stable'
         run: |

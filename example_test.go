@@ -166,7 +166,9 @@ func Example_webhook() {
 		}
 		switch data := payload.(type) {
 		case *webhooks.JobCompletedData:
-			fmt.Println(data.JobID, data.Output.File.URL)
+			if data.Output != nil && data.Output.File != nil { // a data job has no file
+				fmt.Println(data.JobID, data.Output.File.URL)
+			}
 		case *webhooks.JobFailedData:
 			fmt.Println(data.JobID, data.Error.Code)
 		default:

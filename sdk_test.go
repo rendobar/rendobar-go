@@ -740,3 +740,43 @@ func TestAllPagesBy100(t *testing.T) {
 		t.Fatalf("page sizes %v", limits)
 	}
 }
+
+func TestABadAppNameFailsEveryCallWithoutPanicking(t *testing.T) {
+	c, hits := testServer(t, func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, `{"data":[]}`) })
+	bad := New(WithAPIKey("rb_test"), WithBaseURL(c.baseURL), WithApp("has spaces"))
+	_, getErr := bad.Jobs.Get(context.Background(), "job_t")
+	_, typesErr := bad.Jobs.Types(context.Background())
+	for _, err := range []error{getErr, typesErr} {
+		if codeOf(err) != CodeInvalidArgument || !strings.Contains(err.Error(), "WithApp") {
+			t.Fatalf("got %v", err)
+		}
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("%d requests sent", hits.Load())
+	}
+}
+
+func TestLimitsRoundTrip(t *testing.T) {
+	in := `{"concurrentJobs":20,"maxQueuedJobs":100,"apiRequestsPerMinute":600,"maxJobTimeout":32400,"maxInputFileSize":10737418240,` +
+		`"storageQuota":107374182400,"outputRetentionDays":30,"maxUploadSessionFiles":50,"teamMembers":5,"composeMaxPixels":8294400,` +
+		`"composeMaxFps":60,"composeAnimatedMaxPixels":2073600,"composeAnimatedMaxFps":30}`
+	var l Limits
+	if err := json.Unmarshal([]byte(in), &l); err != nil || l.MaxJobTimeout != 9*time.Hour || l.StorageQuota != 107374182400 {
+		t.Fatalf("%+v %v", l, err)
+	}
+	out, err := json.Marshal(l)
+	if err != nil || string(out) != in {
+		t.Fatalf("round trip:\n%s\n%s", out, in)
+	}
+}
+
+func TestSafeFilename(t *testing.T) {
+	for in, want := range map[string]string{
+		"out.mp4": "out.mp4", "../../etc/passwd": "passwd", `..\..\boot.ini`: "boot.ini", "dir/": "",
+		"..": "", "c:evil.exe": "", "a\x00b": "", "": "",
+	} {
+		if got := safeFilename(in); got != want {
+			t.Fatalf("%q: got %q, want %q", in, got, want)
+		}
+	}
+}

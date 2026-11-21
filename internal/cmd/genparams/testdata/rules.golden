@@ -1,0 +1,210 @@
+package golden
+
+// Default: "fast".
+//
+// Validate refuses a value outside the list below.
+type RulesMode string
+
+// The RulesMode values this SDK knows.
+const (
+	RulesModeFast          RulesMode = "fast"
+	RulesModeSlowAndSteady RulesMode = "slow-and-steady"
+)
+
+func (v RulesMode) known() bool {
+	switch v {
+	case RulesModeFast, RulesModeSlowAndSteady:
+		return true
+	}
+	return false
+}
+
+type RulesNested struct {
+	Depth *int64 `json:"depth,omitempty"`
+}
+
+func (v RulesNested) validate(c *check, path string) {
+	if v.Depth != nil {
+		if float64(*v.Depth) > 3 {
+			c.fail(join(path, "depth"), "must be at most 3")
+		}
+	}
+}
+
+// Set it to one of: RulesSizingFactor, RulesSizingHeight.
+type RulesSizing interface {
+	isRulesSizing()
+	validate(c *check, path string)
+}
+
+type RulesSizingFactor struct {
+	Factor *float64 `json:"factor,omitempty"`
+}
+
+// MarshalJSON sends mode "factor" with the fields.
+func (v RulesSizingFactor) MarshalJSON() ([]byte, error) {
+	type plain RulesSizingFactor
+	return marshalWith(plain(v), "mode", "factor")
+}
+
+func (v RulesSizingFactor) validate(c *check, path string) {
+	if v.Factor == nil {
+		c.fail(join(path, "factor"), "is required")
+	} else {
+		if float64(*v.Factor) < 1 {
+			c.fail(join(path, "factor"), "must be at least 1")
+		}
+	}
+}
+
+func (RulesSizingFactor) isRulesSizing() {}
+
+type RulesSizingHeight struct {
+	Height *int64 `json:"height,omitempty"`
+}
+
+// MarshalJSON sends mode "height" with the fields.
+func (v RulesSizingHeight) MarshalJSON() ([]byte, error) {
+	type plain RulesSizingHeight
+	return marshalWith(plain(v), "mode", "height")
+}
+
+func (v RulesSizingHeight) validate(c *check, path string) {
+	if v.Height == nil {
+		c.fail(join(path, "height"), "is required")
+	}
+}
+
+func (RulesSizingHeight) isRulesSizing() {}
+
+// Set it to one of: RulesTargetPreset, RulesTargetInt, RulesTargetMaxBytes.
+type RulesTarget interface {
+	isRulesTarget()
+	validate(c *check, path string)
+}
+
+// RulesTargetPreset is a string from a fixed list. Validate refuses a value outside the list below.
+type RulesTargetPreset string
+
+// The RulesTargetPreset values this SDK knows.
+const (
+	RulesTargetPresetSmall RulesTargetPreset = "small"
+	RulesTargetPresetLarge RulesTargetPreset = "large"
+)
+
+func (v RulesTargetPreset) known() bool {
+	switch v {
+	case RulesTargetPresetSmall, RulesTargetPresetLarge:
+		return true
+	}
+	return false
+}
+
+func (v RulesTargetPreset) validate(c *check, path string) {
+	if !v.known() {
+		c.fail(path, "is not one of the known values")
+	}
+}
+
+func (RulesTargetPreset) isRulesTarget() {}
+
+type RulesTargetInt int64
+
+func (v RulesTargetInt) validate(c *check, path string) {
+	if float64(int64(v)) < 1 {
+		c.fail(path, "must be at least 1")
+	}
+	if float64(int64(v)) > 100 {
+		c.fail(path, "must be at most 100")
+	}
+}
+
+func (RulesTargetInt) isRulesTarget() {}
+
+type RulesTargetMaxBytes struct {
+	MaxBytes *int64 `json:"maxBytes,omitempty"`
+}
+
+func (v RulesTargetMaxBytes) validate(c *check, path string) {
+	if v.MaxBytes == nil {
+		c.fail(join(path, "maxBytes"), "is required")
+	}
+}
+
+func (RulesTargetMaxBytes) isRulesTarget() {}
+
+// RulesParams are the params of a rules.test job.
+//
+// A fixture covering every generator rule.
+type RulesParams struct {
+	// A required string.
+	Command string   `json:"command,omitempty"`
+	Label   string   `json:"label,omitempty"`
+	Count   *int64   `json:"count,omitempty"`
+	Seed    *int64   `json:"seed,omitempty"`
+	Ratio   *float64 `json:"ratio,omitempty"`
+	// Default: false.
+	Loud *bool `json:"loud,omitempty"`
+	// Default: "fast".
+	Mode   RulesMode    `json:"mode,omitempty"`
+	Nested *RulesNested `json:"nested,omitempty"`
+	Sizing RulesSizing  `json:"sizing,omitempty"`
+	Target RulesTarget  `json:"target,omitempty"`
+}
+
+// JobType returns JobTypeRulesTest.
+func (RulesParams) JobType() JobType { return JobTypeRulesTest }
+
+// Validate checks the params against the job type's schema without sending anything.
+// It returns an *Error with code INVALID_ARGUMENT listing each problem.
+func (v RulesParams) Validate() error {
+	var c check
+	v.validate(&c, "")
+	return c.err()
+}
+
+func (RulesParams) isJobParams() {}
+
+func (v RulesParams) validate(c *check, path string) {
+	if v.Command == "" {
+		c.fail(join(path, "command"), "is required")
+	} else {
+		if utf8.RuneCountInString(string(v.Command)) > 100 {
+			c.fail(join(path, "command"), "must be at most 100 characters")
+		}
+	}
+	if v.Label != "" {
+		if !pattern1.MatchString(string(v.Label)) {
+			c.fail(join(path, "label"), "must match ^[a-z]+$")
+		}
+	}
+	if v.Count == nil {
+		c.fail(join(path, "count"), "is required")
+	} else {
+		if float64(*v.Count) < 1 {
+			c.fail(join(path, "count"), "must be at least 1")
+		}
+		if float64(*v.Count) > 10 {
+			c.fail(join(path, "count"), "must be at most 10")
+		}
+	}
+	if v.Ratio != nil {
+		if float64(*v.Ratio) <= 0 {
+			c.fail(join(path, "ratio"), "must be more than 0")
+		}
+	}
+	if v.Mode != "" && !v.Mode.known() {
+		c.fail(join(path, "mode"), "is not one of the known values")
+	}
+	if v.Nested != nil {
+		v.Nested.validate(c, join(path, "nested"))
+	}
+	if v.Sizing == nil {
+		c.fail(join(path, "sizing"), "is required")
+	} else {
+		v.Sizing.validate(c, join(path, "sizing"))
+	}
+	if v.Target != nil {
+		v.Target.validate(c, join(path, "target"))
+	}
+}

@@ -55,9 +55,17 @@ const (
 	PlanStudio PlanSlug = "studio"
 )
 
-// JobType is one live job type, from Jobs.Types.
-type JobType struct {
-	Type         string   `json:"type"`         // the name to submit, such as ffmpeg
+// JobType names a job type, such as JobTypeFfmpeg. The constants in this
+// package are the types with typed params. Jobs.Types lists every live type.
+type JobType string
+
+// JobTypeCompose renders a timeline video. It has no typed params: the API
+// keeps compose out of its typed submit schema, so it goes through CustomParams.
+const JobTypeCompose JobType = "compose"
+
+// JobTypeInfo is one live job type, from Jobs.Types.
+type JobTypeInfo struct {
+	Type         JobType  `json:"type"`         // the name to submit, such as ffmpeg
 	Tag          string   `json:"tag"`          // its category
 	Summary      string   `json:"summary"`      // one line on what it does
 	AcceptsMedia []string `json:"acceptsMedia"` // the media it reads, such as video or audio
@@ -67,7 +75,7 @@ type JobType struct {
 
 // JobTypeSchema is one job type's params, from Jobs.Schema.
 type JobTypeSchema struct {
-	Type string `json:"type"`
+	Type JobType `json:"type"`
 	// Fields are the params in display order.
 	Fields []SchemaField `json:"fields"`
 	// Inputs are the media files the job reads.
@@ -147,7 +155,7 @@ type Limits struct {
 	ConcurrentJobs        int           `json:"concurrentJobs"`
 	MaxQueuedJobs         int           `json:"maxQueuedJobs"`
 	APIRequestsPerMinute  int           `json:"apiRequestsPerMinute"`
-	MaxJobTimeout         time.Duration `json:"maxJobTimeout"`    // longest a job may run; encodes as nanoseconds
+	MaxJobTimeout         time.Duration `json:"maxJobTimeout"`    // longest a job may run, sent as whole seconds
 	MaxInputFileSize      int64         `json:"maxInputFileSize"` // bytes per input file, uploaded or fetched by URL
 	StorageQuota          int64         `json:"storageQuota"`     // bytes
 	OutputRetentionDays   int           `json:"outputRetentionDays"`
@@ -174,6 +182,26 @@ type wireLimits struct {
 	ComposeMaxFps            int64 `json:"composeMaxFps"`
 	ComposeAnimatedMaxPixels int64 `json:"composeAnimatedMaxPixels"`
 	ComposeAnimatedMaxFps    int64 `json:"composeAnimatedMaxFps"`
+}
+
+// MarshalJSON writes the limits as the API sends them, the timeout in whole
+// seconds, so a decoded Limits encodes back to the same JSON.
+func (l Limits) MarshalJSON() ([]byte, error) {
+	return json.Marshal(wireLimits{
+		ConcurrentJobs:           int64(l.ConcurrentJobs),
+		MaxQueuedJobs:            int64(l.MaxQueuedJobs),
+		APIRequestsPerMinute:     int64(l.APIRequestsPerMinute),
+		MaxJobTimeout:            int64(l.MaxJobTimeout / time.Second),
+		MaxInputFileSize:         l.MaxInputFileSize,
+		StorageQuota:             l.StorageQuota,
+		OutputRetentionDays:      int64(l.OutputRetentionDays),
+		MaxUploadSessionFiles:    int64(l.MaxUploadSessionFiles),
+		TeamMembers:              int64(l.TeamMembers),
+		ComposeMaxPixels:         l.ComposeMaxPixels,
+		ComposeMaxFps:            int64(l.ComposeMaxFPS),
+		ComposeAnimatedMaxPixels: l.ComposeAnimatedMaxPixels,
+		ComposeAnimatedMaxFps:    int64(l.ComposeAnimatedMaxFPS),
+	})
 }
 
 // UnmarshalJSON reads the limits, turning the timeout from seconds into a Duration.

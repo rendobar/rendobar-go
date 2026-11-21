@@ -64,15 +64,23 @@ type Client struct {
 	core    *apiclient.Client
 	keyErr  error // why a call that needs a key cannot be sent, or nil
 
-	// The streaming route (Jobs.Download) bypasses the core, which buffers bodies.
+	// Job and account reads and the streaming download bypass the core (see
+	// rawjson.go and download.go).
 	baseURL string
 	header  http.Header // X-Rendobar-Client and Authorization
-	stream  *retrier    // its client has no Timeout: a header timeout bounds each attempt instead
+	api     *retrier    // the core's own client: Timeout bounds each attempt, body included
+	stream  *retrier    // no Timeout: a header timeout bounds each attempt instead
+	confErr error       // a bad option, returned by every call
 }
 
 // needKey fails a call that needs an API key, before it sends anything, when
 // the client has none or has one that cannot be a Rendobar key.
-func (c *Client) needKey() error { return c.keyErr }
+func (c *Client) needKey() error {
+	if c.confErr != nil {
+		return c.confErr
+	}
+	return c.keyErr
+}
 
 func checkKey(key string) error {
 	switch {
@@ -128,7 +136,9 @@ func WithMaxRetries(n int) Option {
 	}
 }
 
-// WithApp names the application built on this client, sent as app/<name> in X-Rendobar-Client.
+// WithApp names the application built on this client, sent as app/<name> in
+// X-Rendobar-Client. The name is 1-32 letters, digits or . _ + -. Another name
+// makes every call return an INVALID_ARGUMENT *Error.
 func WithApp(name string) Option { return func(c *config) { c.app = name } }
 
 // WithDeprecationHandler receives each deprecated endpoint once. The default logs to stderr.
@@ -148,8 +158,10 @@ func New(opts ...Option) *Client {
 	if cfg.apiKey == "" {
 		cfg.apiKey = os.Getenv("RENDOBAR_API_KEY")
 	}
+	var confErr error
 	if cfg.app != "" && !appName.MatchString(cfg.app) {
-		panic(`rendobar: WithApp name must be 1-32 letters, digits or . _ + -`)
+		confErr = local(CodeInvalidArgument, "WithApp name %q must be 1-32 letters, digits or . _ + -", cfg.app)
+		cfg.app = ""
 	}
 	hc := &http.Client{Timeout: 30 * time.Second}
 	if cfg.httpClient != nil {
@@ -171,13 +183,14 @@ func New(opts ...Option) *Client {
 	stream.Timeout = 0
 	stream.Transport = &headerTimeout{base: hc.Transport, timeout: hc.Timeout}
 
+	api := &retrier{client: hc, maxRetries: cfg.maxRetries}
 	header := http.Header{}
 	header.Set("X-Rendobar-Client", clientHeader(cfg.app))
 	coreOpts := []option.RequestOption{
 		option.WithBaseURL(cfg.baseURL),
 		// This package owns retries (retry.go): the generated core would also
 		// retry 408, and never a connection error.
-		option.WithHTTPClient(&retrier{client: hc, maxRetries: cfg.maxRetries}),
+		option.WithHTTPClient(api),
 		option.WithoutRetries(),
 		option.WithHTTPHeader(header),
 	}
@@ -193,7 +206,9 @@ func New(opts ...Option) *Client {
 		keyErr:  checkKey(cfg.apiKey),
 		baseURL: cfg.baseURL,
 		header:  streamHeader,
+		api:     api,
 		stream:  &retrier{client: &stream, maxRetries: cfg.maxRetries},
+		confErr: confErr,
 	}
 	c.Jobs = &Jobs{client: c}
 	c.Account = &Account{client: c}

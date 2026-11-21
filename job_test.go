@@ -141,7 +141,7 @@ func TestPublicTypesReadEveryGeneratedField(t *testing.T) {
 		{api.JobOutputFileMeta{}, reflect.TypeOf(wireFile{}.Meta).Elem()},
 
 		{api.JobError{}, reflect.TypeOf(wireJobError{})},
-		{api.JobType{}, reflect.TypeOf(JobType{})},
+		{api.JobType{}, reflect.TypeOf(JobTypeInfo{})},
 		{api.GetJobTypeSchemaResponseData{}, reflect.TypeOf(JobTypeSchema{})},
 		{api.GetJobTypeSchemaResponseDataInputs{}, reflect.TypeOf(SchemaInputs{})},
 		{api.ConnectorField{}, reflect.TypeOf(SchemaField{})},

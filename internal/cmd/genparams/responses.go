@@ -16,6 +16,7 @@ type resp struct {
 	qual    string            // the root package's qualifier from another package, "rendobar." or ""
 	mapped  map[string]string // components the hand-written layer already models, to their Go type
 	aliases map[string]string // enum names that are a type the SDK already has
+	fields  map[string]string // "Type.prop" or "prop" to a Go type the SDK already has, for a field the spec leaves a plain string
 	done    map[string]bool
 	order   []string // emitted type names, so a name is never written twice
 }
@@ -63,6 +64,12 @@ func (r *resp) typ(name, prop string, n *node, optional bool) string {
 	}
 	if isUnion(n) {
 		bs, nullable := branches(n)
+		if t := scalarBranches(bs); t != "" {
+			if nullable {
+				return "*" + t
+			}
+			return t // such as rotation: one of 0, 90, 180 or 270
+		}
 		if len(bs) == 1 {
 			t := r.typ(name, prop, bs[0], optional || nullable)
 			if nullable && !strings.HasPrefix(t, "*") && !strings.HasPrefix(t, "[]") && !strings.HasPrefix(t, "map[") && t != "json.RawMessage" {
@@ -103,8 +110,10 @@ func (r *resp) typ(name, prop string, n *node, optional bool) string {
 		if n.has("properties") {
 			return "*" + r.named(name, n)
 		}
-		if ap := n.fields["additionalProperties"]; ap != nil && ap.str("type") == "string" {
-			return "map[string]string"
+		if ap := n.fields["additionalProperties"]; ap != nil && ap.isObj && len(ap.keys) > 0 {
+			if t := strings.TrimPrefix(r.typ(name+"Value", "", ap, false), "*"); t != "json.RawMessage" && !strings.HasPrefix(t, "[]") {
+				return "map[string]" + t
+			}
 		}
 		return "json.RawMessage"
 	}
@@ -115,6 +124,38 @@ func (r *resp) typ(name, prop string, n *node, optional bool) string {
 // discriminators are the property names a type's own kind rides on. With a
 // single value they say nothing the type does not, so they are left out.
 var discriminators = map[string]bool{"status": true, "kind": true, "event": true, "version": true}
+
+// scalarBranches returns the one Go type every branch shares when each is a
+// scalar of one JSON type, such as a number enum split into branches, else "".
+func scalarBranches(bs []*node) string {
+	if len(bs) < 2 {
+		return ""
+	}
+	first, _ := bs[0].schemaType()
+	integral := true
+	for _, b := range bs {
+		t, _ := b.schemaType()
+		if t != first || b.has("properties") {
+			return ""
+		}
+		for _, v := range b.fields["enum"].itemsOrNil() {
+			if f, ok := v.value.(float64); !ok || f != float64(int64(f)) {
+				integral = false
+			}
+		}
+	}
+	switch {
+	case first == "integer", first == "number" && integral:
+		return "int64"
+	case first == "number":
+		return "float64"
+	case first == "string":
+		return "string"
+	case first == "boolean":
+		return "bool"
+	}
+	return ""
+}
 
 func isObject(n *node) bool {
 	t, _ := n.schemaType()
@@ -154,6 +195,11 @@ func (r *resp) object(name string, n *node) {
 				continue // a discriminator with one value: the type already says it
 			}
 			t := r.typ(name+pascal(k), k, prop, !required[k])
+			if o, ok := r.fields[name+"."+k]; ok {
+				t = o
+			} else if o, ok := r.fields[k]; ok {
+				t = o
+			}
 			fmt.Fprintf(&body, "%s\t%s %s `json:%q`\n", comment("\t", prop), pascal(k), t, k)
 		}
 	}

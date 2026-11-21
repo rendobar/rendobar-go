@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -16,7 +17,8 @@ type Download struct {
 	Body        io.ReadCloser
 	Size        int64
 	ContentType string
-	// Filename is the name the API suggests for the file, or "".
+	// Filename is the name the API suggests for the file, without any
+	// directory part, or "" when it suggests none that is safe to use.
 	Filename string
 }
 
@@ -50,9 +52,22 @@ func (j *Jobs) Download(ctx context.Context, id string) (*Download, error) {
 	}
 	d := &Download{Body: res.Body, Size: res.ContentLength, ContentType: res.Header.Get("Content-Type")}
 	if _, params, err := mime.ParseMediaType(res.Header.Get("Content-Disposition")); err == nil {
-		d.Filename = params["filename"]
+		d.Filename = safeFilename(params["filename"])
 	}
 	return d, nil
+}
+
+// safeFilename keeps only the last path element of a suggested name, so
+// joining it to a directory cannot escape it. A name with nothing left is "".
+func safeFilename(name string) string {
+	name = strings.ReplaceAll(name, `\`, "/")
+	if i := strings.LastIndex(name, "/"); i >= 0 {
+		name = name[i+1:]
+	}
+	if name == "." || name == ".." || strings.ContainsAny(name, "\x00:") {
+		return ""
+	}
+	return name
 }
 
 // headerTimeout bounds each attempt's wait for response headers, and leaves

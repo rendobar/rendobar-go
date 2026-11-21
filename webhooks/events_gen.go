@@ -51,7 +51,15 @@ func (*TestEventData) isPayload() {}
 
 // Payload reads Data as the type for Type, such as *JobCompletedData for
 // JobCompleted. An event newer than this SDK gives *UnknownPayload.
+// envelopeVersion is the envelope version the data types below describe.
+const envelopeVersion = "1"
+
+// An envelope of another version gives *UnknownPayload: its data may have
+// another shape.
 func (e *Event) Payload() (Payload, error) {
+	if e.Version != envelopeVersion {
+		return &UnknownPayload{Type: e.Type, Data: e.Data}, nil
+	}
 	var p Payload
 	switch e.Type {
 	case JobCreated:
@@ -93,7 +101,7 @@ type JobCreatedDataTiming struct {
 // JobCreatedData is read from the API. Fields it does not send are zero.
 type JobCreatedData struct {
 	JobID   string                `json:"jobId"`
-	JobType string                `json:"jobType"`
+	JobType rendobar.JobType      `json:"jobType"`
 	Timing  *JobCreatedDataTiming `json:"timing"`
 }
 
@@ -107,7 +115,7 @@ type JobStartedDataTiming struct {
 // JobStartedData is read from the API. Fields it does not send are zero.
 type JobStartedData struct {
 	JobID   string                `json:"jobId"`
-	JobType string                `json:"jobType"`
+	JobType rendobar.JobType      `json:"jobType"`
 	Timing  *JobStartedDataTiming `json:"timing"`
 }
 
@@ -129,22 +137,22 @@ type JobCompletedDataTiming struct {
 
 // WebhookJobStep is read from the API. Fields it does not send are zero.
 type WebhookJobStep struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Status     string `json:"status"`
-	DurationMs int64  `json:"durationMs"`
-	Error      string `json:"error"`
+	ID         string              `json:"id"`
+	Name       string              `json:"name"`
+	Status     rendobar.StepStatus `json:"status"`
+	DurationMs int64               `json:"durationMs"`
+	Error      string              `json:"error"`
 }
 
 // JobCompletedData is read from the API. Fields it does not send are zero.
 type JobCompletedData struct {
 	JobID          string                  `json:"jobId"`
-	JobType        string                  `json:"jobType"`
+	JobType        rendobar.JobType        `json:"jobType"`
 	Output         *rendobar.JobOutput     `json:"output"`
 	Cost           *WebhookJobCost         `json:"cost"`
 	Timing         *JobCompletedDataTiming `json:"timing"`
 	Steps          []WebhookJobStep        `json:"steps"`
-	OutputCategory string                  `json:"outputCategory"`
+	OutputCategory rendobar.OutputCategory `json:"outputCategory"`
 	MediaType      string                  `json:"mediaType"`
 }
 
@@ -159,7 +167,7 @@ type JobFailedDataTiming struct {
 // JobFailedData is read from the API. Fields it does not send are zero.
 type JobFailedData struct {
 	JobID   string               `json:"jobId"`
-	JobType string               `json:"jobType"`
+	JobType rendobar.JobType     `json:"jobType"`
 	Error   *rendobar.JobError   `json:"error"`
 	Timing  *JobFailedDataTiming `json:"timing"`
 	Steps   []WebhookJobStep     `json:"steps"`
@@ -174,7 +182,7 @@ type JobCancelledDataTiming struct {
 // JobCancelledData is read from the API. Fields it does not send are zero.
 type JobCancelledData struct {
 	JobID   string                  `json:"jobId"`
-	JobType string                  `json:"jobType"`
+	JobType rendobar.JobType        `json:"jobType"`
 	Timing  *JobCancelledDataTiming `json:"timing"`
 }
 
@@ -188,9 +196,9 @@ type JobDeliverySucceededData struct {
 
 // JobDeliveryFailedData is read from the API. Fields it does not send are zero.
 type JobDeliveryFailedData struct {
-	JobID     string `json:"jobId"`
-	StorageID string `json:"storageId"`
-	Reason    string `json:"reason"`
+	JobID     string                  `json:"jobId"`
+	StorageID string                  `json:"storageId"`
+	Reason    rendobar.DeliveryReason `json:"reason"`
 }
 
 // SettledDelivery is read from the API. Fields it does not send are zero.
@@ -215,20 +223,20 @@ type JobDeliveriesSettledData struct {
 
 // BalanceLowData is read from the API. Fields it does not send are zero.
 type BalanceLowData struct {
-	Balance            int64  `json:"balance"`
-	BalanceFormatted   string `json:"balanceFormatted"`
-	Threshold          int64  `json:"threshold"`
-	ThresholdFormatted string `json:"thresholdFormatted"`
-	TriggeredByJobID   string `json:"triggeredByJobId"`
-	TriggeredByJobType string `json:"triggeredByJobType"`
+	Balance            int64            `json:"balance"`
+	BalanceFormatted   string           `json:"balanceFormatted"`
+	Threshold          int64            `json:"threshold"`
+	ThresholdFormatted string           `json:"thresholdFormatted"`
+	TriggeredByJobID   string           `json:"triggeredByJobId"`
+	TriggeredByJobType rendobar.JobType `json:"triggeredByJobType"`
 }
 
 // BalanceDepletedData is read from the API. Fields it does not send are zero.
 type BalanceDepletedData struct {
-	Balance            int64  `json:"balance"`
-	BalanceFormatted   string `json:"balanceFormatted"`
-	TriggeredByJobID   string `json:"triggeredByJobId"`
-	TriggeredByJobType string `json:"triggeredByJobType"`
+	Balance            int64            `json:"balance"`
+	BalanceFormatted   string           `json:"balanceFormatted"`
+	TriggeredByJobID   string           `json:"triggeredByJobId"`
+	TriggeredByJobType rendobar.JobType `json:"triggeredByJobType"`
 }
 
 // TestEventData is read from the API. Fields it does not send are zero.

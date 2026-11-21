@@ -180,7 +180,7 @@ type CaptionBurnParams struct {
 	// Font family, or a CSS fallback stack. Any Google Fonts family works by name. Bundled and instant: Inter, Bebas Neue, Anton, Montserrat, Poppins, Roboto, Oswald. A stack falls through in CSS order, so "Lato, Inter, sans-serif" tries each in turn.
 	Font string `json:"font,omitempty"`
 	// Font size in pixels. Default: 48.
-	FontSize *int `json:"fontSize,omitempty"`
+	FontSize *int64 `json:"fontSize,omitempty"`
 	// Text color, web hex (#RRGGBB). Default: "#FFFFFF".
 	FontColor string `json:"fontColor,omitempty"`
 	// Bold text. Default: true.
@@ -204,15 +204,15 @@ type CaptionBurnParams struct {
 	// Horizontal alignment. Default: "center".
 	Alignment CaptionBurnAlignment `json:"alignment,omitempty"`
 	// Vertical margin in pixels. Default: 60.
-	MarginV *int `json:"marginV,omitempty"`
+	MarginV *int64 `json:"marginV,omitempty"`
 	// Horizontal margin in pixels. Default: 40.
-	MarginH *int `json:"marginH,omitempty"`
+	MarginH *int64 `json:"marginH,omitempty"`
 	// Max characters per line (auto-transcribe path)
-	MaxCharsPerLine *int `json:"maxCharsPerLine,omitempty"`
+	MaxCharsPerLine *int64 `json:"maxCharsPerLine,omitempty"`
 }
 
-// JobType returns "caption.burn".
-func (CaptionBurnParams) JobType() string { return "caption.burn" }
+// JobType returns JobTypeCaptionBurn.
+func (CaptionBurnParams) JobType() JobType { return JobTypeCaptionBurn }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -391,8 +391,8 @@ func (v CaptionsAnimateStyleCase) known() bool {
 }
 
 type CaptionsAnimateStyleStroke struct {
-	Color string  `json:"color"`
-	Width float64 `json:"width"`
+	Color string   `json:"color,omitempty"`
+	Width *float64 `json:"width,omitempty"`
 }
 
 func (v CaptionsAnimateStyleStroke) validate(c *check, path string) {
@@ -403,11 +403,15 @@ func (v CaptionsAnimateStyleStroke) validate(c *check, path string) {
 			c.fail(join(path, "color"), "must match ^#?[0-9a-fA-F]{6}$")
 		}
 	}
-	if float64(v.Width) < 0 {
-		c.fail(join(path, "width"), "must be at least 0")
-	}
-	if float64(v.Width) > 50 {
-		c.fail(join(path, "width"), "must be at most 50")
+	if v.Width == nil {
+		c.fail(join(path, "width"), "is required")
+	} else {
+		if float64(*v.Width) < 0 {
+			c.fail(join(path, "width"), "must be at least 0")
+		}
+		if float64(*v.Width) > 50 {
+			c.fail(join(path, "width"), "must be at most 50")
+		}
 	}
 }
 
@@ -496,7 +500,7 @@ func (v CaptionsAnimateStylePosition) known() bool {
 }
 
 type CaptionsAnimateStyleEmphasis struct {
-	Color string `json:"color"`
+	Color string `json:"color,omitempty"`
 }
 
 func (v CaptionsAnimateStyleEmphasis) validate(c *check, path string) {
@@ -548,13 +552,13 @@ func (v CaptionsAnimateStyleLayout) known() bool {
 type CaptionsAnimateStyle struct {
 	// Font family, or a CSS fallback stack. Any Google Fonts family works by name. Bundled and instant: Inter, Bebas Neue, Anton, Montserrat, Poppins, Roboto, Oswald. A stack falls through in CSS order, so "Lato, Inter, sans-serif" tries each in turn. Supplying the `font` job input renders in that file instead.
 	Font        string                          `json:"font,omitempty"`
-	FontSize    *int                            `json:"fontSize,omitempty"`
+	FontSize    *int64                          `json:"fontSize,omitempty"`
 	Case        CaptionsAnimateStyleCase        `json:"case,omitempty"`
 	Fill        string                          `json:"fill,omitempty"`
 	Stroke      *CaptionsAnimateStyleStroke     `json:"stroke,omitempty"`
 	Shadow      *float64                        `json:"shadow,omitempty"`
 	Bold        *bool                           `json:"bold,omitempty"`
-	MarginV     *int                            `json:"marginV,omitempty"`
+	MarginV     *int64                          `json:"marginV,omitempty"`
 	Highlight   *CaptionsAnimateStyleHighlight  `json:"highlight,omitempty"`
 	Punctuation CaptionsAnimateStylePunctuation `json:"punctuation,omitempty"`
 	Position    CaptionsAnimateStylePosition    `json:"position,omitempty"`
@@ -657,8 +661,8 @@ type CaptionsAnimateParams struct {
 	TranslateTo  CaptionsAnimateTranslateTo `json:"translateTo,omitempty"`
 }
 
-// JobType returns "captions.animate".
-func (CaptionsAnimateParams) JobType() string { return "captions.animate" }
+// JobType returns JobTypeCaptionsAnimate.
+func (CaptionsAnimateParams) JobType() JobType { return JobTypeCaptionsAnimate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -741,13 +745,13 @@ func (v CompressTargetTargetPreset) validate(c *check, path string) {
 
 func (CompressTargetTargetPreset) isCompressTargetTarget() {}
 
-type CompressTargetTargetInt int
+type CompressTargetTargetInt int64
 
 func (v CompressTargetTargetInt) validate(c *check, path string) {
-	if float64(int(v)) < 1 {
+	if float64(int64(v)) < 1 {
 		c.fail(path, "must be at least 1")
 	}
-	if float64(int(v)) > 100 {
+	if float64(int64(v)) > 100 {
 		c.fail(path, "must be at most 100")
 	}
 }
@@ -755,34 +759,42 @@ func (v CompressTargetTargetInt) validate(c *check, path string) {
 func (CompressTargetTargetInt) isCompressTargetTarget() {}
 
 type CompressTargetTargetQuality struct {
-	Quality int `json:"quality"`
+	Quality *int64 `json:"quality,omitempty"`
 }
 
 func (v CompressTargetTargetQuality) validate(c *check, path string) {
-	if float64(v.Quality) < 1 {
-		c.fail(join(path, "quality"), "must be at least 1")
-	}
-	if float64(v.Quality) > 100 {
-		c.fail(join(path, "quality"), "must be at most 100")
+	if v.Quality == nil {
+		c.fail(join(path, "quality"), "is required")
+	} else {
+		if float64(*v.Quality) < 1 {
+			c.fail(join(path, "quality"), "must be at least 1")
+		}
+		if float64(*v.Quality) > 100 {
+			c.fail(join(path, "quality"), "must be at most 100")
+		}
 	}
 }
 
 func (CompressTargetTargetQuality) isCompressTargetTarget() {}
 
 type CompressTargetTargetMaxBytes struct {
-	MaxBytes int64 `json:"maxBytes"`
+	MaxBytes *int64 `json:"maxBytes,omitempty"`
 }
 
 func (v CompressTargetTargetMaxBytes) validate(c *check, path string) {
-	if float64(v.MaxBytes) <= 0 {
-		c.fail(join(path, "maxBytes"), "must be more than 0")
+	if v.MaxBytes == nil {
+		c.fail(join(path, "maxBytes"), "is required")
+	} else {
+		if float64(*v.MaxBytes) <= 0 {
+			c.fail(join(path, "maxBytes"), "must be more than 0")
+		}
 	}
 }
 
 func (CompressTargetTargetMaxBytes) isCompressTargetTarget() {}
 
 type CompressTargetTargetMaxSize struct {
-	MaxSize string `json:"maxSize"`
+	MaxSize string `json:"maxSize,omitempty"`
 }
 
 func (v CompressTargetTargetMaxSize) validate(c *check, path string) {
@@ -798,12 +810,16 @@ func (v CompressTargetTargetMaxSize) validate(c *check, path string) {
 func (CompressTargetTargetMaxSize) isCompressTargetTarget() {}
 
 type CompressTargetTargetBitrate struct {
-	Bitrate int64 `json:"bitrate"`
+	Bitrate *int64 `json:"bitrate,omitempty"`
 }
 
 func (v CompressTargetTargetBitrate) validate(c *check, path string) {
-	if float64(v.Bitrate) <= 0 {
-		c.fail(join(path, "bitrate"), "must be more than 0")
+	if v.Bitrate == nil {
+		c.fail(join(path, "bitrate"), "is required")
+	} else {
+		if float64(*v.Bitrate) <= 0 {
+			c.fail(join(path, "bitrate"), "must be more than 0")
+		}
 	}
 }
 
@@ -1169,8 +1185,8 @@ type CompressTargetParams struct {
 	Timeout *int64 `json:"timeout,omitempty"`
 }
 
-// JobType returns "compress.target".
-func (CompressTargetParams) JobType() string { return "compress.target" }
+// JobType returns JobTypeCompressTarget.
+func (CompressTargetParams) JobType() JobType { return JobTypeCompressTarget }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1249,15 +1265,15 @@ func (v FfmpegCompute) known() bool {
 // FfmpegParams are the params of a ffmpeg job.
 type FfmpegParams struct {
 	// FFmpeg command string, such as "ffmpeg -i input.mp4 output.mp4". The leading "ffmpeg" is optional.
-	Command string `json:"command"`
+	Command string `json:"command,omitempty"`
 	// Max execution time in seconds (defaults to your plan's max job timeout)
 	Timeout *int64 `json:"timeout,omitempty"`
 	// Hardware target: auto (detect from command), cpu, or gpu (NVENC, Pro and Studio plans). Default: "auto".
 	Compute FfmpegCompute `json:"compute,omitempty"`
 }
 
-// JobType returns "ffmpeg".
-func (FfmpegParams) JobType() string { return "ffmpeg" }
+// JobType returns JobTypeFfmpeg.
+func (FfmpegParams) JobType() JobType { return JobTypeFfmpeg }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1290,13 +1306,13 @@ func (v FfmpegParams) validate(c *check, path string) {
 // FfprobeParams are the params of a ffprobe job.
 type FfprobeParams struct {
 	// A raw ffprobe command, run essentially as written. Minimal form is just the input media URL. Sensible defaults (JSON output, format, streams, chapters) are auto-filled only for flags you did not specify. The "ffprobe" prefix is optional.
-	Command string `json:"command"`
+	Command string `json:"command,omitempty"`
 	// Max execution time in seconds (defaults to your plan's max job timeout)
 	Timeout *int64 `json:"timeout,omitempty"`
 }
 
-// JobType returns "ffprobe".
-func (FfprobeParams) JobType() string { return "ffprobe" }
+// JobType returns JobTypeFfprobe.
+func (FfprobeParams) JobType() JobType { return JobTypeFfprobe }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1328,11 +1344,11 @@ func (v FfprobeParams) validate(c *check, path string) {
 // It sends model "economy".
 type ImageEditEconomyParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1345,8 +1361,8 @@ func (v ImageEditEconomyParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "economy")
 }
 
-// JobType returns "image.edit".
-func (ImageEditEconomyParams) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditEconomyParams) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1389,11 +1405,11 @@ func (v ImageEditEconomyParams) validate(c *check, path string) {
 // It sends model "standard".
 type ImageEditStandardParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1406,8 +1422,8 @@ func (v ImageEditStandardParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "standard")
 }
 
-// JobType returns "image.edit".
-func (ImageEditStandardParams) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditStandardParams) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1450,11 +1466,11 @@ func (v ImageEditStandardParams) validate(c *check, path string) {
 // It sends model "premium".
 type ImageEditPremiumParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1467,8 +1483,8 @@ func (v ImageEditPremiumParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "premium")
 }
 
-// JobType returns "image.edit".
-func (ImageEditPremiumParams) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditPremiumParams) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1511,11 +1527,11 @@ func (v ImageEditPremiumParams) validate(c *check, path string) {
 // It sends model "flux-2-klein-4b".
 type ImageEditFlux2Klein4bParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1528,8 +1544,8 @@ func (v ImageEditFlux2Klein4bParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "flux-2-klein-4b")
 }
 
-// JobType returns "image.edit".
-func (ImageEditFlux2Klein4bParams) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditFlux2Klein4bParams) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1572,11 +1588,11 @@ func (v ImageEditFlux2Klein4bParams) validate(c *check, path string) {
 // It sends model "qwen-image-edit-2511".
 type ImageEditQwenImageEdit2511Params struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1586,7 +1602,7 @@ type ImageEditQwenImageEdit2511Params struct {
 	// How strictly to follow the instruction. Higher is stricter.
 	Guidance *float64 `json:"guidance,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "qwen-image-edit-2511" with the fields.
@@ -1595,8 +1611,8 @@ func (v ImageEditQwenImageEdit2511Params) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "qwen-image-edit-2511")
 }
 
-// JobType returns "image.edit".
-func (ImageEditQwenImageEdit2511Params) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditQwenImageEdit2511Params) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1660,17 +1676,17 @@ func (v ImageEditQwenImageEdit2511Params) validate(c *check, path string) {
 // It sends model "qwen-image-edit-2511-lightning".
 type ImageEditQwenImageEdit2511LightningParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
 	EnhancePrompt *bool `json:"enhancePrompt,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "qwen-image-edit-2511-lightning" with the fields.
@@ -1679,8 +1695,8 @@ func (v ImageEditQwenImageEdit2511LightningParams) MarshalJSON() ([]byte, error)
 	return marshalWith(plain(v), "model", "qwen-image-edit-2511-lightning")
 }
 
-// JobType returns "image.edit".
-func (ImageEditQwenImageEdit2511LightningParams) JobType() string { return "image.edit" }
+// JobType returns JobTypeImageEdit.
+func (ImageEditQwenImageEdit2511LightningParams) JobType() JobType { return JobTypeImageEdit }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1731,11 +1747,11 @@ func (v ImageEditQwenImageEdit2511LightningParams) validate(c *check, path strin
 // It sends model "economy".
 type ImageGenerateEconomyParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1748,8 +1764,8 @@ func (v ImageGenerateEconomyParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "economy")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateEconomyParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateEconomyParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1792,11 +1808,11 @@ func (v ImageGenerateEconomyParams) validate(c *check, path string) {
 // It sends model "standard".
 type ImageGenerateStandardParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1809,8 +1825,8 @@ func (v ImageGenerateStandardParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "standard")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateStandardParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateStandardParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1853,11 +1869,11 @@ func (v ImageGenerateStandardParams) validate(c *check, path string) {
 // It sends model "premium".
 type ImageGeneratePremiumParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1870,8 +1886,8 @@ func (v ImageGeneratePremiumParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "premium")
 }
 
-// JobType returns "image.generate".
-func (ImageGeneratePremiumParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGeneratePremiumParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1914,11 +1930,11 @@ func (v ImageGeneratePremiumParams) validate(c *check, path string) {
 // It sends model "flux-2-klein-4b".
 type ImageGenerateFlux2Klein4bParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1931,8 +1947,8 @@ func (v ImageGenerateFlux2Klein4bParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "flux-2-klein-4b")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateFlux2Klein4bParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateFlux2Klein4bParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -1975,11 +1991,11 @@ func (v ImageGenerateFlux2Klein4bParams) validate(c *check, path string) {
 // It sends model "ernie-image-turbo".
 type ImageGenerateErnieImageTurboParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -1992,8 +2008,8 @@ func (v ImageGenerateErnieImageTurboParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "ernie-image-turbo")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateErnieImageTurboParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateErnieImageTurboParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2036,17 +2052,17 @@ func (v ImageGenerateErnieImageTurboParams) validate(c *check, path string) {
 // It sends model "z-image-turbo".
 type ImageGenerateZImageTurboParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
 	EnhancePrompt *bool `json:"enhancePrompt,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "z-image-turbo" with the fields.
@@ -2055,8 +2071,8 @@ func (v ImageGenerateZImageTurboParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "z-image-turbo")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateZImageTurboParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateZImageTurboParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2107,11 +2123,11 @@ func (v ImageGenerateZImageTurboParams) validate(c *check, path string) {
 // It sends model "qwen-image-2512".
 type ImageGenerateQwenImage2512Params struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -2121,7 +2137,7 @@ type ImageGenerateQwenImage2512Params struct {
 	// How strictly to follow the prompt. Higher is stricter.
 	Guidance *float64 `json:"guidance,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "qwen-image-2512" with the fields.
@@ -2130,8 +2146,8 @@ func (v ImageGenerateQwenImage2512Params) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "qwen-image-2512")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateQwenImage2512Params) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateQwenImage2512Params) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2195,17 +2211,17 @@ func (v ImageGenerateQwenImage2512Params) validate(c *check, path string) {
 // It sends model "qwen-image-2512-lightning".
 type ImageGenerateQwenImage2512LightningParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
 	EnhancePrompt *bool `json:"enhancePrompt,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "qwen-image-2512-lightning" with the fields.
@@ -2214,8 +2230,8 @@ func (v ImageGenerateQwenImage2512LightningParams) MarshalJSON() ([]byte, error)
 	return marshalWith(plain(v), "model", "qwen-image-2512-lightning")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateQwenImage2512LightningParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateQwenImage2512LightningParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2266,11 +2282,11 @@ func (v ImageGenerateQwenImage2512LightningParams) validate(c *check, path strin
 // It sends model "flux-2-dev".
 type ImageGenerateFlux2DevParams struct {
 	// What you want. For image.edit, describe the change to make. Plain language, no special syntax.
-	Prompt string `json:"prompt"`
+	Prompt string `json:"prompt,omitempty"`
 	// Requested output width in pixels. Snapped to what the model can render.
-	Width *int `json:"width,omitempty"`
+	Width *int64 `json:"width,omitempty"`
 	// Requested output height in pixels. Snapped to what the model can render.
-	Height *int `json:"height,omitempty"`
+	Height *int64 `json:"height,omitempty"`
 	// Fixed seed for a reproducible result. The seed used is echoed back.
 	Seed *int64 `json:"seed,omitempty"`
 	// Rewrite the prompt for the model before generating. Defaults per model; omit to keep the model's default.
@@ -2278,7 +2294,7 @@ type ImageGenerateFlux2DevParams struct {
 	// How strictly to follow the prompt. Higher is stricter.
 	Guidance *float64 `json:"guidance,omitempty"`
 	// Denoise steps. More steps means more detail and more time.
-	Steps *int `json:"steps,omitempty"`
+	Steps *int64 `json:"steps,omitempty"`
 }
 
 // MarshalJSON sends model "flux-2-dev" with the fields.
@@ -2287,8 +2303,8 @@ func (v ImageGenerateFlux2DevParams) MarshalJSON() ([]byte, error) {
 	return marshalWith(plain(v), "model", "flux-2-dev")
 }
 
-// JobType returns "image.generate".
-func (ImageGenerateFlux2DevParams) JobType() string { return "image.generate" }
+// JobType returns JobTypeImageGenerate.
+func (ImageGenerateFlux2DevParams) JobType() JobType { return JobTypeImageGenerate }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2371,7 +2387,7 @@ type ImageUpscaleSizing interface {
 
 type ImageUpscaleSizingFactor struct {
 	// How many times larger to make the image, for example 2 or 4.
-	Factor float64 `json:"factor"`
+	Factor *float64 `json:"factor,omitempty"`
 }
 
 // MarshalJSON sends mode "factor" with the fields.
@@ -2381,8 +2397,12 @@ func (v ImageUpscaleSizingFactor) MarshalJSON() ([]byte, error) {
 }
 
 func (v ImageUpscaleSizingFactor) validate(c *check, path string) {
-	if float64(v.Factor) < 1 {
-		c.fail(join(path, "factor"), "must be at least 1")
+	if v.Factor == nil {
+		c.fail(join(path, "factor"), "is required")
+	} else {
+		if float64(*v.Factor) < 1 {
+			c.fail(join(path, "factor"), "must be at least 1")
+		}
 	}
 }
 
@@ -2390,7 +2410,7 @@ func (ImageUpscaleSizingFactor) isImageUpscaleSizing() {}
 
 type ImageUpscaleSizingHeight struct {
 	// Target output height in pixels. Width follows the source aspect ratio.
-	Height int64 `json:"height"`
+	Height *int64 `json:"height,omitempty"`
 }
 
 // MarshalJSON sends mode "height" with the fields.
@@ -2400,8 +2420,12 @@ func (v ImageUpscaleSizingHeight) MarshalJSON() ([]byte, error) {
 }
 
 func (v ImageUpscaleSizingHeight) validate(c *check, path string) {
-	if float64(v.Height) <= 0 {
-		c.fail(join(path, "height"), "must be more than 0")
+	if v.Height == nil {
+		c.fail(join(path, "height"), "is required")
+	} else {
+		if float64(*v.Height) <= 0 {
+			c.fail(join(path, "height"), "must be more than 0")
+		}
 	}
 }
 
@@ -2447,11 +2471,11 @@ type ImageUpscaleParams struct {
 	// Fixed at 42 unless you set one. This model reconstructs detail rather than copying it, so a different seed is a different plausible result. Change it to reroll, keep it to reproduce.
 	Seed *int64 `json:"seed,omitempty"`
 	// Run the model repeatedly, each pass covering an equal share of the total scale factor. Leave it unset and the number of passes follows the factor, keeping every step near a doubling, which is where this model does its best work. Set it explicitly to override. Costs one full render per pass.
-	Passes *int `json:"passes,omitempty"`
+	Passes *int64 `json:"passes,omitempty"`
 }
 
-// JobType returns "image.upscale".
-func (ImageUpscaleParams) JobType() string { return "image.upscale" }
+// JobType returns JobTypeImageUpscale.
+func (ImageUpscaleParams) JobType() JobType { return JobTypeImageUpscale }
 
 // Validate checks the params against the job type's schema without sending anything.
 // It returns an *Error with code INVALID_ARGUMENT listing each problem.
@@ -2629,8 +2653,8 @@ const (
 	FieldTypeJSON    FieldType = "json"
 )
 
-// JobStatus is where a job is in its life. The API may add statuses later,
-// so treat an unknown one as still in progress.
+// JobStatus is where a job is in its life. The API may add statuses, so
+// keep a default branch, and ask Job.IsTerminal whether a job has finished.
 type JobStatus string
 
 // The job statuses this SDK knows.
@@ -2643,18 +2667,18 @@ const (
 	StatusCancelled  JobStatus = "cancelled"
 )
 
-// typedJobTypes maps each job type with a typed params struct to it, so
-// CustomParams can point there instead.
-var typedJobTypes = map[string]bool{
-	"caption.burn":     true,
-	"captions.animate": true,
-	"compress.target":  true,
-	"ffmpeg":           true,
-	"ffprobe":          true,
-	"image.edit":       true,
-	"image.generate":   true,
-	"image.upscale":    true,
-}
+// The job types with typed params in this SDK. Jobs.Types lists every live
+// type, which may include ones newer than this list.
+const (
+	JobTypeCaptionBurn     JobType = "caption.burn"
+	JobTypeCaptionsAnimate JobType = "captions.animate"
+	JobTypeCompressTarget  JobType = "compress.target"
+	JobTypeFfmpeg          JobType = "ffmpeg"
+	JobTypeFfprobe         JobType = "ffprobe"
+	JobTypeImageEdit       JobType = "image.edit"
+	JobTypeImageGenerate   JobType = "image.generate"
+	JobTypeImageUpscale    JobType = "image.upscale"
+)
 
 // Normalized summary, present when the report is JSON with format and streams. Narrow on `kind` before reading `video`, `audio` or `image`.
 //
@@ -2688,9 +2712,9 @@ type FfprobeVideoStream struct {
 	PixelFormat        string `json:"pixelFormat"`
 	BitDepth           *int64 `json:"bitDepth"`
 	// avg_frame_rate as a number; null for a 0/0 rate
-	FPS                 *float64        `json:"fps"`
-	IsVariableFrameRate bool            `json:"isVariableFrameRate"`
-	Rotation            json.RawMessage `json:"rotation"`
+	FPS                 *float64 `json:"fps"`
+	IsVariableFrameRate bool     `json:"isVariableFrameRate"`
+	Rotation            int64    `json:"rotation"`
 	// True for a PQ (smpte2084) or HLG (arib-std-b67) transfer
 	IsHdr bool `json:"isHdr"`
 	// Per-stream bitrate; null when the container omits it
@@ -2878,7 +2902,7 @@ type FfprobeStream struct {
 	Duration           string                 `json:"duration"`
 	NbFrames           string                 `json:"nb_frames"`
 	NbReadFrames       string                 `json:"nb_read_frames"`
-	Disposition        json.RawMessage        `json:"disposition"`
+	Disposition        map[string]int64       `json:"disposition"`
 	Tags               map[string]string      `json:"tags"`
 }
 

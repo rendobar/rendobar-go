@@ -1,12 +1,15 @@
 package rendobar
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"iter"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/rendobar/rendobar-go/internal/api"
@@ -26,11 +29,12 @@ type Jobs struct{ client *Client }
 type CreateParams struct {
 	// Params are the job's params. Their JobType is the job type submitted.
 	Params JobParams
-	// Inputs maps an input name to the URL of a file the API can fetch, such
-	// as {"source": "https://example.com/in.mp4"}. Jobs.Schema lists the names
-	// a type takes. ffmpeg and ffprobe accept any name, and the command refers
-	// to the file by it. A command that names its input URLs needs no Inputs.
-	Inputs map[string]string
+	// Inputs maps an input name to its value: a URL, a list of URLs, inline
+	// Content, a FromJob reference or Fonts (see Input). Jobs.Schema lists the
+	// names a type takes, such as "source", or "images" for image.edit.
+	// ffmpeg and ffprobe accept any file name, and the command refers to the
+	// file by it. A command that names its input URLs needs no Inputs.
+	Inputs map[string]Input
 	// IdempotencyKey makes the submit safe to repeat. With none, the SDK
 	// generates one per Create call, so its own retries cannot create a second job.
 	// Reusing a key with different params is refused with a 409 *Error, code CodeConflict.
@@ -109,15 +113,18 @@ func GenerateIdempotencyKey() string {
 	return "sdk_" + hex.EncodeToString(b[:])
 }
 
-// paramsMap encodes typed params as the JSON object the API takes.
-func paramsMap(p JobParams) (map[string]any, error) {
-	raw, err := json.Marshal(p)
+// jsonObject encodes typed params or inputs as the JSON object the API takes.
+// Numbers stay json.Number, so an int64 above 2^53 keeps every digit.
+func jsonObject(what string, v any) (map[string]any, error) {
+	raw, err := json.Marshal(v)
 	if err != nil {
-		return nil, local(CodeInvalidArgument, "params do not encode to JSON: %v", err)
+		return nil, local(CodeInvalidArgument, "%s do not encode to JSON: %v", what, err)
 	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
 	var m map[string]any
-	if err := json.Unmarshal(raw, &m); err != nil {
-		return nil, local(CodeInvalidArgument, "params must encode to a JSON object: %v", err)
+	if err := dec.Decode(&m); err != nil {
+		return nil, local(CodeInvalidArgument, "%s must encode to a JSON object: %v", what, err)
 	}
 	return m, nil
 }
@@ -141,14 +148,19 @@ func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if err := p.Params.Validate(); err != nil {
 		return nil, err
 	}
+	var c check
+	checkInputs(p.Inputs, &c)
 	if p.Callback != nil {
-		var c check
 		p.Callback.validate(&c)
-		if err := c.err(); err != nil {
-			return nil, err
-		}
 	}
-	params, err := paramsMap(p.Params)
+	if err := c.err(); err != nil {
+		return nil, err
+	}
+	params, err := jsonObject("params", p.Params)
+	if err != nil {
+		return nil, err
+	}
+	inputs, err := jsonObject("inputs", p.Inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +168,7 @@ func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if key == "" {
 		key = GenerateIdempotencyKey()
 	}
-	inputs := make(map[string]any, len(p.Inputs))
-	for k, v := range p.Inputs {
-		inputs[k] = v
-	}
-	body := &api.SubmitAnyJob{Type: p.Params.JobType(), Params: params, Inputs: inputs, IdempotencyKey: &key, Destinations: p.Destinations}
+	body := &api.SubmitAnyJob{Type: string(p.Params.JobType()), Params: params, Inputs: inputs, IdempotencyKey: &key, Destinations: p.Destinations}
 	if p.Callback != nil {
 		body.Callback = p.Callback.wire()
 	}
@@ -194,19 +202,24 @@ func (j *Jobs) Get(ctx context.Context, id string) (*Job, error) {
 	if err := checkID(id); err != nil {
 		return nil, err
 	}
-	res, err := j.client.core.Jobs.GetJob(ctx, &api.GetJobRequest{ID: id})
-	if err != nil {
-		return nil, fromGenerated(err)
+	var res struct {
+		Data *Job `json:"data"`
 	}
-	return fromAPIJob(res.Data)
+	if err := j.client.getJSON(ctx, "/jobs/"+url.PathEscape(id), nil, &res); err != nil {
+		return nil, err
+	}
+	if res.Data == nil {
+		return nil, fmt.Errorf("rendobar: response has no job")
+	}
+	return res.Data, nil
 }
 
 // ListParams filters Jobs.List and Jobs.All. The zero value lists every job.
 type ListParams struct {
 	// Status keeps jobs in one status, such as StatusFailed. "" keeps all.
 	Status JobStatus
-	// Type keeps jobs of one type, such as "ffmpeg". "" keeps all.
-	Type string
+	// Type keeps jobs of one type, such as JobTypeFfmpeg. "" keeps all.
+	Type JobType
 	// Limit is the page size, up to 100. The API treats a larger value as 100.
 	// 0 uses the API's default of 50 for List. All always fetches pages of
 	// 100 or of a smaller Limit you set. A negative Limit is an INVALID_ARGUMENT *Error.
@@ -229,34 +242,34 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 	if p.Limit < 0 || p.Offset < 0 {
 		return nil, local(CodeInvalidArgument, "ListParams Limit and Offset must not be negative, got %d and %d", p.Limit, p.Offset)
 	}
-	req := &api.ListJobsRequest{}
+	q := url.Values{}
 	if p.Status != "" {
-		s := api.ListJobsRequestStatus(p.Status)
-		req.Status = &s
+		q.Set("status", string(p.Status))
 	}
 	if p.Type != "" {
-		req.Type = &p.Type
+		q.Set("type", string(p.Type))
 	}
 	if p.Limit > 0 {
-		req.Limit = &p.Limit
+		q.Set("limit", strconv.Itoa(p.Limit))
 	}
 	if p.Offset > 0 {
-		req.Offset = &p.Offset
+		q.Set("offset", strconv.Itoa(p.Offset))
 	}
-	res, err := j.client.core.Jobs.ListJobs(ctx, req)
-	if err != nil {
-		return nil, fromGenerated(err)
+	var res struct {
+		Data []*Job `json:"data"`
+		Meta *struct {
+			Total int64 `json:"total"`
+		} `json:"meta"`
 	}
-	page := &Page{Jobs: make([]*Job, 0, len(res.Data))}
-	for _, in := range res.Data {
-		job, err := fromAPIJob(in)
-		if err != nil {
-			return nil, err
-		}
-		page.Jobs = append(page.Jobs, job)
+	if err := j.client.getJSON(ctx, "/jobs", q, &res); err != nil {
+		return nil, err
+	}
+	page := &Page{Jobs: res.Data}
+	if page.Jobs == nil {
+		page.Jobs = []*Job{}
 	}
 	if res.Meta != nil {
-		page.Total = res.Meta.Total
+		page.Total = int(res.Meta.Total)
 	}
 	return page, nil
 }
@@ -302,12 +315,15 @@ func (j *Jobs) Cancel(ctx context.Context, id string) error {
 }
 
 // Types returns every live job type. Public: needs no API key.
-func (j *Jobs) Types(ctx context.Context) ([]JobType, error) {
+func (j *Jobs) Types(ctx context.Context) ([]JobTypeInfo, error) {
+	if j.client.confErr != nil {
+		return nil, j.client.confErr
+	}
 	res, err := j.client.core.Jobs.ListJobTypes(ctx)
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	types, err := convert[[]JobType](res.Data)
+	types, err := convert[[]JobTypeInfo](res.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -315,11 +331,14 @@ func (j *Jobs) Types(ctx context.Context) ([]JobType, error) {
 }
 
 // Schema returns one job type's params: its fields, inputs and full JSON Schema. Public: needs no API key.
-func (j *Jobs) Schema(ctx context.Context, jobType string) (*JobTypeSchema, error) {
-	if !jobTypeName.MatchString(jobType) {
+func (j *Jobs) Schema(ctx context.Context, jobType JobType) (*JobTypeSchema, error) {
+	if j.client.confErr != nil {
+		return nil, j.client.confErr
+	}
+	if !jobTypeName.MatchString(string(jobType)) {
 		return nil, local(CodeInvalidArgument, "job type %q is not valid: use the name Jobs.Types lists, such as ffmpeg", jobType)
 	}
-	res, err := j.client.core.Jobs.GetJobTypeSchema(ctx, &api.GetJobTypeSchemaRequest{Type: jobType})
+	res, err := j.client.core.Jobs.GetJobTypeSchema(ctx, &api.GetJobTypeSchemaRequest{Type: string(jobType)})
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
@@ -434,9 +453,14 @@ func (a *Account) Capabilities(ctx context.Context) (*AccountCapabilities, error
 	if err := a.client.needKey(); err != nil {
 		return nil, err
 	}
-	res, err := a.client.core.Account.GetAccountCapabilities(ctx)
-	if err != nil {
-		return nil, fromGenerated(err)
+	var res struct {
+		Data *AccountCapabilities `json:"data"`
 	}
-	return convert[AccountCapabilities](res.Data)
+	if err := a.client.getJSON(ctx, "/account/capabilities", nil, &res); err != nil {
+		return nil, err
+	}
+	if res.Data == nil {
+		return nil, fmt.Errorf("rendobar: response has no capabilities")
+	}
+	return res.Data, nil
 }

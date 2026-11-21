@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "description": "A fixture covering every generator rule.",
+  "required": ["command", "count", "sizing"],
+  "properties": {
+    "command": {"type": "string", "minLength": 1, "maxLength": 100, "description": "A required string."},
+    "label": {"type": "string", "pattern": "^[a-z]+$"},
+    "count": {"type": "integer", "minimum": 1, "maximum": 10},
+    "seed": {"type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991},
+    "ratio": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "loud": {"type": "boolean", "default": false},
+    "mode": {"type": "string", "enum": ["fast", "slow-and-steady"], "default": "fast"},
+    "nested": {"type": "object", "properties": {"depth": {"type": "integer", "maximum": 3}}},
+    "sizing": {
+      "oneOf": [
+        {"type": "object", "properties": {"mode": {"type": "string", "const": "factor"}, "factor": {"type": "number", "minimum": 1}}, "required": ["mode", "factor"]},
+        {"type": "object", "properties": {"mode": {"type": "string", "const": "height"}, "height": {"type": "integer"}}, "required": ["mode", "height"]}
+      ]
+    },
+    "target": {
+      "anyOf": [
+        {"type": "string", "enum": ["small", "large"]},
+        {"type": "integer", "minimum": 1, "maximum": 100},
+        {"type": "object", "properties": {"maxBytes": {"type": "integer"}}, "required": ["maxBytes"]}
+      ]
+    },
+    "old": {"type": "string", "description": "Deprecated alias for label."}
+  }
+}
