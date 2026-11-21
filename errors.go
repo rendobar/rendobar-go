@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
+	"time"
 
 	"github.com/rendobar/rendobar-go/internal/api"
 	"github.com/rendobar/rendobar-go/internal/api/core"
@@ -23,11 +23,16 @@ type Error struct {
 	StatusCode int
 	// RequestID is the X-Request-Id of the failed request. Quote it to support.
 	RequestID string
-	// RetryAfter is the server's Retry-After in seconds, or 0.
-	RetryAfter float64
+	// RetryAfter is how long the server asked the caller to wait (Retry-After), or 0.
+	RetryAfter time.Duration
 	// Details is any structured detail the API sent, such as a refusal's problems.
 	Details any
+
+	err error // the generated core's error
 }
+
+// Unwrap returns the underlying error from the generated core.
+func (e *Error) Unwrap() error { return e.err }
 
 func (e *Error) Error() string {
 	if e.RequestID != "" {
@@ -53,8 +58,14 @@ type JobFailedError struct {
 }
 
 func (e *JobFailedError) Error() string {
-	if e.Job.Failed != nil {
-		return fmt.Sprintf("rendobar: job %s failed: %s (%s)", e.Job.Failed.ID, e.Job.Failed.Error.Message, e.Job.Failed.Error.Code)
+	if e == nil || e.Job == nil {
+		return "rendobar: job failed"
+	}
+	if f := e.Job.Failed; f != nil {
+		if f.Error != nil {
+			return fmt.Sprintf("rendobar: job %s failed: %s (%s)", f.ID, f.Error.Message, f.Error.Code)
+		}
+		return fmt.Sprintf("rendobar: job %s failed", f.ID)
 	}
 	return fmt.Sprintf("rendobar: job ended %s", e.Job.Status)
 }
@@ -63,11 +74,11 @@ func (e *JobFailedError) Error() string {
 type WaitTimeoutError struct {
 	JobID      string
 	LastStatus string
-	Waited     float64 // seconds
+	Waited     time.Duration // how long Wait actually waited
 }
 
 func (e *WaitTimeoutError) Error() string {
-	return fmt.Sprintf("rendobar: job %s still %s after %.0fs. It may still finish: call Jobs.Get later", e.JobID, e.LastStatus, e.Waited)
+	return fmt.Sprintf("rendobar: job %s still %s after %s. It may still finish: call Jobs.Get later", e.JobID, e.LastStatus, e.Waited.Round(time.Second))
 }
 
 type bodied interface{ GetBody() *api.ErrorResponse }
@@ -86,8 +97,9 @@ func fromGenerated(err error) error {
 		Message:    fmt.Sprintf("request failed with status %d", apiErr.StatusCode),
 		StatusCode: apiErr.StatusCode,
 		RequestID:  apiErr.Header.Get(requestIDHeader),
+		err:        err,
 	}
-	if ra, perr := strconv.ParseFloat(apiErr.Header.Get("Retry-After"), 64); perr == nil {
+	if ra, ok := retryAfter(apiErr.Header.Get("Retry-After"), time.Now()); ok {
 		out.RetryAfter = ra
 	}
 	var b bodied

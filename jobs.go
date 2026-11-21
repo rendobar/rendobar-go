@@ -25,9 +25,10 @@ type JobType = api.JobType
 // AccountCapabilities is what this API key's workspace may do.
 type AccountCapabilities = api.GetAccountCapabilitiesResponseData
 
-const (
-	defaultWaitTimeout = 5 * time.Minute  // until the job reports its own budget
-	waitGrace          = 2 * time.Minute  // headroom past that budget for upload and callback
+// Variables, not constants, so the tests can shorten them.
+var (
+	defaultWaitTimeout = 5 * time.Minute // from the start of Wait, until the job reports its own budget
+	waitGrace          = 2 * time.Minute // headroom past that budget for upload and callback
 )
 
 // Jobs submits jobs, follows them to the end, and reads their output.
@@ -168,11 +169,12 @@ func (j *Jobs) List(ctx context.Context, p ListParams) (*Page, error) {
 //	for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: "failed"}) { ... }
 func (j *Jobs) All(ctx context.Context, p ListParams) iter.Seq2[*Job, error] {
 	return func(yield func(*Job, error) bool) {
-		if p.Limit <= 0 {
-			p.Limit = 100
+		q := p // a copy per range, so ranging the same sequence twice yields everything twice
+		if q.Limit <= 0 {
+			q.Limit = 100
 		}
 		for {
-			page, err := j.List(ctx, p)
+			page, err := j.List(ctx, q)
 			if err != nil {
 				yield(nil, err)
 				return
@@ -182,8 +184,8 @@ func (j *Jobs) All(ctx context.Context, p ListParams) iter.Seq2[*Job, error] {
 					return
 				}
 			}
-			p.Offset += len(page.Jobs)
-			if len(page.Jobs) == 0 || p.Offset >= page.Total {
+			q.Offset += len(page.Jobs)
+			if len(page.Jobs) == 0 || q.Offset >= page.Total {
 				return
 			}
 		}
@@ -196,17 +198,17 @@ func (j *Jobs) Cancel(ctx context.Context, id string) error {
 	return fromGenerated(err)
 }
 
-// Download returns the output file of a completed job.
+// Download returns the output file of a completed job, held in memory.
+// WithTimeout bounds the whole download, not only its first byte.
 func (j *Jobs) Download(ctx context.Context, id string) ([]byte, error) {
 	r, err := j.client.core.Jobs.DownloadJobOutput(ctx, &api.DownloadJobOutputRequest{ID: id})
 	if err != nil {
 		return nil, fromGenerated(err)
 	}
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		return nil, err
+	if buf, ok := r.(*bytes.Buffer); ok {
+		return buf.Bytes(), nil // the core already buffered it: hand those bytes over, no second copy
 	}
-	return buf.Bytes(), nil
+	return io.ReadAll(r)
 }
 
 // Types returns every live job type. Public: needs no API key.
@@ -229,8 +231,10 @@ func (j *Jobs) Schema(ctx context.Context, jobType string) (*api.GetJobTypeSchem
 
 // WaitOptions tune Jobs.Wait and Jobs.Run. The zero value is fine.
 type WaitOptions struct {
-	// Timeout overrides the deadline. By default it is 5 minutes, then the job's
-	// own time limit plus 2 minutes once the job reports one.
+	// Timeout overrides the deadline. By default Wait gives up 5 minutes after it
+	// starts, a job stuck in the queue included. When the job first reports its own
+	// time limit, the deadline moves out to that limit plus 2 minutes, counted from
+	// that poll, if that is later.
 	Timeout     time.Duration
 	Interval    time.Duration // first poll gap, default 2s
 	MaxInterval time.Duration // longest poll gap, default 10s
@@ -284,18 +288,21 @@ func (j *Jobs) Wait(ctx context.Context, id string, o *WaitOptions) (*Job, error
 		}
 		if ms := budget(job); !adopted && ms != nil {
 			adopted = true
-			if own := started.Add(time.Duration(*ms)*time.Millisecond + waitGrace); own.After(deadline) {
+			// The budget runs from about now, not from when Wait started.
+			if own := time.Now().Add(time.Duration(*ms)*time.Millisecond + waitGrace); own.After(deadline) {
 				deadline = own
 			}
 		}
 		left := time.Until(deadline)
 		if left <= 0 {
-			return nil, &WaitTimeoutError{JobID: id, LastStatus: job.Status, Waited: deadline.Sub(started).Seconds()}
+			return nil, &WaitTimeoutError{JobID: id, LastStatus: job.Status, Waited: time.Since(started)}
 		}
+		timer := time.NewTimer(min(interval, left))
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return nil, ctx.Err()
-		case <-time.After(min(interval, left)):
+		case <-timer.C:
 		}
 		interval = min(interval*3/2, maxInterval)
 	}
