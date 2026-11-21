@@ -53,6 +53,7 @@ type config struct {
 	apiKey        string
 	baseURL       string
 	httpClient    *http.Client
+	timeout       time.Duration
 	maxRetries    int
 	app           string
 	onDeprecation func(DeprecationNotice)
@@ -65,23 +66,30 @@ type Option func(*config)
 func WithAPIKey(key string) Option { return func(c *config) { c.apiKey = key } }
 
 // WithBaseURL points the client at another API host, such as a test server.
-func WithBaseURL(url string) Option { return func(c *config) { c.baseURL = strings.TrimRight(url, "/") } }
-
-// WithHTTPClient sets the HTTP client. Its Timeout bounds each attempt.
-func WithHTTPClient(hc *http.Client) Option { return func(c *config) { c.httpClient = hc } }
-
-// WithTimeout bounds each request attempt. The default is 30 seconds.
-func WithTimeout(d time.Duration) Option {
-	return func(c *config) {
-		if c.httpClient == nil {
-			c.httpClient = &http.Client{}
-		}
-		c.httpClient.Timeout = d
-	}
+func WithBaseURL(url string) Option {
+	return func(c *config) { c.baseURL = strings.TrimRight(url, "/") }
 }
 
-// WithMaxRetries sets how many times a 429 or 5xx is retried. The default is 2.
-func WithMaxRetries(n int) Option { return func(c *config) { c.maxRetries = n } }
+// WithHTTPClient sets the HTTP client. The client copies it, so the one you
+// pass is never changed. Its Timeout bounds each attempt unless WithTimeout is also given.
+func WithHTTPClient(hc *http.Client) Option { return func(c *config) { c.httpClient = hc } }
+
+// WithTimeout bounds each request attempt, including reading the whole response
+// body, so for Jobs.Download it bounds the whole download. The default is 30
+// seconds. It wins over the Timeout of a WithHTTPClient client, in either order,
+// and never changes that client.
+func WithTimeout(d time.Duration) Option { return func(c *config) { c.timeout = d } }
+
+// WithMaxRetries sets how many times a 429, a 5xx or a connection error is
+// retried. The default is 2. 0 (or a negative number) sends each request once.
+func WithMaxRetries(n int) Option {
+	return func(c *config) {
+		if n < 0 {
+			n = 0
+		}
+		c.maxRetries = n
+	}
+}
 
 // WithApp names the application built on this client, sent as app/<name> in X-Rendobar-Client.
 func WithApp(name string) Option { return func(c *config) { c.app = name } }
@@ -105,8 +113,11 @@ func New(opts ...Option) *Client {
 	}
 	hc := &http.Client{Timeout: 30 * time.Second}
 	if cfg.httpClient != nil {
-		copied := *cfg.httpClient
+		copied := *cfg.httpClient // never mutate the caller's client
 		hc = &copied
+	}
+	if cfg.timeout > 0 {
+		hc.Timeout = cfg.timeout // applied after every option, so order does not matter
 	}
 	base := hc.Transport
 	if base == nil {
@@ -118,9 +129,11 @@ func New(opts ...Option) *Client {
 	header.Set("X-Rendobar-Client", clientHeader(cfg.app))
 	coreOpts := []option.RequestOption{
 		option.WithBaseURL(cfg.baseURL),
-		option.WithHTTPClient(hc),
+		// This package owns retries (retry.go): the generated core would also
+		// retry 408, and never a connection error.
+		option.WithHTTPClient(&retrier{client: hc, maxRetries: cfg.maxRetries}),
+		option.WithoutRetries(),
 		option.WithHTTPHeader(header),
-		option.WithMaxAttempts(uint(cfg.maxRetries + 1)),
 	}
 	if cfg.apiKey != "" {
 		coreOpts = append(coreOpts, option.WithToken(cfg.apiKey))
@@ -153,7 +166,25 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return res, err
 }
 
-var idSegment = regexp.MustCompile(`/[a-z]+_[A-Za-z0-9_-]+(/|$)`)
+var (
+	knownID   = regexp.MustCompile(`^(job|batch|org|asset|wh|key|rb|upl)_[A-Za-z0-9_-]+$`)
+	genericID = regexp.MustCompile(`^[a-z]+_[A-Za-z0-9]{8,}$`)
+)
+
+// The spec has no literal path segment with an underscore, so a lowercase word,
+// "_" and 8 or more letters or digits is always an id.
+//
+// routeOf collapses every id-shaped path segment to :id, adjacent ones included,
+// so one endpoint is one route however many ids it is called with.
+func routeOf(path string) string {
+	segs := strings.Split(path, "/")
+	for i, seg := range segs {
+		if knownID.MatchString(seg) || genericID.MatchString(seg) {
+			segs[i] = ":id"
+		}
+	}
+	return strings.Join(segs, "/")
+}
 
 type deprecations struct {
 	mu      sync.Mutex
@@ -171,8 +202,7 @@ func (d *deprecations) note(res *http.Response, method, path string) {
 	if !ok {
 		return
 	}
-	route := idSegment.ReplaceAllString(path, "/:id$1")
-	key := method + " " + route
+	key := method + " " + routeOf(path)
 	d.mu.Lock()
 	first := !d.seen[key]
 	d.seen[key] = true
@@ -186,7 +216,7 @@ func (d *deprecations) note(res *http.Response, method, path string) {
 		d.handler(notice)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "[rendobar] %s is deprecated since %s. It keeps working until the next major release.\n", key, at.Format("2006-01-02"))
+	fmt.Fprintf(os.Stderr, "[rendobar] %s %s is deprecated since %s. It keeps working until the next major release.\n", method, path, at.Format("2006-01-02"))
 }
 
 // parseDeprecation reads RFC 9745's "@<unix seconds>".
