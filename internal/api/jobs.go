@@ -38,149 +38,6 @@ func (c *CancelJobRequest) SetID(id string) {
 }
 
 var (
-	createJobShareRequestFieldID = big.NewInt(1 << 0)
-)
-
-type CreateJobShareRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (c *CreateJobShareRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if c.explicitFields != nil {
-		next.Set(c.explicitFields)
-	}
-	next.Or(next, field)
-	c.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateJobShareRequest) SetID(id string) {
-	c.ID = id
-	c.require(createJobShareRequestFieldID)
-}
-
-var (
-	deleteJobShareRequestFieldID = big.NewInt(1 << 0)
-)
-
-type DeleteJobShareRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (d *DeleteJobShareRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeleteJobShareRequest) SetID(id string) {
-	d.ID = id
-	d.require(deleteJobShareRequestFieldID)
-}
-
-var (
-	disputeJobRequestFieldID     = big.NewInt(1 << 0)
-	disputeJobRequestFieldReason = big.NewInt(1 << 1)
-)
-
-type DisputeJobRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-	// Reason for dispute
-	Reason *string `json:"reason,omitempty" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (d *DisputeJobRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DisputeJobRequest) SetID(id string) {
-	d.ID = id
-	d.require(disputeJobRequestFieldID)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DisputeJobRequest) SetReason(reason *string) {
-	d.Reason = reason
-	d.require(disputeJobRequestFieldReason)
-}
-
-func (d *DisputeJobRequest) UnmarshalJSON(data []byte) error {
-	type unmarshaler DisputeJobRequest
-	var body unmarshaler
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	*d = DisputeJobRequest(body)
-	return nil
-}
-
-func (d *DisputeJobRequest) MarshalJSON() ([]byte, error) {
-	type embed DisputeJobRequest
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*d),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-var (
-	downloadJobOutputRequestFieldID = big.NewInt(1 << 0)
-)
-
-type DownloadJobOutputRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (d *DownloadJobOutputRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DownloadJobOutputRequest) SetID(id string) {
-	d.ID = id
-	d.require(downloadJobOutputRequestFieldID)
-}
-
-var (
 	getJobRequestFieldID = big.NewInt(1 << 0)
 )
 
@@ -206,202 +63,6 @@ func (g *GetJobRequest) require(field *big.Int) {
 func (g *GetJobRequest) SetID(id string) {
 	g.ID = id
 	g.require(getJobRequestFieldID)
-}
-
-var (
-	getJobLogsRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobLogsRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobLogsRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobLogsRequestFieldID)
-}
-
-var (
-	getJobMetricsRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobMetricsRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobMetricsRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobMetricsRequestFieldID)
-}
-
-var (
-	getJobResourcesRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobResourcesRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobResourcesRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobResourcesRequestFieldID)
-}
-
-var (
-	getJobShareRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobShareRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobShareRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobShareRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobShareRequestFieldID)
-}
-
-var (
-	getJobStatsRequestFieldWindow = big.NewInt(1 << 0)
-)
-
-type GetJobStatsRequest struct {
-	// Window (default 24h). `all` covers the org's whole history.
-	Window *GetJobStatsRequestWindow `json:"-" url:"window,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobStatsRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetWindow sets the Window field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsRequest) SetWindow(window *GetJobStatsRequestWindow) {
-	g.Window = window
-	g.require(getJobStatsRequestFieldWindow)
-}
-
-var (
-	getJobThroughputRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobThroughputRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobThroughputRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobThroughputRequestFieldID)
-}
-
-var (
-	getJobTimingsRequestFieldID = big.NewInt(1 << 0)
-)
-
-type GetJobTimingsRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-}
-
-func (g *GetJobTimingsRequest) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsRequest) SetID(id string) {
-	g.ID = id
-	g.require(getJobTimingsRequestFieldID)
 }
 
 var (
@@ -541,31 +202,117 @@ func (l *ListJobsRequest) SetTo(to *int) {
 }
 
 var (
-	retryDeliveriesRequestFieldID = big.NewInt(1 << 0)
+	callbackStatusFieldStatus = big.NewInt(1 << 0)
 )
 
-type RetryDeliveriesRequest struct {
-	// Job ID
-	ID string `json:"-" url:"-"`
+// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
+type CallbackStatus struct {
+	// Delivery state of the per-job completion callback.
+	Status CallbackStatusStatus `json:"status" url:"status"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
 }
 
-func (r *RetryDeliveriesRequest) require(field *big.Int) {
+func (c *CallbackStatus) GetStatus() CallbackStatusStatus {
+	if c == nil {
+		return ""
+	}
+	return c.Status
+}
+
+func (c *CallbackStatus) GetExtraProperties() map[string]interface{} {
+	if c == nil {
+		return nil
+	}
+	return c.extraProperties
+}
+
+func (c *CallbackStatus) require(field *big.Int) {
 	next := new(big.Int)
-	if r.explicitFields != nil {
-		next.Set(r.explicitFields)
+	if c.explicitFields != nil {
+		next.Set(c.explicitFields)
 	}
 	next.Or(next, field)
-	r.explicitFields = next
+	c.explicitFields = next
 }
 
-// SetID sets the ID field and marks it as non-optional;
+// SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (r *RetryDeliveriesRequest) SetID(id string) {
-	r.ID = id
-	r.require(retryDeliveriesRequestFieldID)
+func (c *CallbackStatus) SetStatus(status CallbackStatusStatus) {
+	c.Status = status
+	c.require(callbackStatusFieldStatus)
+}
+
+func (c *CallbackStatus) UnmarshalJSON(data []byte) error {
+	type unmarshaler CallbackStatus
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CallbackStatus(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CallbackStatus) MarshalJSON() ([]byte, error) {
+	type embed CallbackStatus
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CallbackStatus) String() string {
+	if c == nil {
+		return "<nil>"
+	}
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Delivery state of the per-job completion callback.
+type CallbackStatusStatus string
+
+const (
+	CallbackStatusStatusPending   CallbackStatusStatus = "pending"
+	CallbackStatusStatusDelivered CallbackStatusStatus = "delivered"
+	CallbackStatusStatusFailed    CallbackStatusStatus = "failed"
+)
+
+func NewCallbackStatusStatusFromString(s string) (CallbackStatusStatus, error) {
+	switch s {
+	case "pending":
+		return CallbackStatusStatusPending, nil
+	case "delivered":
+		return CallbackStatusStatusDelivered, nil
+	case "failed":
+		return CallbackStatusStatusFailed, nil
+	}
+	var t CallbackStatusStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CallbackStatusStatus) Ptr() *CallbackStatusStatus {
+	return &c
 }
 
 var (
@@ -4154,13 +3901,13 @@ type ConnectorField struct {
 	Options     []*ConnectorFieldOptionsItem `json:"options,omitempty" url:"options,omitempty"`
 	Min         *float64                     `json:"min,omitempty" url:"min,omitempty"`
 	Max         *float64                     `json:"max,omitempty" url:"max,omitempty"`
-	MinLength   *float64                     `json:"minLength,omitempty" url:"minLength,omitempty"`
-	MaxLength   *float64                     `json:"maxLength,omitempty" url:"maxLength,omitempty"`
+	MinLength   *int                         `json:"minLength,omitempty" url:"minLength,omitempty"`
+	MaxLength   *int                         `json:"maxLength,omitempty" url:"maxLength,omitempty"`
 	Description *string                      `json:"description,omitempty" url:"description,omitempty"`
 	// Example value, for placeholder text
 	Example any `json:"example,omitempty" url:"example,omitempty"`
 	// Render position; fields are already returned in this order
-	Order *float64 `json:"order,omitempty" url:"order,omitempty"`
+	Order *int `json:"order,omitempty" url:"order,omitempty"`
 	// Render behind an Options or Advanced disclosure
 	Advanced *bool `json:"advanced,omitempty" url:"advanced,omitempty"`
 	// Present only on a field from one branch of a union. A field with no showWhen is always shown. The same name can appear several times with different conditions when branches declare different bounds.
@@ -4243,14 +3990,14 @@ func (c *ConnectorField) GetMax() *float64 {
 	return c.Max
 }
 
-func (c *ConnectorField) GetMinLength() *float64 {
+func (c *ConnectorField) GetMinLength() *int {
 	if c == nil {
 		return nil
 	}
 	return c.MinLength
 }
 
-func (c *ConnectorField) GetMaxLength() *float64 {
+func (c *ConnectorField) GetMaxLength() *int {
 	if c == nil {
 		return nil
 	}
@@ -4271,7 +4018,7 @@ func (c *ConnectorField) GetExample() any {
 	return c.Example
 }
 
-func (c *ConnectorField) GetOrder() *float64 {
+func (c *ConnectorField) GetOrder() *int {
 	if c == nil {
 		return nil
 	}
@@ -4380,14 +4127,14 @@ func (c *ConnectorField) SetMax(max *float64) {
 
 // SetMinLength sets the MinLength field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorField) SetMinLength(minLength *float64) {
+func (c *ConnectorField) SetMinLength(minLength *int) {
 	c.MinLength = minLength
 	c.require(connectorFieldFieldMinLength)
 }
 
 // SetMaxLength sets the MaxLength field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorField) SetMaxLength(maxLength *float64) {
+func (c *ConnectorField) SetMaxLength(maxLength *int) {
 	c.MaxLength = maxLength
 	c.require(connectorFieldFieldMaxLength)
 }
@@ -4408,7 +4155,7 @@ func (c *ConnectorField) SetExample(example any) {
 
 // SetOrder sets the Order field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorField) SetOrder(order *float64) {
+func (c *ConnectorField) SetOrder(order *int) {
 	c.Order = order
 	c.require(connectorFieldFieldOrder)
 }
@@ -4742,13 +4489,13 @@ type ConnectorInput struct {
 	Options     []*ConnectorFieldOptionsItem `json:"options,omitempty" url:"options,omitempty"`
 	Min         *float64                     `json:"min,omitempty" url:"min,omitempty"`
 	Max         *float64                     `json:"max,omitempty" url:"max,omitempty"`
-	MinLength   *float64                     `json:"minLength,omitempty" url:"minLength,omitempty"`
-	MaxLength   *float64                     `json:"maxLength,omitempty" url:"maxLength,omitempty"`
+	MinLength   *int                         `json:"minLength,omitempty" url:"minLength,omitempty"`
+	MaxLength   *int                         `json:"maxLength,omitempty" url:"maxLength,omitempty"`
 	Description *string                      `json:"description,omitempty" url:"description,omitempty"`
 	// Example value, for placeholder text
 	Example any `json:"example,omitempty" url:"example,omitempty"`
 	// Render position; fields are already returned in this order
-	Order *float64 `json:"order,omitempty" url:"order,omitempty"`
+	Order *int `json:"order,omitempty" url:"order,omitempty"`
 	// Render behind an Options or Advanced disclosure
 	Advanced *bool `json:"advanced,omitempty" url:"advanced,omitempty"`
 	// Present only on a field from one branch of a union. A field with no showWhen is always shown. The same name can appear several times with different conditions when branches declare different bounds.
@@ -4835,14 +4582,14 @@ func (c *ConnectorInput) GetMax() *float64 {
 	return c.Max
 }
 
-func (c *ConnectorInput) GetMinLength() *float64 {
+func (c *ConnectorInput) GetMinLength() *int {
 	if c == nil {
 		return nil
 	}
 	return c.MinLength
 }
 
-func (c *ConnectorInput) GetMaxLength() *float64 {
+func (c *ConnectorInput) GetMaxLength() *int {
 	if c == nil {
 		return nil
 	}
@@ -4863,7 +4610,7 @@ func (c *ConnectorInput) GetExample() any {
 	return c.Example
 }
 
-func (c *ConnectorInput) GetOrder() *float64 {
+func (c *ConnectorInput) GetOrder() *int {
 	if c == nil {
 		return nil
 	}
@@ -4986,14 +4733,14 @@ func (c *ConnectorInput) SetMax(max *float64) {
 
 // SetMinLength sets the MinLength field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorInput) SetMinLength(minLength *float64) {
+func (c *ConnectorInput) SetMinLength(minLength *int) {
 	c.MinLength = minLength
 	c.require(connectorInputFieldMinLength)
 }
 
 // SetMaxLength sets the MaxLength field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorInput) SetMaxLength(maxLength *float64) {
+func (c *ConnectorInput) SetMaxLength(maxLength *int) {
 	c.MaxLength = maxLength
 	c.require(connectorInputFieldMaxLength)
 }
@@ -5014,7 +4761,7 @@ func (c *ConnectorInput) SetExample(example any) {
 
 // SetOrder sets the Order field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConnectorInput) SetOrder(order *float64) {
+func (c *ConnectorInput) SetOrder(order *int) {
 	c.Order = order
 	c.require(connectorInputFieldOrder)
 }
@@ -5097,7 +4844,7 @@ var (
 
 // Params of the ffmpeg job.
 type FfmpegParams struct {
-	// FFmpeg command string (without the "ffmpeg" prefix)
+	// FFmpeg command string, such as "ffmpeg -i input.mp4 output.mp4". The leading "ffmpeg" is optional.
 	Command string `json:"command" url:"command"`
 	// Max execution time in seconds (defaults to your plan's max job timeout)
 	Timeout *int `json:"timeout,omitempty" url:"timeout,omitempty"`
@@ -9188,8 +8935,9 @@ var (
 	jobCancelledFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobCancelledFieldWebURL             = big.NewInt(1 << 25)
 	jobCancelledFieldModel              = big.NewInt(1 << 26)
-	jobCancelledFieldCallback           = big.NewInt(1 << 27)
-	jobCancelledFieldDeliveries         = big.NewInt(1 << 28)
+	jobCancelledFieldTerminal           = big.NewInt(1 << 27)
+	jobCancelledFieldCallback           = big.NewInt(1 << 28)
+	jobCancelledFieldDeliveries         = big.NewInt(1 << 29)
 )
 
 // jobCancelledNullableFields maps the wire names of JobCancelled's nullable fields (required or optional) to their field bits.
@@ -9233,12 +8981,11 @@ type JobCancelled struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobCancelledCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobCancelledOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobCancelledStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -9250,25 +8997,26 @@ type JobCancelled struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobCancelledCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobCancelledDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -9354,7 +9102,7 @@ func (j *JobCancelled) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobCancelled) GetCost() *JobCancelledCost {
+func (j *JobCancelled) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -9368,7 +9116,7 @@ func (j *JobCancelled) GetOutputCategory() JobCancelledOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobCancelled) GetSteps() []*JobCancelledStepsItem {
+func (j *JobCancelled) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -9410,35 +9158,35 @@ func (j *JobCancelled) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobCancelled) GetCreatedAt() float64 {
+func (j *JobCancelled) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobCancelled) GetDispatchedAt() *float64 {
+func (j *JobCancelled) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobCancelled) GetStartedAt() *float64 {
+func (j *JobCancelled) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobCancelled) GetCompletedAt() *float64 {
+func (j *JobCancelled) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobCancelled) GetSettledAt() *float64 {
+func (j *JobCancelled) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -9466,14 +9214,21 @@ func (j *JobCancelled) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobCancelled) GetCallback() *JobCancelledCallback {
+func (j *JobCancelled) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobCancelled) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobCancelled) GetDeliveries() []*JobCancelledDeliveriesItem {
+func (j *JobCancelled) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
@@ -9575,7 +9330,7 @@ func (j *JobCancelled) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetCost(cost *JobCancelledCost) {
+func (j *JobCancelled) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobCancelledFieldCost)
 }
@@ -9589,7 +9344,7 @@ func (j *JobCancelled) SetOutputCategory(outputCategory JobCancelledOutputCatego
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetSteps(steps []*JobCancelledStepsItem) {
+func (j *JobCancelled) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobCancelledFieldSteps)
 }
@@ -9631,35 +9386,35 @@ func (j *JobCancelled) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetCreatedAt(createdAt float64) {
+func (j *JobCancelled) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobCancelledFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobCancelled) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobCancelledFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetStartedAt(startedAt *float64) {
+func (j *JobCancelled) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobCancelledFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetCompletedAt(completedAt *float64) {
+func (j *JobCancelled) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobCancelledFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetSettledAt(settledAt *float64) {
+func (j *JobCancelled) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobCancelledFieldSettledAt)
 }
@@ -9685,16 +9440,23 @@ func (j *JobCancelled) SetModel(model *string) {
 	j.require(jobCancelledFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCancelled) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobCancelledFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetCallback(callback *JobCancelledCallback) {
+func (j *JobCancelled) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobCancelledFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelled) SetDeliveries(deliveries []*JobCancelledDeliveriesItem) {
+func (j *JobCancelled) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobCancelledFieldDeliveries)
 }
@@ -9748,494 +9510,6 @@ func (j *JobCancelled) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobCancelledCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobCancelledCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobCancelledCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCancelledCallback) GetStatus() JobCancelledCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobCancelledCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCancelledCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledCallback) SetStatus(status JobCancelledCallbackStatus) {
-	j.Status = status
-	j.require(jobCancelledCallbackFieldStatus)
-}
-
-func (j *JobCancelledCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCancelledCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCancelledCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCancelledCallback) MarshalJSON() ([]byte, error) {
-	type embed JobCancelledCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCancelledCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobCancelledCallbackStatus string
-
-const (
-	JobCancelledCallbackStatusPending   JobCancelledCallbackStatus = "pending"
-	JobCancelledCallbackStatusDelivered JobCancelledCallbackStatus = "delivered"
-	JobCancelledCallbackStatusFailed    JobCancelledCallbackStatus = "failed"
-)
-
-func NewJobCancelledCallbackStatusFromString(s string) (JobCancelledCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobCancelledCallbackStatusPending, nil
-	case "delivered":
-		return JobCancelledCallbackStatusDelivered, nil
-	case "failed":
-		return JobCancelledCallbackStatusFailed, nil
-	}
-	var t JobCancelledCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCancelledCallbackStatus) Ptr() *JobCancelledCallbackStatus {
-	return &j
-}
-
-var (
-	jobCancelledCostFieldAmount    = big.NewInt(1 << 0)
-	jobCancelledCostFieldCurrency  = big.NewInt(1 << 1)
-	jobCancelledCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobCancelledCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobCancelledCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCancelledCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobCancelledCost) GetCurrency() JobCancelledCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobCancelledCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobCancelledCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCancelledCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobCancelledCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledCost) SetCurrency(currency JobCancelledCostCurrency) {
-	j.Currency = currency
-	j.require(jobCancelledCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobCancelledCostFieldFormatted)
-}
-
-func (j *JobCancelledCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCancelledCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCancelledCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCancelledCost) MarshalJSON() ([]byte, error) {
-	type embed JobCancelledCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCancelledCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobCancelledCostCurrency string
-
-const (
-	JobCancelledCostCurrencyUsd JobCancelledCostCurrency = "USD"
-)
-
-func NewJobCancelledCostCurrencyFromString(s string) (JobCancelledCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobCancelledCostCurrencyUsd, nil
-	}
-	var t JobCancelledCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCancelledCostCurrency) Ptr() *JobCancelledCostCurrency {
-	return &j
-}
-
-var (
-	jobCancelledDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobCancelledDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobCancelledDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobCancelledDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobCancelledDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobCancelledDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobCancelledDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                           `json:"storageId" url:"storageId"`
-	Status    JobCancelledDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                           `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobCancelledDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCancelledDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobCancelledDeliveriesItem) GetStatus() JobCancelledDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobCancelledDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobCancelledDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobCancelledDeliveriesItem) GetReason() *JobCancelledDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobCancelledDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobCancelledDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCancelledDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobCancelledDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetStatus(status JobCancelledDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobCancelledDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobCancelledDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobCancelledDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetReason(reason *JobCancelledDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobCancelledDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobCancelledDeliveriesItemFieldRenamed)
-}
-
-func (j *JobCancelledDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCancelledDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCancelledDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCancelledDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobCancelledDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCancelledDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobCancelledDeliveriesItemReason string
-
-const (
-	JobCancelledDeliveriesItemReasonDestinationDenied      JobCancelledDeliveriesItemReason = "destination_denied"
-	JobCancelledDeliveriesItemReasonSignatureMismatch      JobCancelledDeliveriesItemReason = "signature_mismatch"
-	JobCancelledDeliveriesItemReasonBucketNotFound         JobCancelledDeliveriesItemReason = "bucket_not_found"
-	JobCancelledDeliveriesItemReasonObjectTooLarge         JobCancelledDeliveriesItemReason = "object_too_large"
-	JobCancelledDeliveriesItemReasonAlreadyExists          JobCancelledDeliveriesItemReason = "already_exists"
-	JobCancelledDeliveriesItemReasonDestinationUnavailable JobCancelledDeliveriesItemReason = "destination_unavailable"
-	JobCancelledDeliveriesItemReasonNotDeliverable         JobCancelledDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobCancelledDeliveriesItemReasonFromString(s string) (JobCancelledDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobCancelledDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobCancelledDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobCancelledDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobCancelledDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobCancelledDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobCancelledDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobCancelledDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobCancelledDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCancelledDeliveriesItemReason) Ptr() *JobCancelledDeliveriesItemReason {
-	return &j
-}
-
-type JobCancelledDeliveriesItemStatus string
-
-const (
-	JobCancelledDeliveriesItemStatusPending   JobCancelledDeliveriesItemStatus = "pending"
-	JobCancelledDeliveriesItemStatusDelivered JobCancelledDeliveriesItemStatus = "delivered"
-	JobCancelledDeliveriesItemStatusFailed    JobCancelledDeliveriesItemStatus = "failed"
-)
-
-func NewJobCancelledDeliveriesItemStatusFromString(s string) (JobCancelledDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobCancelledDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobCancelledDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobCancelledDeliveriesItemStatusFailed, nil
-	}
-	var t JobCancelledDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCancelledDeliveriesItemStatus) Ptr() *JobCancelledDeliveriesItemStatus {
-	return &j
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobCancelledOutputCategory string
 
@@ -10272,205 +9546,6 @@ func (j JobCancelledOutputCategory) Ptr() *JobCancelledOutputCategory {
 }
 
 var (
-	jobCancelledStepsItemFieldID          = big.NewInt(1 << 0)
-	jobCancelledStepsItemFieldName        = big.NewInt(1 << 1)
-	jobCancelledStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobCancelledStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobCancelledStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobCancelledStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobCancelledStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobCancelledStepsItemFieldError       = big.NewInt(1 << 7)
-)
-
-type JobCancelledStepsItem struct {
-	ID   string `json:"id" url:"id"`
-	Name string `json:"name" url:"name"`
-	// pending | running | complete | skipped | error
-	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCancelledStepsItem) GetID() string {
-	if j == nil {
-		return ""
-	}
-	return j.ID
-}
-
-func (j *JobCancelledStepsItem) GetName() string {
-	if j == nil {
-		return ""
-	}
-	return j.Name
-}
-
-func (j *JobCancelledStepsItem) GetStatus() string {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobCancelledStepsItem) GetStartedAt() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.StartedAt
-}
-
-func (j *JobCancelledStepsItem) GetCompletedAt() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.CompletedAt
-}
-
-func (j *JobCancelledStepsItem) GetDurationMs() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.DurationMs
-}
-
-func (j *JobCancelledStepsItem) GetMeta() map[string]any {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobCancelledStepsItem) GetError() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Error
-}
-
-func (j *JobCancelledStepsItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCancelledStepsItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetID(id string) {
-	j.ID = id
-	j.require(jobCancelledStepsItemFieldID)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetName(name string) {
-	j.Name = name
-	j.require(jobCancelledStepsItemFieldName)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetStatus(status string) {
-	j.Status = status
-	j.require(jobCancelledStepsItemFieldStatus)
-}
-
-// SetStartedAt sets the StartedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetStartedAt(startedAt *float64) {
-	j.StartedAt = startedAt
-	j.require(jobCancelledStepsItemFieldStartedAt)
-}
-
-// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetCompletedAt(completedAt *float64) {
-	j.CompletedAt = completedAt
-	j.require(jobCancelledStepsItemFieldCompletedAt)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobCancelledStepsItemFieldDurationMs)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetMeta(meta map[string]any) {
-	j.Meta = meta
-	j.require(jobCancelledStepsItemFieldMeta)
-}
-
-// SetError sets the Error field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCancelledStepsItem) SetError(error_ *string) {
-	j.Error = error_
-	j.require(jobCancelledStepsItemFieldError)
-}
-
-func (j *JobCancelledStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCancelledStepsItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCancelledStepsItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCancelledStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobCancelledStepsItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCancelledStepsItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-var (
 	jobCompleteFieldID                 = big.NewInt(1 << 0)
 	jobCompleteFieldOrgID              = big.NewInt(1 << 1)
 	jobCompleteFieldType               = big.NewInt(1 << 2)
@@ -10498,9 +9573,10 @@ var (
 	jobCompleteFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobCompleteFieldWebURL             = big.NewInt(1 << 25)
 	jobCompleteFieldModel              = big.NewInt(1 << 26)
-	jobCompleteFieldCallback           = big.NewInt(1 << 27)
-	jobCompleteFieldDeliveries         = big.NewInt(1 << 28)
-	jobCompleteFieldOutput             = big.NewInt(1 << 29)
+	jobCompleteFieldTerminal           = big.NewInt(1 << 27)
+	jobCompleteFieldCallback           = big.NewInt(1 << 28)
+	jobCompleteFieldDeliveries         = big.NewInt(1 << 29)
+	jobCompleteFieldOutput             = big.NewInt(1 << 30)
 )
 
 // jobCompleteNullableFields maps the wire names of JobComplete's nullable fields (required or optional) to their field bits.
@@ -10544,12 +9620,11 @@ type JobComplete struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobCompleteCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobCompleteOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobCompleteStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -10561,27 +9636,27 @@ type JobComplete struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobCompleteCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobCompleteDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
-	// Job output (data + file + files). Present only here.
-	Output *JobCompleteOutput `json:"output" url:"output"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Output     *JobOutput     `json:"output" url:"output"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -10667,7 +9742,7 @@ func (j *JobComplete) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobComplete) GetCost() *JobCompleteCost {
+func (j *JobComplete) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -10681,7 +9756,7 @@ func (j *JobComplete) GetOutputCategory() JobCompleteOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobComplete) GetSteps() []*JobCompleteStepsItem {
+func (j *JobComplete) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -10723,35 +9798,35 @@ func (j *JobComplete) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobComplete) GetCreatedAt() float64 {
+func (j *JobComplete) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobComplete) GetDispatchedAt() *float64 {
+func (j *JobComplete) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobComplete) GetStartedAt() *float64 {
+func (j *JobComplete) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobComplete) GetCompletedAt() *float64 {
+func (j *JobComplete) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobComplete) GetSettledAt() *float64 {
+func (j *JobComplete) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -10779,21 +9854,28 @@ func (j *JobComplete) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobComplete) GetCallback() *JobCompleteCallback {
+func (j *JobComplete) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobComplete) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobComplete) GetDeliveries() []*JobCompleteDeliveriesItem {
+func (j *JobComplete) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
 	return j.Deliveries
 }
 
-func (j *JobComplete) GetOutput() *JobCompleteOutput {
+func (j *JobComplete) GetOutput() *JobOutput {
 	if j == nil {
 		return nil
 	}
@@ -10895,7 +9977,7 @@ func (j *JobComplete) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetCost(cost *JobCompleteCost) {
+func (j *JobComplete) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobCompleteFieldCost)
 }
@@ -10909,7 +9991,7 @@ func (j *JobComplete) SetOutputCategory(outputCategory JobCompleteOutputCategory
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetSteps(steps []*JobCompleteStepsItem) {
+func (j *JobComplete) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobCompleteFieldSteps)
 }
@@ -10951,35 +10033,35 @@ func (j *JobComplete) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetCreatedAt(createdAt float64) {
+func (j *JobComplete) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobCompleteFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobComplete) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobCompleteFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetStartedAt(startedAt *float64) {
+func (j *JobComplete) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobCompleteFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetCompletedAt(completedAt *float64) {
+func (j *JobComplete) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobCompleteFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetSettledAt(settledAt *float64) {
+func (j *JobComplete) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobCompleteFieldSettledAt)
 }
@@ -11005,23 +10087,30 @@ func (j *JobComplete) SetModel(model *string) {
 	j.require(jobCompleteFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobComplete) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobCompleteFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetCallback(callback *JobCompleteCallback) {
+func (j *JobComplete) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobCompleteFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetDeliveries(deliveries []*JobCompleteDeliveriesItem) {
+func (j *JobComplete) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobCompleteFieldDeliveries)
 }
 
 // SetOutput sets the Output field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobComplete) SetOutput(output *JobCompleteOutput) {
+func (j *JobComplete) SetOutput(output *JobOutput) {
 	j.Output = output
 	j.require(jobCompleteFieldOutput)
 }
@@ -11075,646 +10164,6 @@ func (j *JobComplete) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobCompleteCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobCompleteCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobCompleteCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteCallback) GetStatus() JobCompleteCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobCompleteCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteCallback) SetStatus(status JobCompleteCallbackStatus) {
-	j.Status = status
-	j.require(jobCompleteCallbackFieldStatus)
-}
-
-func (j *JobCompleteCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteCallback) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobCompleteCallbackStatus string
-
-const (
-	JobCompleteCallbackStatusPending   JobCompleteCallbackStatus = "pending"
-	JobCompleteCallbackStatusDelivered JobCompleteCallbackStatus = "delivered"
-	JobCompleteCallbackStatusFailed    JobCompleteCallbackStatus = "failed"
-)
-
-func NewJobCompleteCallbackStatusFromString(s string) (JobCompleteCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobCompleteCallbackStatusPending, nil
-	case "delivered":
-		return JobCompleteCallbackStatusDelivered, nil
-	case "failed":
-		return JobCompleteCallbackStatusFailed, nil
-	}
-	var t JobCompleteCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteCallbackStatus) Ptr() *JobCompleteCallbackStatus {
-	return &j
-}
-
-var (
-	jobCompleteCostFieldAmount    = big.NewInt(1 << 0)
-	jobCompleteCostFieldCurrency  = big.NewInt(1 << 1)
-	jobCompleteCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobCompleteCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobCompleteCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobCompleteCost) GetCurrency() JobCompleteCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobCompleteCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobCompleteCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobCompleteCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteCost) SetCurrency(currency JobCompleteCostCurrency) {
-	j.Currency = currency
-	j.require(jobCompleteCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobCompleteCostFieldFormatted)
-}
-
-func (j *JobCompleteCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteCost) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobCompleteCostCurrency string
-
-const (
-	JobCompleteCostCurrencyUsd JobCompleteCostCurrency = "USD"
-)
-
-func NewJobCompleteCostCurrencyFromString(s string) (JobCompleteCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobCompleteCostCurrencyUsd, nil
-	}
-	var t JobCompleteCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteCostCurrency) Ptr() *JobCompleteCostCurrency {
-	return &j
-}
-
-var (
-	jobCompleteDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobCompleteDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobCompleteDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobCompleteDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobCompleteDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobCompleteDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobCompleteDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                          `json:"storageId" url:"storageId"`
-	Status    JobCompleteDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                          `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobCompleteDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobCompleteDeliveriesItem) GetStatus() JobCompleteDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobCompleteDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobCompleteDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobCompleteDeliveriesItem) GetReason() *JobCompleteDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobCompleteDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobCompleteDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobCompleteDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetStatus(status JobCompleteDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobCompleteDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobCompleteDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobCompleteDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetReason(reason *JobCompleteDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobCompleteDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobCompleteDeliveriesItemFieldRenamed)
-}
-
-func (j *JobCompleteDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobCompleteDeliveriesItemReason string
-
-const (
-	JobCompleteDeliveriesItemReasonDestinationDenied      JobCompleteDeliveriesItemReason = "destination_denied"
-	JobCompleteDeliveriesItemReasonSignatureMismatch      JobCompleteDeliveriesItemReason = "signature_mismatch"
-	JobCompleteDeliveriesItemReasonBucketNotFound         JobCompleteDeliveriesItemReason = "bucket_not_found"
-	JobCompleteDeliveriesItemReasonObjectTooLarge         JobCompleteDeliveriesItemReason = "object_too_large"
-	JobCompleteDeliveriesItemReasonAlreadyExists          JobCompleteDeliveriesItemReason = "already_exists"
-	JobCompleteDeliveriesItemReasonDestinationUnavailable JobCompleteDeliveriesItemReason = "destination_unavailable"
-	JobCompleteDeliveriesItemReasonNotDeliverable         JobCompleteDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobCompleteDeliveriesItemReasonFromString(s string) (JobCompleteDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobCompleteDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobCompleteDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobCompleteDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobCompleteDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobCompleteDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobCompleteDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobCompleteDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobCompleteDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteDeliveriesItemReason) Ptr() *JobCompleteDeliveriesItemReason {
-	return &j
-}
-
-type JobCompleteDeliveriesItemStatus string
-
-const (
-	JobCompleteDeliveriesItemStatusPending   JobCompleteDeliveriesItemStatus = "pending"
-	JobCompleteDeliveriesItemStatusDelivered JobCompleteDeliveriesItemStatus = "delivered"
-	JobCompleteDeliveriesItemStatusFailed    JobCompleteDeliveriesItemStatus = "failed"
-)
-
-func NewJobCompleteDeliveriesItemStatusFromString(s string) (JobCompleteDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobCompleteDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobCompleteDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobCompleteDeliveriesItemStatusFailed, nil
-	}
-	var t JobCompleteDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteDeliveriesItemStatus) Ptr() *JobCompleteDeliveriesItemStatus {
-	return &j
-}
-
-var (
-	jobCompleteOutputFieldData      = big.NewInt(1 << 0)
-	jobCompleteOutputFieldFile      = big.NewInt(1 << 1)
-	jobCompleteOutputFieldFiles     = big.NewInt(1 << 2)
-	jobCompleteOutputFieldExpiresAt = big.NewInt(1 << 3)
-)
-
-// jobCompleteOutputNullableFields maps the wire names of JobCompleteOutput's nullable fields (required or optional) to their field bits.
-var jobCompleteOutputNullableFields = map[string]*big.Int{
-	"file":      jobCompleteOutputFieldFile,
-	"expiresAt": jobCompleteOutputFieldExpiresAt,
-}
-
-// Job output (data + file + files). Present only here.
-type JobCompleteOutput struct {
-	// Job-type-specific computed result (probe result, detections, transcript). Shape varies per job type. Null when the job produced no structured data.
-	Data any `json:"data,omitempty" url:"data,omitempty"`
-	// Convenience shortcut to the single headline result: the one output file, or the stream manifest (.m3u8/.mpd). Read `file.url` directly when you expect one output. Always one of `files`. Null for pure file sets and data-only jobs (which have no single headline).
-	File *JobCompleteOutputFile `json:"file,omitempty" url:"file,omitempty"`
-	// Every file the job produced, the complete list. Use this when a job can output many files (image sequence, HLS segments, resolution ladder). Empty for data-only jobs.
-	Files []*JobCompleteOutputFilesItem `json:"files" url:"files"`
-	// Unix ms when the file URLs expire. Present iff `files` is non-empty.
-	ExpiresAt *float64 `json:"expiresAt,omitempty" url:"expiresAt,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteOutput) GetData() any {
-	if j == nil {
-		return nil
-	}
-	return j.Data
-}
-
-func (j *JobCompleteOutput) GetFile() *JobCompleteOutputFile {
-	if j == nil {
-		return nil
-	}
-	return j.File
-}
-
-func (j *JobCompleteOutput) GetFiles() []*JobCompleteOutputFilesItem {
-	if j == nil {
-		return nil
-	}
-	return j.Files
-}
-
-func (j *JobCompleteOutput) GetExpiresAt() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.ExpiresAt
-}
-
-func (j *JobCompleteOutput) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteOutput) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutput) SetData(data any) {
-	j.Data = data
-	j.require(jobCompleteOutputFieldData)
-}
-
-// SetFile sets the File field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutput) SetFile(file *JobCompleteOutputFile) {
-	j.File = file
-	j.require(jobCompleteOutputFieldFile)
-}
-
-// SetFiles sets the Files field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutput) SetFiles(files []*JobCompleteOutputFilesItem) {
-	j.Files = files
-	j.require(jobCompleteOutputFieldFiles)
-}
-
-// SetExpiresAt sets the ExpiresAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutput) SetExpiresAt(expiresAt *float64) {
-	j.ExpiresAt = expiresAt
-	j.require(jobCompleteOutputFieldExpiresAt)
-}
-
-func (j *JobCompleteOutput) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteOutput
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteOutput(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobCompleteOutputNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		j.require(presentFields)
-	}
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteOutput) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteOutput
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteOutput) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobCompleteOutputCategory string
 
@@ -11751,33 +10200,18 @@ func (j JobCompleteOutputCategory) Ptr() *JobCompleteOutputCategory {
 }
 
 var (
-	jobCompleteOutputFileFieldURL    = big.NewInt(1 << 0)
-	jobCompleteOutputFileFieldPath   = big.NewInt(1 << 1)
-	jobCompleteOutputFileFieldType   = big.NewInt(1 << 2)
-	jobCompleteOutputFileFieldSize   = big.NewInt(1 << 3)
-	jobCompleteOutputFileFieldSha256 = big.NewInt(1 << 4)
-	jobCompleteOutputFileFieldMeta   = big.NewInt(1 << 5)
+	jobCompletedOnSubmitFieldID     = big.NewInt(1 << 0)
+	jobCompletedOnSubmitFieldStatus = big.NewInt(1 << 1)
+	jobCompletedOnSubmitFieldURL    = big.NewInt(1 << 2)
 )
 
-// jobCompleteOutputFileNullableFields maps the wire names of JobCompleteOutputFile's nullable fields (required or optional) to their field bits.
-var jobCompleteOutputFileNullableFields = map[string]*big.Int{
-	"sha256": jobCompleteOutputFileFieldSha256,
-}
-
-// Convenience shortcut to the single headline result: the one output file, or the stream manifest (.m3u8/.mpd). Read `file.url` directly when you expect one output. Always one of `files`. Null for pure file sets and data-only jobs (which have no single headline).
-type JobCompleteOutputFile struct {
-	// Ready-to-fetch, time-limited URL for this file
-	URL string `json:"url" url:"url"`
-	// File path within the job output (relative). For an ffmpeg job, the name the command wrote.
-	Path string `json:"path" url:"path"`
-	// File type, derived from the extension. OPEN enum — tolerate unknown future values.
-	Type JobCompleteOutputFileType `json:"type" url:"type"`
-	// File size in bytes
-	Size float64 `json:"size" url:"size"`
-	// SHA-256 of the file's bytes, 64 lowercase hex characters. Compare it with your own digest of a download or a delivered copy. Null on jobs completed before 2026-10 (single files) or 2026-10-22 (multi-file outputs).
-	Sha256 *string `json:"sha256,omitempty" url:"sha256,omitempty"`
-	// Optional per-file media metadata, when known
-	Meta *JobCompleteOutputFileMeta `json:"meta,omitempty" url:"meta,omitempty"`
+type JobCompletedOnSubmit struct {
+	// Job ID
+	ID string `json:"id" url:"id"`
+	// Completed synchronously
+	Status JobCompletedOnSubmitStatus `json:"status" url:"status"`
+	// Data URL of the result
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -11786,814 +10220,35 @@ type JobCompleteOutputFile struct {
 	rawJSON         json.RawMessage
 }
 
-func (j *JobCompleteOutputFile) GetURL() string {
-	if j == nil {
-		return ""
-	}
-	return j.URL
-}
-
-func (j *JobCompleteOutputFile) GetPath() string {
-	if j == nil {
-		return ""
-	}
-	return j.Path
-}
-
-func (j *JobCompleteOutputFile) GetType() JobCompleteOutputFileType {
-	if j == nil {
-		return ""
-	}
-	return j.Type
-}
-
-func (j *JobCompleteOutputFile) GetSize() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Size
-}
-
-func (j *JobCompleteOutputFile) GetSha256() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Sha256
-}
-
-func (j *JobCompleteOutputFile) GetMeta() *JobCompleteOutputFileMeta {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobCompleteOutputFile) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteOutputFile) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetURL(url string) {
-	j.URL = url
-	j.require(jobCompleteOutputFileFieldURL)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetPath(path string) {
-	j.Path = path
-	j.require(jobCompleteOutputFileFieldPath)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetType(type_ JobCompleteOutputFileType) {
-	j.Type = type_
-	j.require(jobCompleteOutputFileFieldType)
-}
-
-// SetSize sets the Size field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetSize(size float64) {
-	j.Size = size
-	j.require(jobCompleteOutputFileFieldSize)
-}
-
-// SetSha256 sets the Sha256 field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetSha256(sha256 *string) {
-	j.Sha256 = sha256
-	j.require(jobCompleteOutputFileFieldSha256)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFile) SetMeta(meta *JobCompleteOutputFileMeta) {
-	j.Meta = meta
-	j.require(jobCompleteOutputFileFieldMeta)
-}
-
-func (j *JobCompleteOutputFile) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteOutputFile
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteOutputFile(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobCompleteOutputFileNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		j.require(presentFields)
-	}
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteOutputFile) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteOutputFile
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteOutputFile) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-var (
-	jobCompleteOutputFileMetaFieldFormat     = big.NewInt(1 << 0)
-	jobCompleteOutputFileMetaFieldWidth      = big.NewInt(1 << 1)
-	jobCompleteOutputFileMetaFieldHeight     = big.NewInt(1 << 2)
-	jobCompleteOutputFileMetaFieldDurationMs = big.NewInt(1 << 3)
-	jobCompleteOutputFileMetaFieldSeed       = big.NewInt(1 << 4)
-)
-
-// Optional per-file media metadata, when known
-type JobCompleteOutputFileMeta struct {
-	// Container/codec format (from extension)
-	Format     *string  `json:"format,omitempty" url:"format,omitempty"`
-	Width      *float64 `json:"width,omitempty" url:"width,omitempty"`
-	Height     *float64 `json:"height,omitempty" url:"height,omitempty"`
-	DurationMs *float64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	// Seed used, for reproducible generation
-	Seed *float64 `json:"seed,omitempty" url:"seed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteOutputFileMeta) GetFormat() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Format
-}
-
-func (j *JobCompleteOutputFileMeta) GetWidth() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Width
-}
-
-func (j *JobCompleteOutputFileMeta) GetHeight() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Height
-}
-
-func (j *JobCompleteOutputFileMeta) GetDurationMs() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.DurationMs
-}
-
-func (j *JobCompleteOutputFileMeta) GetSeed() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Seed
-}
-
-func (j *JobCompleteOutputFileMeta) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteOutputFileMeta) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetFormat sets the Format field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFileMeta) SetFormat(format *string) {
-	j.Format = format
-	j.require(jobCompleteOutputFileMetaFieldFormat)
-}
-
-// SetWidth sets the Width field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFileMeta) SetWidth(width *float64) {
-	j.Width = width
-	j.require(jobCompleteOutputFileMetaFieldWidth)
-}
-
-// SetHeight sets the Height field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFileMeta) SetHeight(height *float64) {
-	j.Height = height
-	j.require(jobCompleteOutputFileMetaFieldHeight)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFileMeta) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobCompleteOutputFileMetaFieldDurationMs)
-}
-
-// SetSeed sets the Seed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFileMeta) SetSeed(seed *float64) {
-	j.Seed = seed
-	j.require(jobCompleteOutputFileMetaFieldSeed)
-}
-
-func (j *JobCompleteOutputFileMeta) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteOutputFileMeta
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteOutputFileMeta(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteOutputFileMeta) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteOutputFileMeta
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteOutputFileMeta) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// File type, derived from the extension. OPEN enum — tolerate unknown future values.
-type JobCompleteOutputFileType string
-
-const (
-	JobCompleteOutputFileTypeVideo    JobCompleteOutputFileType = "video"
-	JobCompleteOutputFileTypeImage    JobCompleteOutputFileType = "image"
-	JobCompleteOutputFileTypeAudio    JobCompleteOutputFileType = "audio"
-	JobCompleteOutputFileTypeCaptions JobCompleteOutputFileType = "captions"
-	JobCompleteOutputFileTypePlaylist JobCompleteOutputFileType = "playlist"
-	JobCompleteOutputFileTypeData     JobCompleteOutputFileType = "data"
-	JobCompleteOutputFileTypeOther    JobCompleteOutputFileType = "other"
-)
-
-func NewJobCompleteOutputFileTypeFromString(s string) (JobCompleteOutputFileType, error) {
-	switch s {
-	case "video":
-		return JobCompleteOutputFileTypeVideo, nil
-	case "image":
-		return JobCompleteOutputFileTypeImage, nil
-	case "audio":
-		return JobCompleteOutputFileTypeAudio, nil
-	case "captions":
-		return JobCompleteOutputFileTypeCaptions, nil
-	case "playlist":
-		return JobCompleteOutputFileTypePlaylist, nil
-	case "data":
-		return JobCompleteOutputFileTypeData, nil
-	case "other":
-		return JobCompleteOutputFileTypeOther, nil
-	}
-	var t JobCompleteOutputFileType
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteOutputFileType) Ptr() *JobCompleteOutputFileType {
-	return &j
-}
-
-var (
-	jobCompleteOutputFilesItemFieldURL    = big.NewInt(1 << 0)
-	jobCompleteOutputFilesItemFieldPath   = big.NewInt(1 << 1)
-	jobCompleteOutputFilesItemFieldType   = big.NewInt(1 << 2)
-	jobCompleteOutputFilesItemFieldSize   = big.NewInt(1 << 3)
-	jobCompleteOutputFilesItemFieldSha256 = big.NewInt(1 << 4)
-	jobCompleteOutputFilesItemFieldMeta   = big.NewInt(1 << 5)
-)
-
-// jobCompleteOutputFilesItemNullableFields maps the wire names of JobCompleteOutputFilesItem's nullable fields (required or optional) to their field bits.
-var jobCompleteOutputFilesItemNullableFields = map[string]*big.Int{
-	"sha256": jobCompleteOutputFilesItemFieldSha256,
-}
-
-type JobCompleteOutputFilesItem struct {
-	// Ready-to-fetch, time-limited URL for this file
-	URL string `json:"url" url:"url"`
-	// File path within the job output (relative). For an ffmpeg job, the name the command wrote.
-	Path string `json:"path" url:"path"`
-	// File type, derived from the extension. OPEN enum — tolerate unknown future values.
-	Type JobCompleteOutputFilesItemType `json:"type" url:"type"`
-	// File size in bytes
-	Size float64 `json:"size" url:"size"`
-	// SHA-256 of the file's bytes, 64 lowercase hex characters. Compare it with your own digest of a download or a delivered copy. Null on jobs completed before 2026-10 (single files) or 2026-10-22 (multi-file outputs).
-	Sha256 *string `json:"sha256,omitempty" url:"sha256,omitempty"`
-	// Optional per-file media metadata, when known
-	Meta *JobCompleteOutputFilesItemMeta `json:"meta,omitempty" url:"meta,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteOutputFilesItem) GetURL() string {
-	if j == nil {
-		return ""
-	}
-	return j.URL
-}
-
-func (j *JobCompleteOutputFilesItem) GetPath() string {
-	if j == nil {
-		return ""
-	}
-	return j.Path
-}
-
-func (j *JobCompleteOutputFilesItem) GetType() JobCompleteOutputFilesItemType {
-	if j == nil {
-		return ""
-	}
-	return j.Type
-}
-
-func (j *JobCompleteOutputFilesItem) GetSize() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Size
-}
-
-func (j *JobCompleteOutputFilesItem) GetSha256() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Sha256
-}
-
-func (j *JobCompleteOutputFilesItem) GetMeta() *JobCompleteOutputFilesItemMeta {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobCompleteOutputFilesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteOutputFilesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetURL(url string) {
-	j.URL = url
-	j.require(jobCompleteOutputFilesItemFieldURL)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetPath(path string) {
-	j.Path = path
-	j.require(jobCompleteOutputFilesItemFieldPath)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetType(type_ JobCompleteOutputFilesItemType) {
-	j.Type = type_
-	j.require(jobCompleteOutputFilesItemFieldType)
-}
-
-// SetSize sets the Size field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetSize(size float64) {
-	j.Size = size
-	j.require(jobCompleteOutputFilesItemFieldSize)
-}
-
-// SetSha256 sets the Sha256 field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetSha256(sha256 *string) {
-	j.Sha256 = sha256
-	j.require(jobCompleteOutputFilesItemFieldSha256)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItem) SetMeta(meta *JobCompleteOutputFilesItemMeta) {
-	j.Meta = meta
-	j.require(jobCompleteOutputFilesItemFieldMeta)
-}
-
-func (j *JobCompleteOutputFilesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteOutputFilesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteOutputFilesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobCompleteOutputFilesItemNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		j.require(presentFields)
-	}
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteOutputFilesItem) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteOutputFilesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteOutputFilesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-var (
-	jobCompleteOutputFilesItemMetaFieldFormat     = big.NewInt(1 << 0)
-	jobCompleteOutputFilesItemMetaFieldWidth      = big.NewInt(1 << 1)
-	jobCompleteOutputFilesItemMetaFieldHeight     = big.NewInt(1 << 2)
-	jobCompleteOutputFilesItemMetaFieldDurationMs = big.NewInt(1 << 3)
-	jobCompleteOutputFilesItemMetaFieldSeed       = big.NewInt(1 << 4)
-)
-
-// Optional per-file media metadata, when known
-type JobCompleteOutputFilesItemMeta struct {
-	// Container/codec format (from extension)
-	Format     *string  `json:"format,omitempty" url:"format,omitempty"`
-	Width      *float64 `json:"width,omitempty" url:"width,omitempty"`
-	Height     *float64 `json:"height,omitempty" url:"height,omitempty"`
-	DurationMs *float64 `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	// Seed used, for reproducible generation
-	Seed *float64 `json:"seed,omitempty" url:"seed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetFormat() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Format
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetWidth() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Width
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetHeight() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Height
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetDurationMs() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.DurationMs
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetSeed() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.Seed
-}
-
-func (j *JobCompleteOutputFilesItemMeta) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobCompleteOutputFilesItemMeta) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetFormat sets the Format field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItemMeta) SetFormat(format *string) {
-	j.Format = format
-	j.require(jobCompleteOutputFilesItemMetaFieldFormat)
-}
-
-// SetWidth sets the Width field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItemMeta) SetWidth(width *float64) {
-	j.Width = width
-	j.require(jobCompleteOutputFilesItemMetaFieldWidth)
-}
-
-// SetHeight sets the Height field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItemMeta) SetHeight(height *float64) {
-	j.Height = height
-	j.require(jobCompleteOutputFilesItemMetaFieldHeight)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItemMeta) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobCompleteOutputFilesItemMetaFieldDurationMs)
-}
-
-// SetSeed sets the Seed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteOutputFilesItemMeta) SetSeed(seed *float64) {
-	j.Seed = seed
-	j.require(jobCompleteOutputFilesItemMetaFieldSeed)
-}
-
-func (j *JobCompleteOutputFilesItemMeta) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteOutputFilesItemMeta
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobCompleteOutputFilesItemMeta(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobCompleteOutputFilesItemMeta) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteOutputFilesItemMeta
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobCompleteOutputFilesItemMeta) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// File type, derived from the extension. OPEN enum — tolerate unknown future values.
-type JobCompleteOutputFilesItemType string
-
-const (
-	JobCompleteOutputFilesItemTypeVideo    JobCompleteOutputFilesItemType = "video"
-	JobCompleteOutputFilesItemTypeImage    JobCompleteOutputFilesItemType = "image"
-	JobCompleteOutputFilesItemTypeAudio    JobCompleteOutputFilesItemType = "audio"
-	JobCompleteOutputFilesItemTypeCaptions JobCompleteOutputFilesItemType = "captions"
-	JobCompleteOutputFilesItemTypePlaylist JobCompleteOutputFilesItemType = "playlist"
-	JobCompleteOutputFilesItemTypeData     JobCompleteOutputFilesItemType = "data"
-	JobCompleteOutputFilesItemTypeOther    JobCompleteOutputFilesItemType = "other"
-)
-
-func NewJobCompleteOutputFilesItemTypeFromString(s string) (JobCompleteOutputFilesItemType, error) {
-	switch s {
-	case "video":
-		return JobCompleteOutputFilesItemTypeVideo, nil
-	case "image":
-		return JobCompleteOutputFilesItemTypeImage, nil
-	case "audio":
-		return JobCompleteOutputFilesItemTypeAudio, nil
-	case "captions":
-		return JobCompleteOutputFilesItemTypeCaptions, nil
-	case "playlist":
-		return JobCompleteOutputFilesItemTypePlaylist, nil
-	case "data":
-		return JobCompleteOutputFilesItemTypeData, nil
-	case "other":
-		return JobCompleteOutputFilesItemTypeOther, nil
-	}
-	var t JobCompleteOutputFilesItemType
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobCompleteOutputFilesItemType) Ptr() *JobCompleteOutputFilesItemType {
-	return &j
-}
-
-var (
-	jobCompleteStepsItemFieldID          = big.NewInt(1 << 0)
-	jobCompleteStepsItemFieldName        = big.NewInt(1 << 1)
-	jobCompleteStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobCompleteStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobCompleteStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobCompleteStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobCompleteStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobCompleteStepsItemFieldError       = big.NewInt(1 << 7)
-)
-
-type JobCompleteStepsItem struct {
-	ID   string `json:"id" url:"id"`
-	Name string `json:"name" url:"name"`
-	// pending | running | complete | skipped | error
-	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobCompleteStepsItem) GetID() string {
+func (j *JobCompletedOnSubmit) GetID() string {
 	if j == nil {
 		return ""
 	}
 	return j.ID
 }
 
-func (j *JobCompleteStepsItem) GetName() string {
-	if j == nil {
-		return ""
-	}
-	return j.Name
-}
-
-func (j *JobCompleteStepsItem) GetStatus() string {
+func (j *JobCompletedOnSubmit) GetStatus() JobCompletedOnSubmitStatus {
 	if j == nil {
 		return ""
 	}
 	return j.Status
 }
 
-func (j *JobCompleteStepsItem) GetStartedAt() *float64 {
+func (j *JobCompletedOnSubmit) GetURL() *string {
 	if j == nil {
 		return nil
 	}
-	return j.StartedAt
+	return j.URL
 }
 
-func (j *JobCompleteStepsItem) GetCompletedAt() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.CompletedAt
-}
-
-func (j *JobCompleteStepsItem) GetDurationMs() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.DurationMs
-}
-
-func (j *JobCompleteStepsItem) GetMeta() map[string]any {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobCompleteStepsItem) GetError() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Error
-}
-
-func (j *JobCompleteStepsItem) GetExtraProperties() map[string]interface{} {
+func (j *JobCompletedOnSubmit) GetExtraProperties() map[string]interface{} {
 	if j == nil {
 		return nil
 	}
 	return j.extraProperties
 }
 
-func (j *JobCompleteStepsItem) require(field *big.Int) {
+func (j *JobCompletedOnSubmit) require(field *big.Int) {
 	next := new(big.Int)
 	if j.explicitFields != nil {
 		next.Set(j.explicitFields)
@@ -12604,67 +10259,32 @@ func (j *JobCompleteStepsItem) require(field *big.Int) {
 
 // SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetID(id string) {
+func (j *JobCompletedOnSubmit) SetID(id string) {
 	j.ID = id
-	j.require(jobCompleteStepsItemFieldID)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetName(name string) {
-	j.Name = name
-	j.require(jobCompleteStepsItemFieldName)
+	j.require(jobCompletedOnSubmitFieldID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetStatus(status string) {
+func (j *JobCompletedOnSubmit) SetStatus(status JobCompletedOnSubmitStatus) {
 	j.Status = status
-	j.require(jobCompleteStepsItemFieldStatus)
+	j.require(jobCompletedOnSubmitFieldStatus)
 }
 
-// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetStartedAt(startedAt *float64) {
-	j.StartedAt = startedAt
-	j.require(jobCompleteStepsItemFieldStartedAt)
+func (j *JobCompletedOnSubmit) SetURL(url *string) {
+	j.URL = url
+	j.require(jobCompletedOnSubmitFieldURL)
 }
 
-// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetCompletedAt(completedAt *float64) {
-	j.CompletedAt = completedAt
-	j.require(jobCompleteStepsItemFieldCompletedAt)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobCompleteStepsItemFieldDurationMs)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetMeta(meta map[string]any) {
-	j.Meta = meta
-	j.require(jobCompleteStepsItemFieldMeta)
-}
-
-// SetError sets the Error field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobCompleteStepsItem) SetError(error_ *string) {
-	j.Error = error_
-	j.require(jobCompleteStepsItemFieldError)
-}
-
-func (j *JobCompleteStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobCompleteStepsItem
+func (j *JobCompletedOnSubmit) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCompletedOnSubmit
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*j = JobCompleteStepsItem(value)
+	*j = JobCompletedOnSubmit(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *j)
 	if err != nil {
 		return err
@@ -12674,8 +10294,8 @@ func (j *JobCompleteStepsItem) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (j *JobCompleteStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobCompleteStepsItem
+func (j *JobCompletedOnSubmit) MarshalJSON() ([]byte, error) {
+	type embed JobCompletedOnSubmit
 	var marshaler = struct {
 		embed
 	}{
@@ -12685,7 +10305,7 @@ func (j *JobCompleteStepsItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (j *JobCompleteStepsItem) String() string {
+func (j *JobCompletedOnSubmit) String() string {
 	if j == nil {
 		return "<nil>"
 	}
@@ -12698,6 +10318,400 @@ func (j *JobCompleteStepsItem) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", j)
+}
+
+// Completed synchronously
+type JobCompletedOnSubmitStatus string
+
+const (
+	JobCompletedOnSubmitStatusComplete JobCompletedOnSubmitStatus = "complete"
+)
+
+func NewJobCompletedOnSubmitStatusFromString(s string) (JobCompletedOnSubmitStatus, error) {
+	switch s {
+	case "complete":
+		return JobCompletedOnSubmitStatusComplete, nil
+	}
+	var t JobCompletedOnSubmitStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCompletedOnSubmitStatus) Ptr() *JobCompletedOnSubmitStatus {
+	return &j
+}
+
+var (
+	jobCostFieldAmount    = big.NewInt(1 << 0)
+	jobCostFieldCurrency  = big.NewInt(1 << 1)
+	jobCostFieldFormatted = big.NewInt(1 << 2)
+)
+
+// Amount charged, or null when not yet billed
+type JobCost struct {
+	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
+	Amount int `json:"amount" url:"amount"`
+	// ISO-4217 currency code
+	Currency JobCostCurrency `json:"currency" url:"currency"`
+	// Amount formatted as dollars (e.g. "$0.50")
+	Formatted string `json:"formatted" url:"formatted"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobCost) GetAmount() int {
+	if j == nil {
+		return 0
+	}
+	return j.Amount
+}
+
+func (j *JobCost) GetCurrency() JobCostCurrency {
+	if j == nil {
+		return ""
+	}
+	return j.Currency
+}
+
+func (j *JobCost) GetFormatted() string {
+	if j == nil {
+		return ""
+	}
+	return j.Formatted
+}
+
+func (j *JobCost) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobCost) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCost) SetAmount(amount int) {
+	j.Amount = amount
+	j.require(jobCostFieldAmount)
+}
+
+// SetCurrency sets the Currency field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCost) SetCurrency(currency JobCostCurrency) {
+	j.Currency = currency
+	j.require(jobCostFieldCurrency)
+}
+
+// SetFormatted sets the Formatted field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobCost) SetFormatted(formatted string) {
+	j.Formatted = formatted
+	j.require(jobCostFieldFormatted)
+}
+
+func (j *JobCost) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobCost
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobCost(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobCost) MarshalJSON() ([]byte, error) {
+	type embed JobCost
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobCost) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+// ISO-4217 currency code
+type JobCostCurrency string
+
+const (
+	JobCostCurrencyUsd JobCostCurrency = "USD"
+)
+
+func NewJobCostCurrencyFromString(s string) (JobCostCurrency, error) {
+	switch s {
+	case "USD":
+		return JobCostCurrencyUsd, nil
+	}
+	var t JobCostCurrency
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobCostCurrency) Ptr() *JobCostCurrency {
+	return &j
+}
+
+var (
+	jobDeliveryFieldStorageID = big.NewInt(1 << 0)
+	jobDeliveryFieldStatus    = big.NewInt(1 << 1)
+	jobDeliveryFieldPath      = big.NewInt(1 << 2)
+	jobDeliveryFieldURL       = big.NewInt(1 << 3)
+	jobDeliveryFieldReason    = big.NewInt(1 << 4)
+	jobDeliveryFieldRenamed   = big.NewInt(1 << 5)
+)
+
+type JobDelivery struct {
+	// The storage connection id
+	StorageID string            `json:"storageId" url:"storageId"`
+	Status    JobDeliveryStatus `json:"status" url:"status"`
+	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
+	Path *string `json:"path,omitempty" url:"path,omitempty"`
+	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
+	URL    *string            `json:"url,omitempty" url:"url,omitempty"`
+	Reason *JobDeliveryReason `json:"reason,omitempty" url:"reason,omitempty"`
+	// The name was taken, so the job's tail was appended to free it
+	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobDelivery) GetStorageID() string {
+	if j == nil {
+		return ""
+	}
+	return j.StorageID
+}
+
+func (j *JobDelivery) GetStatus() JobDeliveryStatus {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobDelivery) GetPath() *string {
+	if j == nil {
+		return nil
+	}
+	return j.Path
+}
+
+func (j *JobDelivery) GetURL() *string {
+	if j == nil {
+		return nil
+	}
+	return j.URL
+}
+
+func (j *JobDelivery) GetReason() *JobDeliveryReason {
+	if j == nil {
+		return nil
+	}
+	return j.Reason
+}
+
+func (j *JobDelivery) GetRenamed() *bool {
+	if j == nil {
+		return nil
+	}
+	return j.Renamed
+}
+
+func (j *JobDelivery) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobDelivery) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetStorageID sets the StorageID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetStorageID(storageID string) {
+	j.StorageID = storageID
+	j.require(jobDeliveryFieldStorageID)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetStatus(status JobDeliveryStatus) {
+	j.Status = status
+	j.require(jobDeliveryFieldStatus)
+}
+
+// SetPath sets the Path field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetPath(path *string) {
+	j.Path = path
+	j.require(jobDeliveryFieldPath)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetURL(url *string) {
+	j.URL = url
+	j.require(jobDeliveryFieldURL)
+}
+
+// SetReason sets the Reason field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetReason(reason *JobDeliveryReason) {
+	j.Reason = reason
+	j.require(jobDeliveryFieldReason)
+}
+
+// SetRenamed sets the Renamed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDelivery) SetRenamed(renamed *bool) {
+	j.Renamed = renamed
+	j.require(jobDeliveryFieldRenamed)
+}
+
+func (j *JobDelivery) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobDelivery
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobDelivery(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobDelivery) MarshalJSON() ([]byte, error) {
+	type embed JobDelivery
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobDelivery) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+type JobDeliveryReason string
+
+const (
+	JobDeliveryReasonDestinationDenied      JobDeliveryReason = "destination_denied"
+	JobDeliveryReasonSignatureMismatch      JobDeliveryReason = "signature_mismatch"
+	JobDeliveryReasonBucketNotFound         JobDeliveryReason = "bucket_not_found"
+	JobDeliveryReasonObjectTooLarge         JobDeliveryReason = "object_too_large"
+	JobDeliveryReasonAlreadyExists          JobDeliveryReason = "already_exists"
+	JobDeliveryReasonDestinationUnavailable JobDeliveryReason = "destination_unavailable"
+	JobDeliveryReasonNotDeliverable         JobDeliveryReason = "not_deliverable"
+)
+
+func NewJobDeliveryReasonFromString(s string) (JobDeliveryReason, error) {
+	switch s {
+	case "destination_denied":
+		return JobDeliveryReasonDestinationDenied, nil
+	case "signature_mismatch":
+		return JobDeliveryReasonSignatureMismatch, nil
+	case "bucket_not_found":
+		return JobDeliveryReasonBucketNotFound, nil
+	case "object_too_large":
+		return JobDeliveryReasonObjectTooLarge, nil
+	case "already_exists":
+		return JobDeliveryReasonAlreadyExists, nil
+	case "destination_unavailable":
+		return JobDeliveryReasonDestinationUnavailable, nil
+	case "not_deliverable":
+		return JobDeliveryReasonNotDeliverable, nil
+	}
+	var t JobDeliveryReason
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliveryReason) Ptr() *JobDeliveryReason {
+	return &j
+}
+
+type JobDeliveryStatus string
+
+const (
+	JobDeliveryStatusPending   JobDeliveryStatus = "pending"
+	JobDeliveryStatusDelivered JobDeliveryStatus = "delivered"
+	JobDeliveryStatusFailed    JobDeliveryStatus = "failed"
+)
+
+func NewJobDeliveryStatusFromString(s string) (JobDeliveryStatus, error) {
+	switch s {
+	case "pending":
+		return JobDeliveryStatusPending, nil
+	case "delivered":
+		return JobDeliveryStatusDelivered, nil
+	case "failed":
+		return JobDeliveryStatusFailed, nil
+	}
+	var t JobDeliveryStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobDeliveryStatus) Ptr() *JobDeliveryStatus {
+	return &j
 }
 
 var (
@@ -12728,11 +10742,12 @@ var (
 	jobDispatchedFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobDispatchedFieldWebURL             = big.NewInt(1 << 25)
 	jobDispatchedFieldModel              = big.NewInt(1 << 26)
-	jobDispatchedFieldCallback           = big.NewInt(1 << 27)
-	jobDispatchedFieldDeliveries         = big.NewInt(1 << 28)
-	jobDispatchedFieldProgress           = big.NewInt(1 << 29)
-	jobDispatchedFieldEta                = big.NewInt(1 << 30)
-	jobDispatchedFieldBootState          = big.NewInt(1 << 31)
+	jobDispatchedFieldTerminal           = big.NewInt(1 << 27)
+	jobDispatchedFieldCallback           = big.NewInt(1 << 28)
+	jobDispatchedFieldDeliveries         = big.NewInt(1 << 29)
+	jobDispatchedFieldProgress           = big.NewInt(1 << 30)
+	jobDispatchedFieldEta                = big.NewInt(1 << 31)
+	jobDispatchedFieldBootState          = big.NewInt(1 << 32)
 )
 
 // jobDispatchedNullableFields maps the wire names of JobDispatched's nullable fields (required or optional) to their field bits.
@@ -12779,12 +10794,11 @@ type JobDispatched struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobDispatchedCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobDispatchedOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobDispatchedStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -12796,25 +10810,26 @@ type JobDispatched struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobDispatchedCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobDispatchedDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
 	// Completion fraction 0..1, or null when it cannot be determined
 	Progress *float64 `json:"progress,omitempty" url:"progress,omitempty"`
 	// Estimated seconds remaining, or null
@@ -12906,7 +10921,7 @@ func (j *JobDispatched) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobDispatched) GetCost() *JobDispatchedCost {
+func (j *JobDispatched) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -12920,7 +10935,7 @@ func (j *JobDispatched) GetOutputCategory() JobDispatchedOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobDispatched) GetSteps() []*JobDispatchedStepsItem {
+func (j *JobDispatched) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -12962,35 +10977,35 @@ func (j *JobDispatched) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobDispatched) GetCreatedAt() float64 {
+func (j *JobDispatched) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobDispatched) GetDispatchedAt() *float64 {
+func (j *JobDispatched) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobDispatched) GetStartedAt() *float64 {
+func (j *JobDispatched) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobDispatched) GetCompletedAt() *float64 {
+func (j *JobDispatched) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobDispatched) GetSettledAt() *float64 {
+func (j *JobDispatched) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -13018,14 +11033,21 @@ func (j *JobDispatched) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobDispatched) GetCallback() *JobDispatchedCallback {
+func (j *JobDispatched) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobDispatched) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobDispatched) GetDeliveries() []*JobDispatchedDeliveriesItem {
+func (j *JobDispatched) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
@@ -13148,7 +11170,7 @@ func (j *JobDispatched) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetCost(cost *JobDispatchedCost) {
+func (j *JobDispatched) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobDispatchedFieldCost)
 }
@@ -13162,7 +11184,7 @@ func (j *JobDispatched) SetOutputCategory(outputCategory JobDispatchedOutputCate
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetSteps(steps []*JobDispatchedStepsItem) {
+func (j *JobDispatched) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobDispatchedFieldSteps)
 }
@@ -13204,35 +11226,35 @@ func (j *JobDispatched) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetCreatedAt(createdAt float64) {
+func (j *JobDispatched) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobDispatchedFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobDispatched) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobDispatchedFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetStartedAt(startedAt *float64) {
+func (j *JobDispatched) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobDispatchedFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetCompletedAt(completedAt *float64) {
+func (j *JobDispatched) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobDispatchedFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetSettledAt(settledAt *float64) {
+func (j *JobDispatched) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobDispatchedFieldSettledAt)
 }
@@ -13258,16 +11280,23 @@ func (j *JobDispatched) SetModel(model *string) {
 	j.require(jobDispatchedFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobDispatched) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobDispatchedFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetCallback(callback *JobDispatchedCallback) {
+func (j *JobDispatched) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobDispatchedFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatched) SetDeliveries(deliveries []*JobDispatchedDeliveriesItem) {
+func (j *JobDispatched) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobDispatchedFieldDeliveries)
 }
@@ -13511,494 +11540,6 @@ func (j *JobDispatchedBootState) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobDispatchedCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobDispatchedCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobDispatchedCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobDispatchedCallback) GetStatus() JobDispatchedCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobDispatchedCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobDispatchedCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedCallback) SetStatus(status JobDispatchedCallbackStatus) {
-	j.Status = status
-	j.require(jobDispatchedCallbackFieldStatus)
-}
-
-func (j *JobDispatchedCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobDispatchedCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobDispatchedCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobDispatchedCallback) MarshalJSON() ([]byte, error) {
-	type embed JobDispatchedCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobDispatchedCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobDispatchedCallbackStatus string
-
-const (
-	JobDispatchedCallbackStatusPending   JobDispatchedCallbackStatus = "pending"
-	JobDispatchedCallbackStatusDelivered JobDispatchedCallbackStatus = "delivered"
-	JobDispatchedCallbackStatusFailed    JobDispatchedCallbackStatus = "failed"
-)
-
-func NewJobDispatchedCallbackStatusFromString(s string) (JobDispatchedCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobDispatchedCallbackStatusPending, nil
-	case "delivered":
-		return JobDispatchedCallbackStatusDelivered, nil
-	case "failed":
-		return JobDispatchedCallbackStatusFailed, nil
-	}
-	var t JobDispatchedCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobDispatchedCallbackStatus) Ptr() *JobDispatchedCallbackStatus {
-	return &j
-}
-
-var (
-	jobDispatchedCostFieldAmount    = big.NewInt(1 << 0)
-	jobDispatchedCostFieldCurrency  = big.NewInt(1 << 1)
-	jobDispatchedCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobDispatchedCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobDispatchedCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobDispatchedCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobDispatchedCost) GetCurrency() JobDispatchedCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobDispatchedCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobDispatchedCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobDispatchedCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobDispatchedCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedCost) SetCurrency(currency JobDispatchedCostCurrency) {
-	j.Currency = currency
-	j.require(jobDispatchedCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobDispatchedCostFieldFormatted)
-}
-
-func (j *JobDispatchedCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobDispatchedCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobDispatchedCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobDispatchedCost) MarshalJSON() ([]byte, error) {
-	type embed JobDispatchedCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobDispatchedCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobDispatchedCostCurrency string
-
-const (
-	JobDispatchedCostCurrencyUsd JobDispatchedCostCurrency = "USD"
-)
-
-func NewJobDispatchedCostCurrencyFromString(s string) (JobDispatchedCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobDispatchedCostCurrencyUsd, nil
-	}
-	var t JobDispatchedCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobDispatchedCostCurrency) Ptr() *JobDispatchedCostCurrency {
-	return &j
-}
-
-var (
-	jobDispatchedDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobDispatchedDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobDispatchedDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobDispatchedDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobDispatchedDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobDispatchedDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobDispatchedDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                            `json:"storageId" url:"storageId"`
-	Status    JobDispatchedDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                            `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobDispatchedDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobDispatchedDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobDispatchedDeliveriesItem) GetStatus() JobDispatchedDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobDispatchedDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobDispatchedDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobDispatchedDeliveriesItem) GetReason() *JobDispatchedDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobDispatchedDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobDispatchedDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobDispatchedDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobDispatchedDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetStatus(status JobDispatchedDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobDispatchedDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobDispatchedDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobDispatchedDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetReason(reason *JobDispatchedDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobDispatchedDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobDispatchedDeliveriesItemFieldRenamed)
-}
-
-func (j *JobDispatchedDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobDispatchedDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobDispatchedDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobDispatchedDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobDispatchedDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobDispatchedDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobDispatchedDeliveriesItemReason string
-
-const (
-	JobDispatchedDeliveriesItemReasonDestinationDenied      JobDispatchedDeliveriesItemReason = "destination_denied"
-	JobDispatchedDeliveriesItemReasonSignatureMismatch      JobDispatchedDeliveriesItemReason = "signature_mismatch"
-	JobDispatchedDeliveriesItemReasonBucketNotFound         JobDispatchedDeliveriesItemReason = "bucket_not_found"
-	JobDispatchedDeliveriesItemReasonObjectTooLarge         JobDispatchedDeliveriesItemReason = "object_too_large"
-	JobDispatchedDeliveriesItemReasonAlreadyExists          JobDispatchedDeliveriesItemReason = "already_exists"
-	JobDispatchedDeliveriesItemReasonDestinationUnavailable JobDispatchedDeliveriesItemReason = "destination_unavailable"
-	JobDispatchedDeliveriesItemReasonNotDeliverable         JobDispatchedDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobDispatchedDeliveriesItemReasonFromString(s string) (JobDispatchedDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobDispatchedDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobDispatchedDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobDispatchedDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobDispatchedDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobDispatchedDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobDispatchedDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobDispatchedDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobDispatchedDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobDispatchedDeliveriesItemReason) Ptr() *JobDispatchedDeliveriesItemReason {
-	return &j
-}
-
-type JobDispatchedDeliveriesItemStatus string
-
-const (
-	JobDispatchedDeliveriesItemStatusPending   JobDispatchedDeliveriesItemStatus = "pending"
-	JobDispatchedDeliveriesItemStatusDelivered JobDispatchedDeliveriesItemStatus = "delivered"
-	JobDispatchedDeliveriesItemStatusFailed    JobDispatchedDeliveriesItemStatus = "failed"
-)
-
-func NewJobDispatchedDeliveriesItemStatusFromString(s string) (JobDispatchedDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobDispatchedDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobDispatchedDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobDispatchedDeliveriesItemStatusFailed, nil
-	}
-	var t JobDispatchedDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobDispatchedDeliveriesItemStatus) Ptr() *JobDispatchedDeliveriesItemStatus {
-	return &j
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobDispatchedOutputCategory string
 
@@ -14035,26 +11576,29 @@ func (j JobDispatchedOutputCategory) Ptr() *JobDispatchedOutputCategory {
 }
 
 var (
-	jobDispatchedStepsItemFieldID          = big.NewInt(1 << 0)
-	jobDispatchedStepsItemFieldName        = big.NewInt(1 << 1)
-	jobDispatchedStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobDispatchedStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobDispatchedStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobDispatchedStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobDispatchedStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobDispatchedStepsItemFieldError       = big.NewInt(1 << 7)
+	jobErrorFieldCode        = big.NewInt(1 << 0)
+	jobErrorFieldMessage     = big.NewInt(1 << 1)
+	jobErrorFieldDetail      = big.NewInt(1 << 2)
+	jobErrorFieldRetryable   = big.NewInt(1 << 3)
+	jobErrorFieldFailedPhase = big.NewInt(1 << 4)
 )
 
-type JobDispatchedStepsItem struct {
-	ID   string `json:"id" url:"id"`
-	Name string `json:"name" url:"name"`
-	// pending | running | complete | skipped | error
-	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
+// jobErrorNullableFields maps the wire names of JobError's nullable fields (required or optional) to their field bits.
+var jobErrorNullableFields = map[string]*big.Int{
+	"detail": jobErrorFieldDetail,
+}
+
+type JobError struct {
+	// Machine-readable error code
+	Code string `json:"code" url:"code"`
+	// Human-readable error message
+	Message string `json:"message" url:"message"`
+	// Real provider stderr tail (e.g. ffmpeg), or null
+	Detail *string `json:"detail,omitempty" url:"detail,omitempty"`
+	// True when retrying the same job may succeed
+	Retryable bool `json:"retryable" url:"retryable"`
+	// Which phase the job failed in, when known
+	FailedPhase *JobErrorFailedPhase `json:"failedPhase,omitempty" url:"failedPhase,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14063,70 +11607,49 @@ type JobDispatchedStepsItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (j *JobDispatchedStepsItem) GetID() string {
+func (j *JobError) GetCode() string {
 	if j == nil {
 		return ""
 	}
-	return j.ID
+	return j.Code
 }
 
-func (j *JobDispatchedStepsItem) GetName() string {
+func (j *JobError) GetMessage() string {
 	if j == nil {
 		return ""
 	}
-	return j.Name
+	return j.Message
 }
 
-func (j *JobDispatchedStepsItem) GetStatus() string {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobDispatchedStepsItem) GetStartedAt() *float64 {
+func (j *JobError) GetDetail() *string {
 	if j == nil {
 		return nil
 	}
-	return j.StartedAt
+	return j.Detail
 }
 
-func (j *JobDispatchedStepsItem) GetCompletedAt() *float64 {
+func (j *JobError) GetRetryable() bool {
+	if j == nil {
+		return false
+	}
+	return j.Retryable
+}
+
+func (j *JobError) GetFailedPhase() *JobErrorFailedPhase {
 	if j == nil {
 		return nil
 	}
-	return j.CompletedAt
+	return j.FailedPhase
 }
 
-func (j *JobDispatchedStepsItem) GetDurationMs() *float64 {
-	if j == nil {
-		return nil
-	}
-	return j.DurationMs
-}
-
-func (j *JobDispatchedStepsItem) GetMeta() map[string]any {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobDispatchedStepsItem) GetError() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Error
-}
-
-func (j *JobDispatchedStepsItem) GetExtraProperties() map[string]interface{} {
+func (j *JobError) GetExtraProperties() map[string]interface{} {
 	if j == nil {
 		return nil
 	}
 	return j.extraProperties
 }
 
-func (j *JobDispatchedStepsItem) require(field *big.Int) {
+func (j *JobError) require(field *big.Int) {
 	next := new(big.Int)
 	if j.explicitFields != nil {
 		next.Set(j.explicitFields)
@@ -14135,80 +11658,66 @@ func (j *JobDispatchedStepsItem) require(field *big.Int) {
 	j.explicitFields = next
 }
 
-// SetID sets the ID field and marks it as non-optional;
+// SetCode sets the Code field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetID(id string) {
-	j.ID = id
-	j.require(jobDispatchedStepsItemFieldID)
+func (j *JobError) SetCode(code string) {
+	j.Code = code
+	j.require(jobErrorFieldCode)
 }
 
-// SetName sets the Name field and marks it as non-optional;
+// SetMessage sets the Message field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetName(name string) {
-	j.Name = name
-	j.require(jobDispatchedStepsItemFieldName)
+func (j *JobError) SetMessage(message string) {
+	j.Message = message
+	j.require(jobErrorFieldMessage)
 }
 
-// SetStatus sets the Status field and marks it as non-optional;
+// SetDetail sets the Detail field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetStatus(status string) {
-	j.Status = status
-	j.require(jobDispatchedStepsItemFieldStatus)
+func (j *JobError) SetDetail(detail *string) {
+	j.Detail = detail
+	j.require(jobErrorFieldDetail)
 }
 
-// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// SetRetryable sets the Retryable field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetStartedAt(startedAt *float64) {
-	j.StartedAt = startedAt
-	j.require(jobDispatchedStepsItemFieldStartedAt)
+func (j *JobError) SetRetryable(retryable bool) {
+	j.Retryable = retryable
+	j.require(jobErrorFieldRetryable)
 }
 
-// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// SetFailedPhase sets the FailedPhase field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetCompletedAt(completedAt *float64) {
-	j.CompletedAt = completedAt
-	j.require(jobDispatchedStepsItemFieldCompletedAt)
+func (j *JobError) SetFailedPhase(failedPhase *JobErrorFailedPhase) {
+	j.FailedPhase = failedPhase
+	j.require(jobErrorFieldFailedPhase)
 }
 
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobDispatchedStepsItemFieldDurationMs)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetMeta(meta map[string]any) {
-	j.Meta = meta
-	j.require(jobDispatchedStepsItemFieldMeta)
-}
-
-// SetError sets the Error field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobDispatchedStepsItem) SetError(error_ *string) {
-	j.Error = error_
-	j.require(jobDispatchedStepsItemFieldError)
-}
-
-func (j *JobDispatchedStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobDispatchedStepsItem
+func (j *JobError) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobError
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*j = JobDispatchedStepsItem(value)
+	*j = JobError(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *j)
 	if err != nil {
 		return err
 	}
 	j.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobErrorNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		j.require(presentFields)
+	}
 	j.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (j *JobDispatchedStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobDispatchedStepsItem
+func (j *JobError) MarshalJSON() ([]byte, error) {
+	type embed JobError
 	var marshaler = struct {
 		embed
 	}{
@@ -14218,7 +11727,7 @@ func (j *JobDispatchedStepsItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (j *JobDispatchedStepsItem) String() string {
+func (j *JobError) String() string {
 	if j == nil {
 		return "<nil>"
 	}
@@ -14231,6 +11740,32 @@ func (j *JobDispatchedStepsItem) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", j)
+}
+
+// Which phase the job failed in, when known
+type JobErrorFailedPhase string
+
+const (
+	JobErrorFailedPhasePreparing  JobErrorFailedPhase = "preparing"
+	JobErrorFailedPhaseProcessing JobErrorFailedPhase = "processing"
+	JobErrorFailedPhaseFinalizing JobErrorFailedPhase = "finalizing"
+)
+
+func NewJobErrorFailedPhaseFromString(s string) (JobErrorFailedPhase, error) {
+	switch s {
+	case "preparing":
+		return JobErrorFailedPhasePreparing, nil
+	case "processing":
+		return JobErrorFailedPhaseProcessing, nil
+	case "finalizing":
+		return JobErrorFailedPhaseFinalizing, nil
+	}
+	var t JobErrorFailedPhase
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (j JobErrorFailedPhase) Ptr() *JobErrorFailedPhase {
+	return &j
 }
 
 var (
@@ -14261,9 +11796,10 @@ var (
 	jobFailedFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobFailedFieldWebURL             = big.NewInt(1 << 25)
 	jobFailedFieldModel              = big.NewInt(1 << 26)
-	jobFailedFieldCallback           = big.NewInt(1 << 27)
-	jobFailedFieldDeliveries         = big.NewInt(1 << 28)
-	jobFailedFieldError              = big.NewInt(1 << 29)
+	jobFailedFieldTerminal           = big.NewInt(1 << 27)
+	jobFailedFieldCallback           = big.NewInt(1 << 28)
+	jobFailedFieldDeliveries         = big.NewInt(1 << 29)
+	jobFailedFieldError              = big.NewInt(1 << 30)
 )
 
 // jobFailedNullableFields maps the wire names of JobFailed's nullable fields (required or optional) to their field bits.
@@ -14307,12 +11843,11 @@ type JobFailed struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobFailedCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobFailedOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobFailedStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -14324,27 +11859,27 @@ type JobFailed struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobFailedCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobFailedDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
-	// Failure detail. Present only here.
-	Error *JobFailedError `json:"error" url:"error"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Error      *JobError      `json:"error" url:"error"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -14430,7 +11965,7 @@ func (j *JobFailed) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobFailed) GetCost() *JobFailedCost {
+func (j *JobFailed) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -14444,7 +11979,7 @@ func (j *JobFailed) GetOutputCategory() JobFailedOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobFailed) GetSteps() []*JobFailedStepsItem {
+func (j *JobFailed) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -14486,35 +12021,35 @@ func (j *JobFailed) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobFailed) GetCreatedAt() float64 {
+func (j *JobFailed) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobFailed) GetDispatchedAt() *float64 {
+func (j *JobFailed) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobFailed) GetStartedAt() *float64 {
+func (j *JobFailed) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobFailed) GetCompletedAt() *float64 {
+func (j *JobFailed) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobFailed) GetSettledAt() *float64 {
+func (j *JobFailed) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -14542,21 +12077,28 @@ func (j *JobFailed) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobFailed) GetCallback() *JobFailedCallback {
+func (j *JobFailed) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobFailed) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobFailed) GetDeliveries() []*JobFailedDeliveriesItem {
+func (j *JobFailed) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
 	return j.Deliveries
 }
 
-func (j *JobFailed) GetError() *JobFailedError {
+func (j *JobFailed) GetError() *JobError {
 	if j == nil {
 		return nil
 	}
@@ -14658,7 +12200,7 @@ func (j *JobFailed) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetCost(cost *JobFailedCost) {
+func (j *JobFailed) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobFailedFieldCost)
 }
@@ -14672,7 +12214,7 @@ func (j *JobFailed) SetOutputCategory(outputCategory JobFailedOutputCategory) {
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetSteps(steps []*JobFailedStepsItem) {
+func (j *JobFailed) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobFailedFieldSteps)
 }
@@ -14714,35 +12256,35 @@ func (j *JobFailed) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetCreatedAt(createdAt float64) {
+func (j *JobFailed) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobFailedFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobFailed) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobFailedFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetStartedAt(startedAt *float64) {
+func (j *JobFailed) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobFailedFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetCompletedAt(completedAt *float64) {
+func (j *JobFailed) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobFailedFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetSettledAt(settledAt *float64) {
+func (j *JobFailed) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobFailedFieldSettledAt)
 }
@@ -14768,23 +12310,30 @@ func (j *JobFailed) SetModel(model *string) {
 	j.require(jobFailedFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobFailed) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobFailedFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetCallback(callback *JobFailedCallback) {
+func (j *JobFailed) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobFailedFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetDeliveries(deliveries []*JobFailedDeliveriesItem) {
+func (j *JobFailed) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobFailedFieldDeliveries)
 }
 
 // SetError sets the Error field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailed) SetError(error_ *JobFailedError) {
+func (j *JobFailed) SetError(error_ *JobError) {
 	j.Error = error_
 	j.require(jobFailedFieldError)
 }
@@ -14838,688 +12387,6 @@ func (j *JobFailed) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobFailedCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobFailedCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobFailedCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobFailedCallback) GetStatus() JobFailedCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobFailedCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobFailedCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedCallback) SetStatus(status JobFailedCallbackStatus) {
-	j.Status = status
-	j.require(jobFailedCallbackFieldStatus)
-}
-
-func (j *JobFailedCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobFailedCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobFailedCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobFailedCallback) MarshalJSON() ([]byte, error) {
-	type embed JobFailedCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobFailedCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobFailedCallbackStatus string
-
-const (
-	JobFailedCallbackStatusPending   JobFailedCallbackStatus = "pending"
-	JobFailedCallbackStatusDelivered JobFailedCallbackStatus = "delivered"
-	JobFailedCallbackStatusFailed    JobFailedCallbackStatus = "failed"
-)
-
-func NewJobFailedCallbackStatusFromString(s string) (JobFailedCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobFailedCallbackStatusPending, nil
-	case "delivered":
-		return JobFailedCallbackStatusDelivered, nil
-	case "failed":
-		return JobFailedCallbackStatusFailed, nil
-	}
-	var t JobFailedCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobFailedCallbackStatus) Ptr() *JobFailedCallbackStatus {
-	return &j
-}
-
-var (
-	jobFailedCostFieldAmount    = big.NewInt(1 << 0)
-	jobFailedCostFieldCurrency  = big.NewInt(1 << 1)
-	jobFailedCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobFailedCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobFailedCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobFailedCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobFailedCost) GetCurrency() JobFailedCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobFailedCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobFailedCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobFailedCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobFailedCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedCost) SetCurrency(currency JobFailedCostCurrency) {
-	j.Currency = currency
-	j.require(jobFailedCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobFailedCostFieldFormatted)
-}
-
-func (j *JobFailedCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobFailedCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobFailedCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobFailedCost) MarshalJSON() ([]byte, error) {
-	type embed JobFailedCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobFailedCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobFailedCostCurrency string
-
-const (
-	JobFailedCostCurrencyUsd JobFailedCostCurrency = "USD"
-)
-
-func NewJobFailedCostCurrencyFromString(s string) (JobFailedCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobFailedCostCurrencyUsd, nil
-	}
-	var t JobFailedCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobFailedCostCurrency) Ptr() *JobFailedCostCurrency {
-	return &j
-}
-
-var (
-	jobFailedDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobFailedDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobFailedDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobFailedDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobFailedDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobFailedDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobFailedDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                        `json:"storageId" url:"storageId"`
-	Status    JobFailedDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                        `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobFailedDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobFailedDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobFailedDeliveriesItem) GetStatus() JobFailedDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobFailedDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobFailedDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobFailedDeliveriesItem) GetReason() *JobFailedDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobFailedDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobFailedDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobFailedDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobFailedDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetStatus(status JobFailedDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobFailedDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobFailedDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobFailedDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetReason(reason *JobFailedDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobFailedDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobFailedDeliveriesItemFieldRenamed)
-}
-
-func (j *JobFailedDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobFailedDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobFailedDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobFailedDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobFailedDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobFailedDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobFailedDeliveriesItemReason string
-
-const (
-	JobFailedDeliveriesItemReasonDestinationDenied      JobFailedDeliveriesItemReason = "destination_denied"
-	JobFailedDeliveriesItemReasonSignatureMismatch      JobFailedDeliveriesItemReason = "signature_mismatch"
-	JobFailedDeliveriesItemReasonBucketNotFound         JobFailedDeliveriesItemReason = "bucket_not_found"
-	JobFailedDeliveriesItemReasonObjectTooLarge         JobFailedDeliveriesItemReason = "object_too_large"
-	JobFailedDeliveriesItemReasonAlreadyExists          JobFailedDeliveriesItemReason = "already_exists"
-	JobFailedDeliveriesItemReasonDestinationUnavailable JobFailedDeliveriesItemReason = "destination_unavailable"
-	JobFailedDeliveriesItemReasonNotDeliverable         JobFailedDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobFailedDeliveriesItemReasonFromString(s string) (JobFailedDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobFailedDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobFailedDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobFailedDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobFailedDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobFailedDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobFailedDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobFailedDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobFailedDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobFailedDeliveriesItemReason) Ptr() *JobFailedDeliveriesItemReason {
-	return &j
-}
-
-type JobFailedDeliveriesItemStatus string
-
-const (
-	JobFailedDeliveriesItemStatusPending   JobFailedDeliveriesItemStatus = "pending"
-	JobFailedDeliveriesItemStatusDelivered JobFailedDeliveriesItemStatus = "delivered"
-	JobFailedDeliveriesItemStatusFailed    JobFailedDeliveriesItemStatus = "failed"
-)
-
-func NewJobFailedDeliveriesItemStatusFromString(s string) (JobFailedDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobFailedDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobFailedDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobFailedDeliveriesItemStatusFailed, nil
-	}
-	var t JobFailedDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobFailedDeliveriesItemStatus) Ptr() *JobFailedDeliveriesItemStatus {
-	return &j
-}
-
-var (
-	jobFailedErrorFieldCode        = big.NewInt(1 << 0)
-	jobFailedErrorFieldMessage     = big.NewInt(1 << 1)
-	jobFailedErrorFieldDetail      = big.NewInt(1 << 2)
-	jobFailedErrorFieldRetryable   = big.NewInt(1 << 3)
-	jobFailedErrorFieldFailedPhase = big.NewInt(1 << 4)
-)
-
-// jobFailedErrorNullableFields maps the wire names of JobFailedError's nullable fields (required or optional) to their field bits.
-var jobFailedErrorNullableFields = map[string]*big.Int{
-	"detail": jobFailedErrorFieldDetail,
-}
-
-// Failure detail. Present only here.
-type JobFailedError struct {
-	// Machine-readable error code
-	Code string `json:"code" url:"code"`
-	// Human-readable error message
-	Message string `json:"message" url:"message"`
-	// Real provider stderr tail (e.g. ffmpeg), or null
-	Detail *string `json:"detail,omitempty" url:"detail,omitempty"`
-	// True when retrying the same job may succeed
-	Retryable bool `json:"retryable" url:"retryable"`
-	// Which phase the job failed in, when known
-	FailedPhase *JobFailedErrorFailedPhase `json:"failedPhase,omitempty" url:"failedPhase,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobFailedError) GetCode() string {
-	if j == nil {
-		return ""
-	}
-	return j.Code
-}
-
-func (j *JobFailedError) GetMessage() string {
-	if j == nil {
-		return ""
-	}
-	return j.Message
-}
-
-func (j *JobFailedError) GetDetail() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Detail
-}
-
-func (j *JobFailedError) GetRetryable() bool {
-	if j == nil {
-		return false
-	}
-	return j.Retryable
-}
-
-func (j *JobFailedError) GetFailedPhase() *JobFailedErrorFailedPhase {
-	if j == nil {
-		return nil
-	}
-	return j.FailedPhase
-}
-
-func (j *JobFailedError) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobFailedError) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetCode sets the Code field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedError) SetCode(code string) {
-	j.Code = code
-	j.require(jobFailedErrorFieldCode)
-}
-
-// SetMessage sets the Message field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedError) SetMessage(message string) {
-	j.Message = message
-	j.require(jobFailedErrorFieldMessage)
-}
-
-// SetDetail sets the Detail field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedError) SetDetail(detail *string) {
-	j.Detail = detail
-	j.require(jobFailedErrorFieldDetail)
-}
-
-// SetRetryable sets the Retryable field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedError) SetRetryable(retryable bool) {
-	j.Retryable = retryable
-	j.require(jobFailedErrorFieldRetryable)
-}
-
-// SetFailedPhase sets the FailedPhase field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedError) SetFailedPhase(failedPhase *JobFailedErrorFailedPhase) {
-	j.FailedPhase = failedPhase
-	j.require(jobFailedErrorFieldFailedPhase)
-}
-
-func (j *JobFailedError) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobFailedError
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobFailedError(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobFailedErrorNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		j.require(presentFields)
-	}
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobFailedError) MarshalJSON() ([]byte, error) {
-	type embed JobFailedError
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobFailedError) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Which phase the job failed in, when known
-type JobFailedErrorFailedPhase string
-
-const (
-	JobFailedErrorFailedPhasePreparing  JobFailedErrorFailedPhase = "preparing"
-	JobFailedErrorFailedPhaseProcessing JobFailedErrorFailedPhase = "processing"
-	JobFailedErrorFailedPhaseFinalizing JobFailedErrorFailedPhase = "finalizing"
-)
-
-func NewJobFailedErrorFailedPhaseFromString(s string) (JobFailedErrorFailedPhase, error) {
-	switch s {
-	case "preparing":
-		return JobFailedErrorFailedPhasePreparing, nil
-	case "processing":
-		return JobFailedErrorFailedPhaseProcessing, nil
-	case "finalizing":
-		return JobFailedErrorFailedPhaseFinalizing, nil
-	}
-	var t JobFailedErrorFailedPhase
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobFailedErrorFailedPhase) Ptr() *JobFailedErrorFailedPhase {
-	return &j
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobFailedOutputCategory string
 
@@ -15556,26 +12423,28 @@ func (j JobFailedOutputCategory) Ptr() *JobFailedOutputCategory {
 }
 
 var (
-	jobFailedStepsItemFieldID          = big.NewInt(1 << 0)
-	jobFailedStepsItemFieldName        = big.NewInt(1 << 1)
-	jobFailedStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobFailedStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobFailedStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobFailedStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobFailedStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobFailedStepsItemFieldError       = big.NewInt(1 << 7)
+	jobOutputFieldData      = big.NewInt(1 << 0)
+	jobOutputFieldFile      = big.NewInt(1 << 1)
+	jobOutputFieldFiles     = big.NewInt(1 << 2)
+	jobOutputFieldExpiresAt = big.NewInt(1 << 3)
 )
 
-type JobFailedStepsItem struct {
-	ID   string `json:"id" url:"id"`
-	Name string `json:"name" url:"name"`
-	// pending | running | complete | skipped | error
-	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
+// jobOutputNullableFields maps the wire names of JobOutput's nullable fields (required or optional) to their field bits.
+var jobOutputNullableFields = map[string]*big.Int{
+	"file":      jobOutputFieldFile,
+	"expiresAt": jobOutputFieldExpiresAt,
+}
+
+// Job output. Present only when status is complete.
+type JobOutput struct {
+	// Job-type-specific computed result (probe result, detections, transcript). Shape varies per job type. Null when the job produced no structured data. For an ffprobe job it is an FfprobeResult (#/components/schemas/FfprobeResult).
+	Data any `json:"data,omitempty" url:"data,omitempty"`
+	// Convenience shortcut to the single headline result: the one output file, or the stream manifest (.m3u8/.mpd). Read `file.url` directly when you expect one output. Always one of `files`. Null for pure file sets and data-only jobs (which have no single headline).
+	File *JobOutputFile `json:"file,omitempty" url:"file,omitempty"`
+	// Every file the job produced, the complete list. Use this when a job can output many files (image sequence, HLS segments, resolution ladder). Empty for data-only jobs.
+	Files []*OutputFile `json:"files" url:"files"`
+	// Unix ms when the file URLs expire. Present iff `files` is non-empty.
+	ExpiresAt *int `json:"expiresAt,omitempty" url:"expiresAt,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -15584,70 +12453,514 @@ type JobFailedStepsItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (j *JobFailedStepsItem) GetID() string {
-	if j == nil {
-		return ""
-	}
-	return j.ID
-}
-
-func (j *JobFailedStepsItem) GetName() string {
-	if j == nil {
-		return ""
-	}
-	return j.Name
-}
-
-func (j *JobFailedStepsItem) GetStatus() string {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobFailedStepsItem) GetStartedAt() *float64 {
+func (j *JobOutput) GetData() any {
 	if j == nil {
 		return nil
 	}
-	return j.StartedAt
+	return j.Data
 }
 
-func (j *JobFailedStepsItem) GetCompletedAt() *float64 {
+func (j *JobOutput) GetFile() *JobOutputFile {
 	if j == nil {
 		return nil
 	}
-	return j.CompletedAt
+	return j.File
 }
 
-func (j *JobFailedStepsItem) GetDurationMs() *float64 {
+func (j *JobOutput) GetFiles() []*OutputFile {
 	if j == nil {
 		return nil
 	}
-	return j.DurationMs
+	return j.Files
 }
 
-func (j *JobFailedStepsItem) GetMeta() map[string]any {
+func (j *JobOutput) GetExpiresAt() *int {
 	if j == nil {
 		return nil
 	}
-	return j.Meta
+	return j.ExpiresAt
 }
 
-func (j *JobFailedStepsItem) GetError() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Error
-}
-
-func (j *JobFailedStepsItem) GetExtraProperties() map[string]interface{} {
+func (j *JobOutput) GetExtraProperties() map[string]interface{} {
 	if j == nil {
 		return nil
 	}
 	return j.extraProperties
 }
 
-func (j *JobFailedStepsItem) require(field *big.Int) {
+func (j *JobOutput) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutput) SetData(data any) {
+	j.Data = data
+	j.require(jobOutputFieldData)
+}
+
+// SetFile sets the File field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutput) SetFile(file *JobOutputFile) {
+	j.File = file
+	j.require(jobOutputFieldFile)
+}
+
+// SetFiles sets the Files field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutput) SetFiles(files []*OutputFile) {
+	j.Files = files
+	j.require(jobOutputFieldFiles)
+}
+
+// SetExpiresAt sets the ExpiresAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutput) SetExpiresAt(expiresAt *int) {
+	j.ExpiresAt = expiresAt
+	j.require(jobOutputFieldExpiresAt)
+}
+
+func (j *JobOutput) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobOutput
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobOutput(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobOutputNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		j.require(presentFields)
+	}
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobOutput) MarshalJSON() ([]byte, error) {
+	type embed JobOutput
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobOutput) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobOutputFileFieldURL    = big.NewInt(1 << 0)
+	jobOutputFileFieldPath   = big.NewInt(1 << 1)
+	jobOutputFileFieldType   = big.NewInt(1 << 2)
+	jobOutputFileFieldSize   = big.NewInt(1 << 3)
+	jobOutputFileFieldSha256 = big.NewInt(1 << 4)
+	jobOutputFileFieldMeta   = big.NewInt(1 << 5)
+)
+
+// jobOutputFileNullableFields maps the wire names of JobOutputFile's nullable fields (required or optional) to their field bits.
+var jobOutputFileNullableFields = map[string]*big.Int{
+	"sha256": jobOutputFileFieldSha256,
+}
+
+// Convenience shortcut to the single headline result: the one output file, or the stream manifest (.m3u8/.mpd). Read `file.url` directly when you expect one output. Always one of `files`. Null for pure file sets and data-only jobs (which have no single headline).
+type JobOutputFile struct {
+	// Ready-to-fetch, time-limited URL for this file
+	URL string `json:"url" url:"url"`
+	// File path within the job output (relative). For an ffmpeg job, the name the command wrote.
+	Path string         `json:"path" url:"path"`
+	Type OutputFileType `json:"type" url:"type"`
+	// File size in bytes
+	Size int `json:"size" url:"size"`
+	// SHA-256 of the file's bytes, 64 lowercase hex characters. Compare it with your own digest of a download or a delivered copy. Null on jobs completed before 2026-10 (single files) or 2026-10-22 (multi-file outputs).
+	Sha256 *string `json:"sha256,omitempty" url:"sha256,omitempty"`
+	// Optional per-file media metadata, when known
+	Meta *JobOutputFileMeta `json:"meta,omitempty" url:"meta,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobOutputFile) GetURL() string {
+	if j == nil {
+		return ""
+	}
+	return j.URL
+}
+
+func (j *JobOutputFile) GetPath() string {
+	if j == nil {
+		return ""
+	}
+	return j.Path
+}
+
+func (j *JobOutputFile) GetType() OutputFileType {
+	if j == nil {
+		return ""
+	}
+	return j.Type
+}
+
+func (j *JobOutputFile) GetSize() int {
+	if j == nil {
+		return 0
+	}
+	return j.Size
+}
+
+func (j *JobOutputFile) GetSha256() *string {
+	if j == nil {
+		return nil
+	}
+	return j.Sha256
+}
+
+func (j *JobOutputFile) GetMeta() *JobOutputFileMeta {
+	if j == nil {
+		return nil
+	}
+	return j.Meta
+}
+
+func (j *JobOutputFile) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobOutputFile) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetURL(url string) {
+	j.URL = url
+	j.require(jobOutputFileFieldURL)
+}
+
+// SetPath sets the Path field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetPath(path string) {
+	j.Path = path
+	j.require(jobOutputFileFieldPath)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetType(type_ OutputFileType) {
+	j.Type = type_
+	j.require(jobOutputFileFieldType)
+}
+
+// SetSize sets the Size field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetSize(size int) {
+	j.Size = size
+	j.require(jobOutputFileFieldSize)
+}
+
+// SetSha256 sets the Sha256 field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetSha256(sha256 *string) {
+	j.Sha256 = sha256
+	j.require(jobOutputFileFieldSha256)
+}
+
+// SetMeta sets the Meta field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFile) SetMeta(meta *JobOutputFileMeta) {
+	j.Meta = meta
+	j.require(jobOutputFileFieldMeta)
+}
+
+func (j *JobOutputFile) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobOutputFile
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobOutputFile(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, jobOutputFileNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		j.require(presentFields)
+	}
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobOutputFile) MarshalJSON() ([]byte, error) {
+	type embed JobOutputFile
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobOutputFile) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobOutputFileMetaFieldFormat     = big.NewInt(1 << 0)
+	jobOutputFileMetaFieldWidth      = big.NewInt(1 << 1)
+	jobOutputFileMetaFieldHeight     = big.NewInt(1 << 2)
+	jobOutputFileMetaFieldDurationMs = big.NewInt(1 << 3)
+	jobOutputFileMetaFieldSeed       = big.NewInt(1 << 4)
+)
+
+// Optional per-file media metadata, when known
+type JobOutputFileMeta struct {
+	// Container/codec format (from extension)
+	Format     *string `json:"format,omitempty" url:"format,omitempty"`
+	Width      *int    `json:"width,omitempty" url:"width,omitempty"`
+	Height     *int    `json:"height,omitempty" url:"height,omitempty"`
+	DurationMs *int    `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	// Seed used, for reproducible generation
+	Seed *int `json:"seed,omitempty" url:"seed,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobOutputFileMeta) GetFormat() *string {
+	if j == nil {
+		return nil
+	}
+	return j.Format
+}
+
+func (j *JobOutputFileMeta) GetWidth() *int {
+	if j == nil {
+		return nil
+	}
+	return j.Width
+}
+
+func (j *JobOutputFileMeta) GetHeight() *int {
+	if j == nil {
+		return nil
+	}
+	return j.Height
+}
+
+func (j *JobOutputFileMeta) GetDurationMs() *int {
+	if j == nil {
+		return nil
+	}
+	return j.DurationMs
+}
+
+func (j *JobOutputFileMeta) GetSeed() *int {
+	if j == nil {
+		return nil
+	}
+	return j.Seed
+}
+
+func (j *JobOutputFileMeta) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobOutputFileMeta) require(field *big.Int) {
+	next := new(big.Int)
+	if j.explicitFields != nil {
+		next.Set(j.explicitFields)
+	}
+	next.Or(next, field)
+	j.explicitFields = next
+}
+
+// SetFormat sets the Format field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFileMeta) SetFormat(format *string) {
+	j.Format = format
+	j.require(jobOutputFileMetaFieldFormat)
+}
+
+// SetWidth sets the Width field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFileMeta) SetWidth(width *int) {
+	j.Width = width
+	j.require(jobOutputFileMetaFieldWidth)
+}
+
+// SetHeight sets the Height field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFileMeta) SetHeight(height *int) {
+	j.Height = height
+	j.require(jobOutputFileMetaFieldHeight)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFileMeta) SetDurationMs(durationMs *int) {
+	j.DurationMs = durationMs
+	j.require(jobOutputFileMetaFieldDurationMs)
+}
+
+// SetSeed sets the Seed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobOutputFileMeta) SetSeed(seed *int) {
+	j.Seed = seed
+	j.require(jobOutputFileMetaFieldSeed)
+}
+
+func (j *JobOutputFileMeta) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobOutputFileMeta
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*j = JobOutputFileMeta(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	if err != nil {
+		return err
+	}
+	j.extraProperties = extraProperties
+	j.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (j *JobOutputFileMeta) MarshalJSON() ([]byte, error) {
+	type embed JobOutputFileMeta
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*j),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (j *JobOutputFileMeta) String() string {
+	if j == nil {
+		return "<nil>"
+	}
+	if len(j.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(j); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", j)
+}
+
+var (
+	jobReplayedFieldID         = big.NewInt(1 << 0)
+	jobReplayedFieldStatus     = big.NewInt(1 << 1)
+	jobReplayedFieldIdempotent = big.NewInt(1 << 2)
+)
+
+type JobReplayed struct {
+	// Job ID of the earlier submit
+	ID string `json:"id" url:"id"`
+	// That job's current status: any of waiting, dispatched, running, complete, failed, cancelled
+	Status string `json:"status" url:"status"`
+	// This submit replayed an earlier one instead of creating a job
+	Idempotent bool `json:"idempotent" url:"idempotent"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (j *JobReplayed) GetID() string {
+	if j == nil {
+		return ""
+	}
+	return j.ID
+}
+
+func (j *JobReplayed) GetStatus() string {
+	if j == nil {
+		return ""
+	}
+	return j.Status
+}
+
+func (j *JobReplayed) GetIdempotent() bool {
+	if j == nil {
+		return false
+	}
+	return j.Idempotent
+}
+
+func (j *JobReplayed) GetExtraProperties() map[string]interface{} {
+	if j == nil {
+		return nil
+	}
+	return j.extraProperties
+}
+
+func (j *JobReplayed) require(field *big.Int) {
 	next := new(big.Int)
 	if j.explicitFields != nil {
 		next.Set(j.explicitFields)
@@ -15658,67 +12971,32 @@ func (j *JobFailedStepsItem) require(field *big.Int) {
 
 // SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetID(id string) {
+func (j *JobReplayed) SetID(id string) {
 	j.ID = id
-	j.require(jobFailedStepsItemFieldID)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetName(name string) {
-	j.Name = name
-	j.require(jobFailedStepsItemFieldName)
+	j.require(jobReplayedFieldID)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetStatus(status string) {
+func (j *JobReplayed) SetStatus(status string) {
 	j.Status = status
-	j.require(jobFailedStepsItemFieldStatus)
+	j.require(jobReplayedFieldStatus)
 }
 
-// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// SetIdempotent sets the Idempotent field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetStartedAt(startedAt *float64) {
-	j.StartedAt = startedAt
-	j.require(jobFailedStepsItemFieldStartedAt)
+func (j *JobReplayed) SetIdempotent(idempotent bool) {
+	j.Idempotent = idempotent
+	j.require(jobReplayedFieldIdempotent)
 }
 
-// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetCompletedAt(completedAt *float64) {
-	j.CompletedAt = completedAt
-	j.require(jobFailedStepsItemFieldCompletedAt)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobFailedStepsItemFieldDurationMs)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetMeta(meta map[string]any) {
-	j.Meta = meta
-	j.require(jobFailedStepsItemFieldMeta)
-}
-
-// SetError sets the Error field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobFailedStepsItem) SetError(error_ *string) {
-	j.Error = error_
-	j.require(jobFailedStepsItemFieldError)
-}
-
-func (j *JobFailedStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobFailedStepsItem
+func (j *JobReplayed) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobReplayed
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*j = JobFailedStepsItem(value)
+	*j = JobReplayed(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *j)
 	if err != nil {
 		return err
@@ -15728,8 +13006,8 @@ func (j *JobFailedStepsItem) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (j *JobFailedStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobFailedStepsItem
+func (j *JobReplayed) MarshalJSON() ([]byte, error) {
+	type embed JobReplayed
 	var marshaler = struct {
 		embed
 	}{
@@ -15739,7 +13017,7 @@ func (j *JobFailedStepsItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (j *JobFailedStepsItem) String() string {
+func (j *JobReplayed) String() string {
 	if j == nil {
 		return "<nil>"
 	}
@@ -15782,10 +13060,11 @@ var (
 	jobRunningFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobRunningFieldWebURL             = big.NewInt(1 << 25)
 	jobRunningFieldModel              = big.NewInt(1 << 26)
-	jobRunningFieldCallback           = big.NewInt(1 << 27)
-	jobRunningFieldDeliveries         = big.NewInt(1 << 28)
-	jobRunningFieldProgress           = big.NewInt(1 << 29)
-	jobRunningFieldEta                = big.NewInt(1 << 30)
+	jobRunningFieldTerminal           = big.NewInt(1 << 27)
+	jobRunningFieldCallback           = big.NewInt(1 << 28)
+	jobRunningFieldDeliveries         = big.NewInt(1 << 29)
+	jobRunningFieldProgress           = big.NewInt(1 << 30)
+	jobRunningFieldEta                = big.NewInt(1 << 31)
 )
 
 // jobRunningNullableFields maps the wire names of JobRunning's nullable fields (required or optional) to their field bits.
@@ -15831,12 +13110,11 @@ type JobRunning struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobRunningCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobRunningOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobRunningStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -15848,25 +13126,26 @@ type JobRunning struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobRunningCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobRunningDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
 	// Completion fraction 0..1, or null when it cannot be determined
 	Progress *float64 `json:"progress,omitempty" url:"progress,omitempty"`
 	// Estimated seconds remaining, or null
@@ -15956,7 +13235,7 @@ func (j *JobRunning) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobRunning) GetCost() *JobRunningCost {
+func (j *JobRunning) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -15970,7 +13249,7 @@ func (j *JobRunning) GetOutputCategory() JobRunningOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobRunning) GetSteps() []*JobRunningStepsItem {
+func (j *JobRunning) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -16012,35 +13291,35 @@ func (j *JobRunning) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobRunning) GetCreatedAt() float64 {
+func (j *JobRunning) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobRunning) GetDispatchedAt() *float64 {
+func (j *JobRunning) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobRunning) GetStartedAt() *float64 {
+func (j *JobRunning) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobRunning) GetCompletedAt() *float64 {
+func (j *JobRunning) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobRunning) GetSettledAt() *float64 {
+func (j *JobRunning) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -16068,14 +13347,21 @@ func (j *JobRunning) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobRunning) GetCallback() *JobRunningCallback {
+func (j *JobRunning) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobRunning) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobRunning) GetDeliveries() []*JobRunningDeliveriesItem {
+func (j *JobRunning) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
@@ -16191,7 +13477,7 @@ func (j *JobRunning) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetCost(cost *JobRunningCost) {
+func (j *JobRunning) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobRunningFieldCost)
 }
@@ -16205,7 +13491,7 @@ func (j *JobRunning) SetOutputCategory(outputCategory JobRunningOutputCategory) 
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetSteps(steps []*JobRunningStepsItem) {
+func (j *JobRunning) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobRunningFieldSteps)
 }
@@ -16247,35 +13533,35 @@ func (j *JobRunning) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetCreatedAt(createdAt float64) {
+func (j *JobRunning) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobRunningFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobRunning) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobRunningFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetStartedAt(startedAt *float64) {
+func (j *JobRunning) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobRunningFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetCompletedAt(completedAt *float64) {
+func (j *JobRunning) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobRunningFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetSettledAt(settledAt *float64) {
+func (j *JobRunning) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobRunningFieldSettledAt)
 }
@@ -16301,16 +13587,23 @@ func (j *JobRunning) SetModel(model *string) {
 	j.require(jobRunningFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobRunning) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobRunningFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetCallback(callback *JobRunningCallback) {
+func (j *JobRunning) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobRunningFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunning) SetDeliveries(deliveries []*JobRunningDeliveriesItem) {
+func (j *JobRunning) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobRunningFieldDeliveries)
 }
@@ -16378,494 +13671,6 @@ func (j *JobRunning) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobRunningCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobRunningCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobRunningCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobRunningCallback) GetStatus() JobRunningCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobRunningCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobRunningCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningCallback) SetStatus(status JobRunningCallbackStatus) {
-	j.Status = status
-	j.require(jobRunningCallbackFieldStatus)
-}
-
-func (j *JobRunningCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobRunningCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobRunningCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobRunningCallback) MarshalJSON() ([]byte, error) {
-	type embed JobRunningCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobRunningCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobRunningCallbackStatus string
-
-const (
-	JobRunningCallbackStatusPending   JobRunningCallbackStatus = "pending"
-	JobRunningCallbackStatusDelivered JobRunningCallbackStatus = "delivered"
-	JobRunningCallbackStatusFailed    JobRunningCallbackStatus = "failed"
-)
-
-func NewJobRunningCallbackStatusFromString(s string) (JobRunningCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobRunningCallbackStatusPending, nil
-	case "delivered":
-		return JobRunningCallbackStatusDelivered, nil
-	case "failed":
-		return JobRunningCallbackStatusFailed, nil
-	}
-	var t JobRunningCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobRunningCallbackStatus) Ptr() *JobRunningCallbackStatus {
-	return &j
-}
-
-var (
-	jobRunningCostFieldAmount    = big.NewInt(1 << 0)
-	jobRunningCostFieldCurrency  = big.NewInt(1 << 1)
-	jobRunningCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobRunningCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobRunningCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobRunningCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobRunningCost) GetCurrency() JobRunningCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobRunningCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobRunningCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobRunningCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobRunningCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningCost) SetCurrency(currency JobRunningCostCurrency) {
-	j.Currency = currency
-	j.require(jobRunningCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobRunningCostFieldFormatted)
-}
-
-func (j *JobRunningCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobRunningCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobRunningCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobRunningCost) MarshalJSON() ([]byte, error) {
-	type embed JobRunningCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobRunningCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobRunningCostCurrency string
-
-const (
-	JobRunningCostCurrencyUsd JobRunningCostCurrency = "USD"
-)
-
-func NewJobRunningCostCurrencyFromString(s string) (JobRunningCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobRunningCostCurrencyUsd, nil
-	}
-	var t JobRunningCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobRunningCostCurrency) Ptr() *JobRunningCostCurrency {
-	return &j
-}
-
-var (
-	jobRunningDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobRunningDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobRunningDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobRunningDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobRunningDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobRunningDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobRunningDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                         `json:"storageId" url:"storageId"`
-	Status    JobRunningDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                         `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobRunningDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobRunningDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobRunningDeliveriesItem) GetStatus() JobRunningDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobRunningDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobRunningDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobRunningDeliveriesItem) GetReason() *JobRunningDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobRunningDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobRunningDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobRunningDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobRunningDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetStatus(status JobRunningDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobRunningDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobRunningDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobRunningDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetReason(reason *JobRunningDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobRunningDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobRunningDeliveriesItemFieldRenamed)
-}
-
-func (j *JobRunningDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobRunningDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobRunningDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobRunningDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobRunningDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobRunningDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobRunningDeliveriesItemReason string
-
-const (
-	JobRunningDeliveriesItemReasonDestinationDenied      JobRunningDeliveriesItemReason = "destination_denied"
-	JobRunningDeliveriesItemReasonSignatureMismatch      JobRunningDeliveriesItemReason = "signature_mismatch"
-	JobRunningDeliveriesItemReasonBucketNotFound         JobRunningDeliveriesItemReason = "bucket_not_found"
-	JobRunningDeliveriesItemReasonObjectTooLarge         JobRunningDeliveriesItemReason = "object_too_large"
-	JobRunningDeliveriesItemReasonAlreadyExists          JobRunningDeliveriesItemReason = "already_exists"
-	JobRunningDeliveriesItemReasonDestinationUnavailable JobRunningDeliveriesItemReason = "destination_unavailable"
-	JobRunningDeliveriesItemReasonNotDeliverable         JobRunningDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobRunningDeliveriesItemReasonFromString(s string) (JobRunningDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobRunningDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobRunningDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobRunningDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobRunningDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobRunningDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobRunningDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobRunningDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobRunningDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobRunningDeliveriesItemReason) Ptr() *JobRunningDeliveriesItemReason {
-	return &j
-}
-
-type JobRunningDeliveriesItemStatus string
-
-const (
-	JobRunningDeliveriesItemStatusPending   JobRunningDeliveriesItemStatus = "pending"
-	JobRunningDeliveriesItemStatusDelivered JobRunningDeliveriesItemStatus = "delivered"
-	JobRunningDeliveriesItemStatusFailed    JobRunningDeliveriesItemStatus = "failed"
-)
-
-func NewJobRunningDeliveriesItemStatusFromString(s string) (JobRunningDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobRunningDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobRunningDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobRunningDeliveriesItemStatusFailed, nil
-	}
-	var t JobRunningDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobRunningDeliveriesItemStatus) Ptr() *JobRunningDeliveriesItemStatus {
-	return &j
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobRunningOutputCategory string
 
@@ -16902,24 +13707,24 @@ func (j JobRunningOutputCategory) Ptr() *JobRunningOutputCategory {
 }
 
 var (
-	jobRunningStepsItemFieldID          = big.NewInt(1 << 0)
-	jobRunningStepsItemFieldName        = big.NewInt(1 << 1)
-	jobRunningStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobRunningStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobRunningStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobRunningStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobRunningStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobRunningStepsItemFieldError       = big.NewInt(1 << 7)
+	jobStepFieldID          = big.NewInt(1 << 0)
+	jobStepFieldName        = big.NewInt(1 << 1)
+	jobStepFieldStatus      = big.NewInt(1 << 2)
+	jobStepFieldStartedAt   = big.NewInt(1 << 3)
+	jobStepFieldCompletedAt = big.NewInt(1 << 4)
+	jobStepFieldDurationMs  = big.NewInt(1 << 5)
+	jobStepFieldMeta        = big.NewInt(1 << 6)
+	jobStepFieldError       = big.NewInt(1 << 7)
 )
 
-type JobRunningStepsItem struct {
+type JobStep struct {
 	ID   string `json:"id" url:"id"`
 	Name string `json:"name" url:"name"`
 	// pending | running | complete | skipped | error
 	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	StartedAt   *int           `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	CompletedAt *int           `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	DurationMs  *int           `json:"durationMs,omitempty" url:"durationMs,omitempty"`
 	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
 	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
 
@@ -16930,70 +13735,70 @@ type JobRunningStepsItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (j *JobRunningStepsItem) GetID() string {
+func (j *JobStep) GetID() string {
 	if j == nil {
 		return ""
 	}
 	return j.ID
 }
 
-func (j *JobRunningStepsItem) GetName() string {
+func (j *JobStep) GetName() string {
 	if j == nil {
 		return ""
 	}
 	return j.Name
 }
 
-func (j *JobRunningStepsItem) GetStatus() string {
+func (j *JobStep) GetStatus() string {
 	if j == nil {
 		return ""
 	}
 	return j.Status
 }
 
-func (j *JobRunningStepsItem) GetStartedAt() *float64 {
+func (j *JobStep) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobRunningStepsItem) GetCompletedAt() *float64 {
+func (j *JobStep) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobRunningStepsItem) GetDurationMs() *float64 {
+func (j *JobStep) GetDurationMs() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DurationMs
 }
 
-func (j *JobRunningStepsItem) GetMeta() map[string]any {
+func (j *JobStep) GetMeta() map[string]any {
 	if j == nil {
 		return nil
 	}
 	return j.Meta
 }
 
-func (j *JobRunningStepsItem) GetError() *string {
+func (j *JobStep) GetError() *string {
 	if j == nil {
 		return nil
 	}
 	return j.Error
 }
 
-func (j *JobRunningStepsItem) GetExtraProperties() map[string]interface{} {
+func (j *JobStep) GetExtraProperties() map[string]interface{} {
 	if j == nil {
 		return nil
 	}
 	return j.extraProperties
 }
 
-func (j *JobRunningStepsItem) require(field *big.Int) {
+func (j *JobStep) require(field *big.Int) {
 	next := new(big.Int)
 	if j.explicitFields != nil {
 		next.Set(j.explicitFields)
@@ -17004,67 +13809,67 @@ func (j *JobRunningStepsItem) require(field *big.Int) {
 
 // SetID sets the ID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetID(id string) {
+func (j *JobStep) SetID(id string) {
 	j.ID = id
-	j.require(jobRunningStepsItemFieldID)
+	j.require(jobStepFieldID)
 }
 
 // SetName sets the Name field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetName(name string) {
+func (j *JobStep) SetName(name string) {
 	j.Name = name
-	j.require(jobRunningStepsItemFieldName)
+	j.require(jobStepFieldName)
 }
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetStatus(status string) {
+func (j *JobStep) SetStatus(status string) {
 	j.Status = status
-	j.require(jobRunningStepsItemFieldStatus)
+	j.require(jobStepFieldStatus)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetStartedAt(startedAt *float64) {
+func (j *JobStep) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
-	j.require(jobRunningStepsItemFieldStartedAt)
+	j.require(jobStepFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetCompletedAt(completedAt *float64) {
+func (j *JobStep) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
-	j.require(jobRunningStepsItemFieldCompletedAt)
+	j.require(jobStepFieldCompletedAt)
 }
 
 // SetDurationMs sets the DurationMs field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetDurationMs(durationMs *float64) {
+func (j *JobStep) SetDurationMs(durationMs *int) {
 	j.DurationMs = durationMs
-	j.require(jobRunningStepsItemFieldDurationMs)
+	j.require(jobStepFieldDurationMs)
 }
 
 // SetMeta sets the Meta field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetMeta(meta map[string]any) {
+func (j *JobStep) SetMeta(meta map[string]any) {
 	j.Meta = meta
-	j.require(jobRunningStepsItemFieldMeta)
+	j.require(jobStepFieldMeta)
 }
 
 // SetError sets the Error field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobRunningStepsItem) SetError(error_ *string) {
+func (j *JobStep) SetError(error_ *string) {
 	j.Error = error_
-	j.require(jobRunningStepsItemFieldError)
+	j.require(jobStepFieldError)
 }
 
-func (j *JobRunningStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobRunningStepsItem
+func (j *JobStep) UnmarshalJSON(data []byte) error {
+	type unmarshaler JobStep
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*j = JobRunningStepsItem(value)
+	*j = JobStep(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *j)
 	if err != nil {
 		return err
@@ -17074,8 +13879,8 @@ func (j *JobRunningStepsItem) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (j *JobRunningStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobRunningStepsItem
+func (j *JobStep) MarshalJSON() ([]byte, error) {
+	type embed JobStep
 	var marshaler = struct {
 		embed
 	}{
@@ -17085,7 +13890,7 @@ func (j *JobRunningStepsItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (j *JobRunningStepsItem) String() string {
+func (j *JobStep) String() string {
 	if j == nil {
 		return "<nil>"
 	}
@@ -17300,8 +14105,9 @@ var (
 	jobWaitingFieldRetentionExpiresAt = big.NewInt(1 << 24)
 	jobWaitingFieldWebURL             = big.NewInt(1 << 25)
 	jobWaitingFieldModel              = big.NewInt(1 << 26)
-	jobWaitingFieldCallback           = big.NewInt(1 << 27)
-	jobWaitingFieldDeliveries         = big.NewInt(1 << 28)
+	jobWaitingFieldTerminal           = big.NewInt(1 << 27)
+	jobWaitingFieldCallback           = big.NewInt(1 << 28)
+	jobWaitingFieldDeliveries         = big.NewInt(1 << 29)
 )
 
 // jobWaitingNullableFields maps the wire names of JobWaiting's nullable fields (required or optional) to their field bits.
@@ -17345,12 +14151,11 @@ type JobWaiting struct {
 	Inputs map[string]any `json:"inputs" url:"inputs"`
 	// Job parameters
 	Params map[string]any `json:"params" url:"params"`
-	// Amount charged, or null when not yet billed
-	Cost *JobWaitingCost `json:"cost,omitempty" url:"cost,omitempty"`
+	Cost   *JobCost       `json:"cost,omitempty" url:"cost,omitempty"`
 	// Output category. Clients should tolerate unknown future values.
 	OutputCategory JobWaitingOutputCategory `json:"outputCategory" url:"outputCategory"`
 	// Execution steps
-	Steps []*JobWaitingStepsItem `json:"steps" url:"steps"`
+	Steps []*JobStep `json:"steps" url:"steps"`
 	// Whether execution logs are stored
 	LogsAvailable bool `json:"logsAvailable" url:"logsAvailable"`
 	// Whether the resource-utilization series is stored
@@ -17362,25 +14167,26 @@ type JobWaiting struct {
 	// How long this job is allowed to run, in milliseconds: the requested timeout clamped to the plan ceiling. Null until the job is dispatched. Clients waiting on a job should bound the wait by this rather than a fixed guess.
 	TimeoutMs *int `json:"timeoutMs,omitempty" url:"timeoutMs,omitempty"`
 	// Creation timestamp (Unix ms)
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
+	CreatedAt int `json:"createdAt" url:"createdAt"`
 	// Dispatch timestamp (Unix ms)
-	DispatchedAt *float64 `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
+	DispatchedAt *int `json:"dispatchedAt,omitempty" url:"dispatchedAt,omitempty"`
 	// Start timestamp (Unix ms)
-	StartedAt *float64 `json:"startedAt,omitempty" url:"startedAt,omitempty"`
+	StartedAt *int `json:"startedAt,omitempty" url:"startedAt,omitempty"`
 	// Completion timestamp (Unix ms)
-	CompletedAt *float64 `json:"completedAt,omitempty" url:"completedAt,omitempty"`
+	CompletedAt *int `json:"completedAt,omitempty" url:"completedAt,omitempty"`
 	// CF Worker timestamp when terminal status written (Unix ms)
-	SettledAt *float64 `json:"settledAt,omitempty" url:"settledAt,omitempty"`
+	SettledAt *int `json:"settledAt,omitempty" url:"settledAt,omitempty"`
 	// Unix ms when the stored output files are deleted (completion + plan retention window). Null until the job completes with a stored output. Distinct from output.expiresAt, which is the short-lived download-URL expiry.
 	RetentionExpiresAt *int `json:"retentionExpiresAt,omitempty" url:"retentionExpiresAt,omitempty"`
 	// Dashboard URL for this job
 	WebURL string `json:"webUrl" url:"webUrl"`
 	// Resolved generation model id (image.generate / image.edit jobs only), else null
 	Model *string `json:"model,omitempty" url:"model,omitempty"`
-	// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-	Callback *JobWaitingCallback `json:"callback,omitempty" url:"callback,omitempty"`
+	// True once the job has ended (complete, failed or cancelled), false while it waits or runs. Stop waiting on this rather than on a list of statuses: it stays right when a status is added.
+	Terminal bool            `json:"terminal" url:"terminal"`
+	Callback *CallbackStatus `json:"callback,omitempty" url:"callback,omitempty"`
 	// Where the output was or will be delivered, one entry per destination given at submit. Detail endpoint only; absent when the job had no destinations.
-	Deliveries []*JobWaitingDeliveriesItem `json:"deliveries,omitempty" url:"deliveries,omitempty"`
+	Deliveries []*JobDelivery `json:"deliveries,omitempty" url:"deliveries,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -17466,7 +14272,7 @@ func (j *JobWaiting) GetParams() map[string]any {
 	return j.Params
 }
 
-func (j *JobWaiting) GetCost() *JobWaitingCost {
+func (j *JobWaiting) GetCost() *JobCost {
 	if j == nil {
 		return nil
 	}
@@ -17480,7 +14286,7 @@ func (j *JobWaiting) GetOutputCategory() JobWaitingOutputCategory {
 	return j.OutputCategory
 }
 
-func (j *JobWaiting) GetSteps() []*JobWaitingStepsItem {
+func (j *JobWaiting) GetSteps() []*JobStep {
 	if j == nil {
 		return nil
 	}
@@ -17522,35 +14328,35 @@ func (j *JobWaiting) GetTimeoutMs() *int {
 	return j.TimeoutMs
 }
 
-func (j *JobWaiting) GetCreatedAt() float64 {
+func (j *JobWaiting) GetCreatedAt() int {
 	if j == nil {
 		return 0
 	}
 	return j.CreatedAt
 }
 
-func (j *JobWaiting) GetDispatchedAt() *float64 {
+func (j *JobWaiting) GetDispatchedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.DispatchedAt
 }
 
-func (j *JobWaiting) GetStartedAt() *float64 {
+func (j *JobWaiting) GetStartedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.StartedAt
 }
 
-func (j *JobWaiting) GetCompletedAt() *float64 {
+func (j *JobWaiting) GetCompletedAt() *int {
 	if j == nil {
 		return nil
 	}
 	return j.CompletedAt
 }
 
-func (j *JobWaiting) GetSettledAt() *float64 {
+func (j *JobWaiting) GetSettledAt() *int {
 	if j == nil {
 		return nil
 	}
@@ -17578,14 +14384,21 @@ func (j *JobWaiting) GetModel() *string {
 	return j.Model
 }
 
-func (j *JobWaiting) GetCallback() *JobWaitingCallback {
+func (j *JobWaiting) GetTerminal() bool {
+	if j == nil {
+		return false
+	}
+	return j.Terminal
+}
+
+func (j *JobWaiting) GetCallback() *CallbackStatus {
 	if j == nil {
 		return nil
 	}
 	return j.Callback
 }
 
-func (j *JobWaiting) GetDeliveries() []*JobWaitingDeliveriesItem {
+func (j *JobWaiting) GetDeliveries() []*JobDelivery {
 	if j == nil {
 		return nil
 	}
@@ -17687,7 +14500,7 @@ func (j *JobWaiting) SetParams(params map[string]any) {
 
 // SetCost sets the Cost field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetCost(cost *JobWaitingCost) {
+func (j *JobWaiting) SetCost(cost *JobCost) {
 	j.Cost = cost
 	j.require(jobWaitingFieldCost)
 }
@@ -17701,7 +14514,7 @@ func (j *JobWaiting) SetOutputCategory(outputCategory JobWaitingOutputCategory) 
 
 // SetSteps sets the Steps field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetSteps(steps []*JobWaitingStepsItem) {
+func (j *JobWaiting) SetSteps(steps []*JobStep) {
 	j.Steps = steps
 	j.require(jobWaitingFieldSteps)
 }
@@ -17743,35 +14556,35 @@ func (j *JobWaiting) SetTimeoutMs(timeoutMs *int) {
 
 // SetCreatedAt sets the CreatedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetCreatedAt(createdAt float64) {
+func (j *JobWaiting) SetCreatedAt(createdAt int) {
 	j.CreatedAt = createdAt
 	j.require(jobWaitingFieldCreatedAt)
 }
 
 // SetDispatchedAt sets the DispatchedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetDispatchedAt(dispatchedAt *float64) {
+func (j *JobWaiting) SetDispatchedAt(dispatchedAt *int) {
 	j.DispatchedAt = dispatchedAt
 	j.require(jobWaitingFieldDispatchedAt)
 }
 
 // SetStartedAt sets the StartedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetStartedAt(startedAt *float64) {
+func (j *JobWaiting) SetStartedAt(startedAt *int) {
 	j.StartedAt = startedAt
 	j.require(jobWaitingFieldStartedAt)
 }
 
 // SetCompletedAt sets the CompletedAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetCompletedAt(completedAt *float64) {
+func (j *JobWaiting) SetCompletedAt(completedAt *int) {
 	j.CompletedAt = completedAt
 	j.require(jobWaitingFieldCompletedAt)
 }
 
 // SetSettledAt sets the SettledAt field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetSettledAt(settledAt *float64) {
+func (j *JobWaiting) SetSettledAt(settledAt *int) {
 	j.SettledAt = settledAt
 	j.require(jobWaitingFieldSettledAt)
 }
@@ -17797,16 +14610,23 @@ func (j *JobWaiting) SetModel(model *string) {
 	j.require(jobWaitingFieldModel)
 }
 
+// SetTerminal sets the Terminal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (j *JobWaiting) SetTerminal(terminal bool) {
+	j.Terminal = terminal
+	j.require(jobWaitingFieldTerminal)
+}
+
 // SetCallback sets the Callback field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetCallback(callback *JobWaitingCallback) {
+func (j *JobWaiting) SetCallback(callback *CallbackStatus) {
 	j.Callback = callback
 	j.require(jobWaitingFieldCallback)
 }
 
 // SetDeliveries sets the Deliveries field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaiting) SetDeliveries(deliveries []*JobWaitingDeliveriesItem) {
+func (j *JobWaiting) SetDeliveries(deliveries []*JobDelivery) {
 	j.Deliveries = deliveries
 	j.require(jobWaitingFieldDeliveries)
 }
@@ -17860,494 +14680,6 @@ func (j *JobWaiting) String() string {
 	return fmt.Sprintf("%#v", j)
 }
 
-var (
-	jobWaitingCallbackFieldStatus = big.NewInt(1 << 0)
-)
-
-// Per-job callback delivery status, populated by GET /jobs/:id when a callback.url was set at submit (else null/absent). Deliberately carries ONLY the status — the callback url and any custom headers are secret and are never returned by any response.
-type JobWaitingCallback struct {
-	// Delivery state of the per-job completion callback.
-	Status JobWaitingCallbackStatus `json:"status" url:"status"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobWaitingCallback) GetStatus() JobWaitingCallbackStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobWaitingCallback) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobWaitingCallback) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingCallback) SetStatus(status JobWaitingCallbackStatus) {
-	j.Status = status
-	j.require(jobWaitingCallbackFieldStatus)
-}
-
-func (j *JobWaitingCallback) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobWaitingCallback
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobWaitingCallback(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobWaitingCallback) MarshalJSON() ([]byte, error) {
-	type embed JobWaitingCallback
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobWaitingCallback) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// Delivery state of the per-job completion callback.
-type JobWaitingCallbackStatus string
-
-const (
-	JobWaitingCallbackStatusPending   JobWaitingCallbackStatus = "pending"
-	JobWaitingCallbackStatusDelivered JobWaitingCallbackStatus = "delivered"
-	JobWaitingCallbackStatusFailed    JobWaitingCallbackStatus = "failed"
-)
-
-func NewJobWaitingCallbackStatusFromString(s string) (JobWaitingCallbackStatus, error) {
-	switch s {
-	case "pending":
-		return JobWaitingCallbackStatusPending, nil
-	case "delivered":
-		return JobWaitingCallbackStatusDelivered, nil
-	case "failed":
-		return JobWaitingCallbackStatusFailed, nil
-	}
-	var t JobWaitingCallbackStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobWaitingCallbackStatus) Ptr() *JobWaitingCallbackStatus {
-	return &j
-}
-
-var (
-	jobWaitingCostFieldAmount    = big.NewInt(1 << 0)
-	jobWaitingCostFieldCurrency  = big.NewInt(1 << 1)
-	jobWaitingCostFieldFormatted = big.NewInt(1 << 2)
-)
-
-// Amount charged, or null when not yet billed
-type JobWaitingCost struct {
-	// Amount charged in nanodollars (integer minor units; 1 USD = 1,000,000,000). Use `formatted` for display.
-	Amount float64 `json:"amount" url:"amount"`
-	// ISO-4217 currency code
-	Currency JobWaitingCostCurrency `json:"currency" url:"currency"`
-	// Amount formatted as dollars (e.g. "$0.50")
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobWaitingCost) GetAmount() float64 {
-	if j == nil {
-		return 0
-	}
-	return j.Amount
-}
-
-func (j *JobWaitingCost) GetCurrency() JobWaitingCostCurrency {
-	if j == nil {
-		return ""
-	}
-	return j.Currency
-}
-
-func (j *JobWaitingCost) GetFormatted() string {
-	if j == nil {
-		return ""
-	}
-	return j.Formatted
-}
-
-func (j *JobWaitingCost) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobWaitingCost) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingCost) SetAmount(amount float64) {
-	j.Amount = amount
-	j.require(jobWaitingCostFieldAmount)
-}
-
-// SetCurrency sets the Currency field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingCost) SetCurrency(currency JobWaitingCostCurrency) {
-	j.Currency = currency
-	j.require(jobWaitingCostFieldCurrency)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingCost) SetFormatted(formatted string) {
-	j.Formatted = formatted
-	j.require(jobWaitingCostFieldFormatted)
-}
-
-func (j *JobWaitingCost) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobWaitingCost
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobWaitingCost(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobWaitingCost) MarshalJSON() ([]byte, error) {
-	type embed JobWaitingCost
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobWaitingCost) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-// ISO-4217 currency code
-type JobWaitingCostCurrency string
-
-const (
-	JobWaitingCostCurrencyUsd JobWaitingCostCurrency = "USD"
-)
-
-func NewJobWaitingCostCurrencyFromString(s string) (JobWaitingCostCurrency, error) {
-	switch s {
-	case "USD":
-		return JobWaitingCostCurrencyUsd, nil
-	}
-	var t JobWaitingCostCurrency
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobWaitingCostCurrency) Ptr() *JobWaitingCostCurrency {
-	return &j
-}
-
-var (
-	jobWaitingDeliveriesItemFieldStorageID = big.NewInt(1 << 0)
-	jobWaitingDeliveriesItemFieldStatus    = big.NewInt(1 << 1)
-	jobWaitingDeliveriesItemFieldPath      = big.NewInt(1 << 2)
-	jobWaitingDeliveriesItemFieldURL       = big.NewInt(1 << 3)
-	jobWaitingDeliveriesItemFieldReason    = big.NewInt(1 << 4)
-	jobWaitingDeliveriesItemFieldRenamed   = big.NewInt(1 << 5)
-)
-
-type JobWaitingDeliveriesItem struct {
-	// The storage connection id
-	StorageID string                         `json:"storageId" url:"storageId"`
-	Status    JobWaitingDeliveriesItemStatus `json:"status" url:"status"`
-	// Object key in the bucket, rendered from the template. A multi-file output is a folder, and its path ends in /
-	Path *string `json:"path,omitempty" url:"path,omitempty"`
-	// Where to fetch it: the public base URL when set, else our files route. Absent for a folder
-	URL    *string                         `json:"url,omitempty" url:"url,omitempty"`
-	Reason *JobWaitingDeliveriesItemReason `json:"reason,omitempty" url:"reason,omitempty"`
-	// The name was taken, so the job's tail was appended to free it
-	Renamed *bool `json:"renamed,omitempty" url:"renamed,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (j *JobWaitingDeliveriesItem) GetStorageID() string {
-	if j == nil {
-		return ""
-	}
-	return j.StorageID
-}
-
-func (j *JobWaitingDeliveriesItem) GetStatus() JobWaitingDeliveriesItemStatus {
-	if j == nil {
-		return ""
-	}
-	return j.Status
-}
-
-func (j *JobWaitingDeliveriesItem) GetPath() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Path
-}
-
-func (j *JobWaitingDeliveriesItem) GetURL() *string {
-	if j == nil {
-		return nil
-	}
-	return j.URL
-}
-
-func (j *JobWaitingDeliveriesItem) GetReason() *JobWaitingDeliveriesItemReason {
-	if j == nil {
-		return nil
-	}
-	return j.Reason
-}
-
-func (j *JobWaitingDeliveriesItem) GetRenamed() *bool {
-	if j == nil {
-		return nil
-	}
-	return j.Renamed
-}
-
-func (j *JobWaitingDeliveriesItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobWaitingDeliveriesItem) require(field *big.Int) {
-	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
-	}
-	next.Or(next, field)
-	j.explicitFields = next
-}
-
-// SetStorageID sets the StorageID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetStorageID(storageID string) {
-	j.StorageID = storageID
-	j.require(jobWaitingDeliveriesItemFieldStorageID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetStatus(status JobWaitingDeliveriesItemStatus) {
-	j.Status = status
-	j.require(jobWaitingDeliveriesItemFieldStatus)
-}
-
-// SetPath sets the Path field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetPath(path *string) {
-	j.Path = path
-	j.require(jobWaitingDeliveriesItemFieldPath)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetURL(url *string) {
-	j.URL = url
-	j.require(jobWaitingDeliveriesItemFieldURL)
-}
-
-// SetReason sets the Reason field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetReason(reason *JobWaitingDeliveriesItemReason) {
-	j.Reason = reason
-	j.require(jobWaitingDeliveriesItemFieldReason)
-}
-
-// SetRenamed sets the Renamed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingDeliveriesItem) SetRenamed(renamed *bool) {
-	j.Renamed = renamed
-	j.require(jobWaitingDeliveriesItemFieldRenamed)
-}
-
-func (j *JobWaitingDeliveriesItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobWaitingDeliveriesItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*j = JobWaitingDeliveriesItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
-	if err != nil {
-		return err
-	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (j *JobWaitingDeliveriesItem) MarshalJSON() ([]byte, error) {
-	type embed JobWaitingDeliveriesItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*j),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (j *JobWaitingDeliveriesItem) String() string {
-	if j == nil {
-		return "<nil>"
-	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(j); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", j)
-}
-
-type JobWaitingDeliveriesItemReason string
-
-const (
-	JobWaitingDeliveriesItemReasonDestinationDenied      JobWaitingDeliveriesItemReason = "destination_denied"
-	JobWaitingDeliveriesItemReasonSignatureMismatch      JobWaitingDeliveriesItemReason = "signature_mismatch"
-	JobWaitingDeliveriesItemReasonBucketNotFound         JobWaitingDeliveriesItemReason = "bucket_not_found"
-	JobWaitingDeliveriesItemReasonObjectTooLarge         JobWaitingDeliveriesItemReason = "object_too_large"
-	JobWaitingDeliveriesItemReasonAlreadyExists          JobWaitingDeliveriesItemReason = "already_exists"
-	JobWaitingDeliveriesItemReasonDestinationUnavailable JobWaitingDeliveriesItemReason = "destination_unavailable"
-	JobWaitingDeliveriesItemReasonNotDeliverable         JobWaitingDeliveriesItemReason = "not_deliverable"
-)
-
-func NewJobWaitingDeliveriesItemReasonFromString(s string) (JobWaitingDeliveriesItemReason, error) {
-	switch s {
-	case "destination_denied":
-		return JobWaitingDeliveriesItemReasonDestinationDenied, nil
-	case "signature_mismatch":
-		return JobWaitingDeliveriesItemReasonSignatureMismatch, nil
-	case "bucket_not_found":
-		return JobWaitingDeliveriesItemReasonBucketNotFound, nil
-	case "object_too_large":
-		return JobWaitingDeliveriesItemReasonObjectTooLarge, nil
-	case "already_exists":
-		return JobWaitingDeliveriesItemReasonAlreadyExists, nil
-	case "destination_unavailable":
-		return JobWaitingDeliveriesItemReasonDestinationUnavailable, nil
-	case "not_deliverable":
-		return JobWaitingDeliveriesItemReasonNotDeliverable, nil
-	}
-	var t JobWaitingDeliveriesItemReason
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobWaitingDeliveriesItemReason) Ptr() *JobWaitingDeliveriesItemReason {
-	return &j
-}
-
-type JobWaitingDeliveriesItemStatus string
-
-const (
-	JobWaitingDeliveriesItemStatusPending   JobWaitingDeliveriesItemStatus = "pending"
-	JobWaitingDeliveriesItemStatusDelivered JobWaitingDeliveriesItemStatus = "delivered"
-	JobWaitingDeliveriesItemStatusFailed    JobWaitingDeliveriesItemStatus = "failed"
-)
-
-func NewJobWaitingDeliveriesItemStatusFromString(s string) (JobWaitingDeliveriesItemStatus, error) {
-	switch s {
-	case "pending":
-		return JobWaitingDeliveriesItemStatusPending, nil
-	case "delivered":
-		return JobWaitingDeliveriesItemStatusDelivered, nil
-	case "failed":
-		return JobWaitingDeliveriesItemStatusFailed, nil
-	}
-	var t JobWaitingDeliveriesItemStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (j JobWaitingDeliveriesItemStatus) Ptr() *JobWaitingDeliveriesItemStatus {
-	return &j
-}
-
 // Output category. Clients should tolerate unknown future values.
 type JobWaitingOutputCategory string
 
@@ -18384,26 +14716,31 @@ func (j JobWaitingOutputCategory) Ptr() *JobWaitingOutputCategory {
 }
 
 var (
-	jobWaitingStepsItemFieldID          = big.NewInt(1 << 0)
-	jobWaitingStepsItemFieldName        = big.NewInt(1 << 1)
-	jobWaitingStepsItemFieldStatus      = big.NewInt(1 << 2)
-	jobWaitingStepsItemFieldStartedAt   = big.NewInt(1 << 3)
-	jobWaitingStepsItemFieldCompletedAt = big.NewInt(1 << 4)
-	jobWaitingStepsItemFieldDurationMs  = big.NewInt(1 << 5)
-	jobWaitingStepsItemFieldMeta        = big.NewInt(1 << 6)
-	jobWaitingStepsItemFieldError       = big.NewInt(1 << 7)
+	outputFileFieldURL    = big.NewInt(1 << 0)
+	outputFileFieldPath   = big.NewInt(1 << 1)
+	outputFileFieldType   = big.NewInt(1 << 2)
+	outputFileFieldSize   = big.NewInt(1 << 3)
+	outputFileFieldSha256 = big.NewInt(1 << 4)
+	outputFileFieldMeta   = big.NewInt(1 << 5)
 )
 
-type JobWaitingStepsItem struct {
-	ID   string `json:"id" url:"id"`
-	Name string `json:"name" url:"name"`
-	// pending | running | complete | skipped | error
-	Status      string         `json:"status" url:"status"`
-	StartedAt   *float64       `json:"startedAt,omitempty" url:"startedAt,omitempty"`
-	CompletedAt *float64       `json:"completedAt,omitempty" url:"completedAt,omitempty"`
-	DurationMs  *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta        map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-	Error       *string        `json:"error,omitempty" url:"error,omitempty"`
+// outputFileNullableFields maps the wire names of OutputFile's nullable fields (required or optional) to their field bits.
+var outputFileNullableFields = map[string]*big.Int{
+	"sha256": outputFileFieldSha256,
+}
+
+type OutputFile struct {
+	// Ready-to-fetch, time-limited URL for this file
+	URL string `json:"url" url:"url"`
+	// File path within the job output (relative). For an ffmpeg job, the name the command wrote.
+	Path string         `json:"path" url:"path"`
+	Type OutputFileType `json:"type" url:"type"`
+	// File size in bytes
+	Size int `json:"size" url:"size"`
+	// SHA-256 of the file's bytes, 64 lowercase hex characters. Compare it with your own digest of a download or a delivered copy. Null on jobs completed before 2026-10 (single files) or 2026-10-22 (multi-file outputs).
+	Sha256 *string `json:"sha256,omitempty" url:"sha256,omitempty"`
+	// Optional per-file media metadata, when known
+	Meta *OutputFileMeta `json:"meta,omitempty" url:"meta,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -18412,174 +14749,344 @@ type JobWaitingStepsItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (j *JobWaitingStepsItem) GetID() string {
-	if j == nil {
+func (o *OutputFile) GetURL() string {
+	if o == nil {
 		return ""
 	}
-	return j.ID
+	return o.URL
 }
 
-func (j *JobWaitingStepsItem) GetName() string {
-	if j == nil {
+func (o *OutputFile) GetPath() string {
+	if o == nil {
 		return ""
 	}
-	return j.Name
+	return o.Path
 }
 
-func (j *JobWaitingStepsItem) GetStatus() string {
-	if j == nil {
+func (o *OutputFile) GetType() OutputFileType {
+	if o == nil {
 		return ""
 	}
-	return j.Status
+	return o.Type
 }
 
-func (j *JobWaitingStepsItem) GetStartedAt() *float64 {
-	if j == nil {
+func (o *OutputFile) GetSize() int {
+	if o == nil {
+		return 0
+	}
+	return o.Size
+}
+
+func (o *OutputFile) GetSha256() *string {
+	if o == nil {
 		return nil
 	}
-	return j.StartedAt
+	return o.Sha256
 }
 
-func (j *JobWaitingStepsItem) GetCompletedAt() *float64 {
-	if j == nil {
+func (o *OutputFile) GetMeta() *OutputFileMeta {
+	if o == nil {
 		return nil
 	}
-	return j.CompletedAt
+	return o.Meta
 }
 
-func (j *JobWaitingStepsItem) GetDurationMs() *float64 {
-	if j == nil {
+func (o *OutputFile) GetExtraProperties() map[string]interface{} {
+	if o == nil {
 		return nil
 	}
-	return j.DurationMs
+	return o.extraProperties
 }
 
-func (j *JobWaitingStepsItem) GetMeta() map[string]any {
-	if j == nil {
-		return nil
-	}
-	return j.Meta
-}
-
-func (j *JobWaitingStepsItem) GetError() *string {
-	if j == nil {
-		return nil
-	}
-	return j.Error
-}
-
-func (j *JobWaitingStepsItem) GetExtraProperties() map[string]interface{} {
-	if j == nil {
-		return nil
-	}
-	return j.extraProperties
-}
-
-func (j *JobWaitingStepsItem) require(field *big.Int) {
+func (o *OutputFile) require(field *big.Int) {
 	next := new(big.Int)
-	if j.explicitFields != nil {
-		next.Set(j.explicitFields)
+	if o.explicitFields != nil {
+		next.Set(o.explicitFields)
 	}
 	next.Or(next, field)
-	j.explicitFields = next
+	o.explicitFields = next
 }
 
-// SetID sets the ID field and marks it as non-optional;
+// SetURL sets the URL field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetID(id string) {
-	j.ID = id
-	j.require(jobWaitingStepsItemFieldID)
+func (o *OutputFile) SetURL(url string) {
+	o.URL = url
+	o.require(outputFileFieldURL)
 }
 
-// SetName sets the Name field and marks it as non-optional;
+// SetPath sets the Path field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetName(name string) {
-	j.Name = name
-	j.require(jobWaitingStepsItemFieldName)
+func (o *OutputFile) SetPath(path string) {
+	o.Path = path
+	o.require(outputFileFieldPath)
 }
 
-// SetStatus sets the Status field and marks it as non-optional;
+// SetType sets the Type field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetStatus(status string) {
-	j.Status = status
-	j.require(jobWaitingStepsItemFieldStatus)
+func (o *OutputFile) SetType(type_ OutputFileType) {
+	o.Type = type_
+	o.require(outputFileFieldType)
 }
 
-// SetStartedAt sets the StartedAt field and marks it as non-optional;
+// SetSize sets the Size field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetStartedAt(startedAt *float64) {
-	j.StartedAt = startedAt
-	j.require(jobWaitingStepsItemFieldStartedAt)
+func (o *OutputFile) SetSize(size int) {
+	o.Size = size
+	o.require(outputFileFieldSize)
 }
 
-// SetCompletedAt sets the CompletedAt field and marks it as non-optional;
+// SetSha256 sets the Sha256 field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetCompletedAt(completedAt *float64) {
-	j.CompletedAt = completedAt
-	j.require(jobWaitingStepsItemFieldCompletedAt)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetDurationMs(durationMs *float64) {
-	j.DurationMs = durationMs
-	j.require(jobWaitingStepsItemFieldDurationMs)
+func (o *OutputFile) SetSha256(sha256 *string) {
+	o.Sha256 = sha256
+	o.require(outputFileFieldSha256)
 }
 
 // SetMeta sets the Meta field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetMeta(meta map[string]any) {
-	j.Meta = meta
-	j.require(jobWaitingStepsItemFieldMeta)
+func (o *OutputFile) SetMeta(meta *OutputFileMeta) {
+	o.Meta = meta
+	o.require(outputFileFieldMeta)
 }
 
-// SetError sets the Error field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (j *JobWaitingStepsItem) SetError(error_ *string) {
-	j.Error = error_
-	j.require(jobWaitingStepsItemFieldError)
-}
-
-func (j *JobWaitingStepsItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler JobWaitingStepsItem
+func (o *OutputFile) UnmarshalJSON(data []byte) error {
+	type unmarshaler OutputFile
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*j = JobWaitingStepsItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *j)
+	*o = OutputFile(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
-	j.extraProperties = extraProperties
-	j.rawJSON = json.RawMessage(data)
+	o.extraProperties = extraProperties
+	presentFields, err := internal.ExplicitFieldsFromJSON(data, outputFileNullableFields)
+	if err != nil {
+		return err
+	}
+	if presentFields != nil {
+		o.require(presentFields)
+	}
+	o.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (j *JobWaitingStepsItem) MarshalJSON() ([]byte, error) {
-	type embed JobWaitingStepsItem
+func (o *OutputFile) MarshalJSON() ([]byte, error) {
+	type embed OutputFile
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*j),
+		embed: embed(*o),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, j.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (j *JobWaitingStepsItem) String() string {
-	if j == nil {
+func (o *OutputFile) String() string {
+	if o == nil {
 		return "<nil>"
 	}
-	if len(j.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(j.rawJSON); err == nil {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(j); err == nil {
+	if value, err := internal.StringifyJSON(o); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", j)
+	return fmt.Sprintf("%#v", o)
+}
+
+var (
+	outputFileMetaFieldFormat     = big.NewInt(1 << 0)
+	outputFileMetaFieldWidth      = big.NewInt(1 << 1)
+	outputFileMetaFieldHeight     = big.NewInt(1 << 2)
+	outputFileMetaFieldDurationMs = big.NewInt(1 << 3)
+	outputFileMetaFieldSeed       = big.NewInt(1 << 4)
+)
+
+// Optional per-file media metadata, when known
+type OutputFileMeta struct {
+	// Container/codec format (from extension)
+	Format     *string `json:"format,omitempty" url:"format,omitempty"`
+	Width      *int    `json:"width,omitempty" url:"width,omitempty"`
+	Height     *int    `json:"height,omitempty" url:"height,omitempty"`
+	DurationMs *int    `json:"durationMs,omitempty" url:"durationMs,omitempty"`
+	// Seed used, for reproducible generation
+	Seed *int `json:"seed,omitempty" url:"seed,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OutputFileMeta) GetFormat() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Format
+}
+
+func (o *OutputFileMeta) GetWidth() *int {
+	if o == nil {
+		return nil
+	}
+	return o.Width
+}
+
+func (o *OutputFileMeta) GetHeight() *int {
+	if o == nil {
+		return nil
+	}
+	return o.Height
+}
+
+func (o *OutputFileMeta) GetDurationMs() *int {
+	if o == nil {
+		return nil
+	}
+	return o.DurationMs
+}
+
+func (o *OutputFileMeta) GetSeed() *int {
+	if o == nil {
+		return nil
+	}
+	return o.Seed
+}
+
+func (o *OutputFileMeta) GetExtraProperties() map[string]interface{} {
+	if o == nil {
+		return nil
+	}
+	return o.extraProperties
+}
+
+func (o *OutputFileMeta) require(field *big.Int) {
+	next := new(big.Int)
+	if o.explicitFields != nil {
+		next.Set(o.explicitFields)
+	}
+	next.Or(next, field)
+	o.explicitFields = next
+}
+
+// SetFormat sets the Format field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OutputFileMeta) SetFormat(format *string) {
+	o.Format = format
+	o.require(outputFileMetaFieldFormat)
+}
+
+// SetWidth sets the Width field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OutputFileMeta) SetWidth(width *int) {
+	o.Width = width
+	o.require(outputFileMetaFieldWidth)
+}
+
+// SetHeight sets the Height field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OutputFileMeta) SetHeight(height *int) {
+	o.Height = height
+	o.require(outputFileMetaFieldHeight)
+}
+
+// SetDurationMs sets the DurationMs field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OutputFileMeta) SetDurationMs(durationMs *int) {
+	o.DurationMs = durationMs
+	o.require(outputFileMetaFieldDurationMs)
+}
+
+// SetSeed sets the Seed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OutputFileMeta) SetSeed(seed *int) {
+	o.Seed = seed
+	o.require(outputFileMetaFieldSeed)
+}
+
+func (o *OutputFileMeta) UnmarshalJSON(data []byte) error {
+	type unmarshaler OutputFileMeta
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OutputFileMeta(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OutputFileMeta) MarshalJSON() ([]byte, error) {
+	type embed OutputFileMeta
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OutputFileMeta) String() string {
+	if o == nil {
+		return "<nil>"
+	}
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
+// File type, derived from the extension. OPEN enum — tolerate unknown future values.
+type OutputFileType string
+
+const (
+	OutputFileTypeVideo    OutputFileType = "video"
+	OutputFileTypeImage    OutputFileType = "image"
+	OutputFileTypeAudio    OutputFileType = "audio"
+	OutputFileTypeCaptions OutputFileType = "captions"
+	OutputFileTypePlaylist OutputFileType = "playlist"
+	OutputFileTypeData     OutputFileType = "data"
+	OutputFileTypeOther    OutputFileType = "other"
+)
+
+func NewOutputFileTypeFromString(s string) (OutputFileType, error) {
+	switch s {
+	case "video":
+		return OutputFileTypeVideo, nil
+	case "image":
+		return OutputFileTypeImage, nil
+	case "audio":
+		return OutputFileTypeAudio, nil
+	case "captions":
+		return OutputFileTypeCaptions, nil
+	case "playlist":
+		return OutputFileTypePlaylist, nil
+	case "data":
+		return OutputFileTypeData, nil
+	case "other":
+		return OutputFileTypeOther, nil
+	}
+	var t OutputFileType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OutputFileType) Ptr() *OutputFileType {
+	return &o
 }
 
 var (
@@ -18603,7 +15110,7 @@ type SubmitAnyJob struct {
 	Params map[string]any `json:"params,omitempty" url:"params,omitempty"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -18967,7 +15474,7 @@ type SubmitCaptionBurnJob struct {
 	Params *CaptionBurnParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -19351,7 +15858,7 @@ type SubmitCaptionsAnimateJob struct {
 	Params *CaptionsAnimateParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -19735,7 +16242,7 @@ type SubmitCompressTargetJob struct {
 	Params *CompressTargetParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -20119,7 +16626,7 @@ type SubmitFfmpegJob struct {
 	Params *FfmpegParams  `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -20503,7 +17010,7 @@ type SubmitFfprobeJob struct {
 	Params *FfprobeParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -20887,7 +17394,7 @@ type SubmitImageEditJob struct {
 	Params *ImageEditParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -21271,7 +17778,7 @@ type SubmitImageGenerateJob struct {
 	Params *ImageGenerateParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -21655,7 +18162,7 @@ type SubmitImageUpscaleJob struct {
 	Params *ImageUpscaleParams `json:"params" url:"params"`
 	// Force async dispatch even for sync-eligible job types
 	ForceAsync *bool `json:"forceAsync,omitempty" url:"forceAsync,omitempty"`
-	// Idempotency key to prevent duplicate job creation
+	// Idempotency key to prevent duplicate job creation. Resending the same request with the same key returns the job it created. Reusing the key with a different type, inputs or params is a 409 CONFLICT naming that job.
 	IdempotencyKey *string `json:"idempotencyKey,omitempty" url:"idempotencyKey,omitempty"`
 	// A short name for this job, such as "Trim intro for episode 12". Shown in the dashboard and returned with the job as `label`.
 	Label *string `json:"label,omitempty" url:"label,omitempty"`
@@ -22227,1985 +18734,6 @@ func (c CancelJobResponseDataStatus) Ptr() *CancelJobResponseDataStatus {
 }
 
 var (
-	createJobShareResponseFieldData = big.NewInt(1 << 0)
-)
-
-type CreateJobShareResponse struct {
-	Data *CreateJobShareResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (c *CreateJobShareResponse) GetData() *CreateJobShareResponseData {
-	if c == nil {
-		return nil
-	}
-	return c.Data
-}
-
-func (c *CreateJobShareResponse) GetExtraProperties() map[string]interface{} {
-	if c == nil {
-		return nil
-	}
-	return c.extraProperties
-}
-
-func (c *CreateJobShareResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if c.explicitFields != nil {
-		next.Set(c.explicitFields)
-	}
-	next.Or(next, field)
-	c.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateJobShareResponse) SetData(data *CreateJobShareResponseData) {
-	c.Data = data
-	c.require(createJobShareResponseFieldData)
-}
-
-func (c *CreateJobShareResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler CreateJobShareResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*c = CreateJobShareResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *c)
-	if err != nil {
-		return err
-	}
-	c.extraProperties = extraProperties
-	c.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (c *CreateJobShareResponse) MarshalJSON() ([]byte, error) {
-	type embed CreateJobShareResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*c),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (c *CreateJobShareResponse) String() string {
-	if c == nil {
-		return "<nil>"
-	}
-	if len(c.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(c); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", c)
-}
-
-var (
-	createJobShareResponseDataFieldShareID  = big.NewInt(1 << 0)
-	createJobShareResponseDataFieldShareURL = big.NewInt(1 << 1)
-)
-
-type CreateJobShareResponseData struct {
-	ShareID  string `json:"shareId" url:"shareId"`
-	ShareURL string `json:"shareUrl" url:"shareUrl"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (c *CreateJobShareResponseData) GetShareID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ShareID
-}
-
-func (c *CreateJobShareResponseData) GetShareURL() string {
-	if c == nil {
-		return ""
-	}
-	return c.ShareURL
-}
-
-func (c *CreateJobShareResponseData) GetExtraProperties() map[string]interface{} {
-	if c == nil {
-		return nil
-	}
-	return c.extraProperties
-}
-
-func (c *CreateJobShareResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if c.explicitFields != nil {
-		next.Set(c.explicitFields)
-	}
-	next.Or(next, field)
-	c.explicitFields = next
-}
-
-// SetShareID sets the ShareID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateJobShareResponseData) SetShareID(shareID string) {
-	c.ShareID = shareID
-	c.require(createJobShareResponseDataFieldShareID)
-}
-
-// SetShareURL sets the ShareURL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateJobShareResponseData) SetShareURL(shareURL string) {
-	c.ShareURL = shareURL
-	c.require(createJobShareResponseDataFieldShareURL)
-}
-
-func (c *CreateJobShareResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler CreateJobShareResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*c = CreateJobShareResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *c)
-	if err != nil {
-		return err
-	}
-	c.extraProperties = extraProperties
-	c.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (c *CreateJobShareResponseData) MarshalJSON() ([]byte, error) {
-	type embed CreateJobShareResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*c),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (c *CreateJobShareResponseData) String() string {
-	if c == nil {
-		return "<nil>"
-	}
-	if len(c.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(c); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", c)
-}
-
-var (
-	deleteJobShareResponseFieldData = big.NewInt(1 << 0)
-)
-
-type DeleteJobShareResponse struct {
-	Data *DeleteJobShareResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (d *DeleteJobShareResponse) GetData() *DeleteJobShareResponseData {
-	if d == nil {
-		return nil
-	}
-	return d.Data
-}
-
-func (d *DeleteJobShareResponse) GetExtraProperties() map[string]interface{} {
-	if d == nil {
-		return nil
-	}
-	return d.extraProperties
-}
-
-func (d *DeleteJobShareResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeleteJobShareResponse) SetData(data *DeleteJobShareResponseData) {
-	d.Data = data
-	d.require(deleteJobShareResponseFieldData)
-}
-
-func (d *DeleteJobShareResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler DeleteJobShareResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*d = DeleteJobShareResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *d)
-	if err != nil {
-		return err
-	}
-	d.extraProperties = extraProperties
-	d.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (d *DeleteJobShareResponse) MarshalJSON() ([]byte, error) {
-	type embed DeleteJobShareResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*d),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (d *DeleteJobShareResponse) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-	if len(d.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(d); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", d)
-}
-
-var (
-	deleteJobShareResponseDataFieldDeleted = big.NewInt(1 << 0)
-)
-
-type DeleteJobShareResponseData struct {
-	Deleted bool `json:"deleted" url:"deleted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (d *DeleteJobShareResponseData) GetDeleted() bool {
-	if d == nil {
-		return false
-	}
-	return d.Deleted
-}
-
-func (d *DeleteJobShareResponseData) GetExtraProperties() map[string]interface{} {
-	if d == nil {
-		return nil
-	}
-	return d.extraProperties
-}
-
-func (d *DeleteJobShareResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetDeleted sets the Deleted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DeleteJobShareResponseData) SetDeleted(deleted bool) {
-	d.Deleted = deleted
-	d.require(deleteJobShareResponseDataFieldDeleted)
-}
-
-func (d *DeleteJobShareResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler DeleteJobShareResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*d = DeleteJobShareResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *d)
-	if err != nil {
-		return err
-	}
-	d.extraProperties = extraProperties
-	d.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (d *DeleteJobShareResponseData) MarshalJSON() ([]byte, error) {
-	type embed DeleteJobShareResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*d),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (d *DeleteJobShareResponseData) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-	if len(d.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(d); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", d)
-}
-
-var (
-	disputeJobResponseFieldData = big.NewInt(1 << 0)
-)
-
-type DisputeJobResponse struct {
-	Data *DisputeJobResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (d *DisputeJobResponse) GetData() *DisputeJobResponseData {
-	if d == nil {
-		return nil
-	}
-	return d.Data
-}
-
-func (d *DisputeJobResponse) GetExtraProperties() map[string]interface{} {
-	if d == nil {
-		return nil
-	}
-	return d.extraProperties
-}
-
-func (d *DisputeJobResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DisputeJobResponse) SetData(data *DisputeJobResponseData) {
-	d.Data = data
-	d.require(disputeJobResponseFieldData)
-}
-
-func (d *DisputeJobResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler DisputeJobResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*d = DisputeJobResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *d)
-	if err != nil {
-		return err
-	}
-	d.extraProperties = extraProperties
-	d.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (d *DisputeJobResponse) MarshalJSON() ([]byte, error) {
-	type embed DisputeJobResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*d),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (d *DisputeJobResponse) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-	if len(d.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(d); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", d)
-}
-
-var (
-	disputeJobResponseDataFieldAction  = big.NewInt(1 << 0)
-	disputeJobResponseDataFieldMessage = big.NewInt(1 << 1)
-)
-
-type DisputeJobResponseData struct {
-	Action  DisputeJobResponseDataAction `json:"action" url:"action"`
-	Message string                       `json:"message" url:"message"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (d *DisputeJobResponseData) GetAction() DisputeJobResponseDataAction {
-	if d == nil {
-		return ""
-	}
-	return d.Action
-}
-
-func (d *DisputeJobResponseData) GetMessage() string {
-	if d == nil {
-		return ""
-	}
-	return d.Message
-}
-
-func (d *DisputeJobResponseData) GetExtraProperties() map[string]interface{} {
-	if d == nil {
-		return nil
-	}
-	return d.extraProperties
-}
-
-func (d *DisputeJobResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if d.explicitFields != nil {
-		next.Set(d.explicitFields)
-	}
-	next.Or(next, field)
-	d.explicitFields = next
-}
-
-// SetAction sets the Action field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DisputeJobResponseData) SetAction(action DisputeJobResponseDataAction) {
-	d.Action = action
-	d.require(disputeJobResponseDataFieldAction)
-}
-
-// SetMessage sets the Message field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (d *DisputeJobResponseData) SetMessage(message string) {
-	d.Message = message
-	d.require(disputeJobResponseDataFieldMessage)
-}
-
-func (d *DisputeJobResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler DisputeJobResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*d = DisputeJobResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *d)
-	if err != nil {
-		return err
-	}
-	d.extraProperties = extraProperties
-	d.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (d *DisputeJobResponseData) MarshalJSON() ([]byte, error) {
-	type embed DisputeJobResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*d),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (d *DisputeJobResponseData) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-	if len(d.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(d.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(d); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", d)
-}
-
-type DisputeJobResponseDataAction string
-
-const (
-	DisputeJobResponseDataActionFlagged DisputeJobResponseDataAction = "flagged"
-)
-
-func NewDisputeJobResponseDataActionFromString(s string) (DisputeJobResponseDataAction, error) {
-	switch s {
-	case "flagged":
-		return DisputeJobResponseDataActionFlagged, nil
-	}
-	var t DisputeJobResponseDataAction
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (d DisputeJobResponseDataAction) Ptr() *DisputeJobResponseDataAction {
-	return &d
-}
-
-var (
-	getJobLogsResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobLogsResponse struct {
-	Data []*GetJobLogsResponseDataItem `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobLogsResponse) GetData() []*GetJobLogsResponseDataItem {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobLogsResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobLogsResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponse) SetData(data []*GetJobLogsResponseDataItem) {
-	g.Data = data
-	g.require(getJobLogsResponseFieldData)
-}
-
-func (g *GetJobLogsResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobLogsResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobLogsResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobLogsResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobLogsResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobLogsResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobLogsResponseDataItemFieldTimestamp  = big.NewInt(1 << 0)
-	getJobLogsResponseDataItemFieldLevel      = big.NewInt(1 << 1)
-	getJobLogsResponseDataItemFieldStep       = big.NewInt(1 << 2)
-	getJobLogsResponseDataItemFieldEvent      = big.NewInt(1 << 3)
-	getJobLogsResponseDataItemFieldMessage    = big.NewInt(1 << 4)
-	getJobLogsResponseDataItemFieldDurationMs = big.NewInt(1 << 5)
-	getJobLogsResponseDataItemFieldMeta       = big.NewInt(1 << 6)
-)
-
-type GetJobLogsResponseDataItem struct {
-	Timestamp  float64        `json:"timestamp" url:"timestamp"`
-	Level      string         `json:"level" url:"level"`
-	Step       *string        `json:"step,omitempty" url:"step,omitempty"`
-	Event      string         `json:"event" url:"event"`
-	Message    string         `json:"message" url:"message"`
-	DurationMs *float64       `json:"durationMs,omitempty" url:"durationMs,omitempty"`
-	Meta       map[string]any `json:"meta,omitempty" url:"meta,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobLogsResponseDataItem) GetTimestamp() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.Timestamp
-}
-
-func (g *GetJobLogsResponseDataItem) GetLevel() string {
-	if g == nil {
-		return ""
-	}
-	return g.Level
-}
-
-func (g *GetJobLogsResponseDataItem) GetStep() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Step
-}
-
-func (g *GetJobLogsResponseDataItem) GetEvent() string {
-	if g == nil {
-		return ""
-	}
-	return g.Event
-}
-
-func (g *GetJobLogsResponseDataItem) GetMessage() string {
-	if g == nil {
-		return ""
-	}
-	return g.Message
-}
-
-func (g *GetJobLogsResponseDataItem) GetDurationMs() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DurationMs
-}
-
-func (g *GetJobLogsResponseDataItem) GetMeta() map[string]any {
-	if g == nil {
-		return nil
-	}
-	return g.Meta
-}
-
-func (g *GetJobLogsResponseDataItem) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobLogsResponseDataItem) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetTimestamp(timestamp float64) {
-	g.Timestamp = timestamp
-	g.require(getJobLogsResponseDataItemFieldTimestamp)
-}
-
-// SetLevel sets the Level field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetLevel(level string) {
-	g.Level = level
-	g.require(getJobLogsResponseDataItemFieldLevel)
-}
-
-// SetStep sets the Step field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetStep(step *string) {
-	g.Step = step
-	g.require(getJobLogsResponseDataItemFieldStep)
-}
-
-// SetEvent sets the Event field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetEvent(event string) {
-	g.Event = event
-	g.require(getJobLogsResponseDataItemFieldEvent)
-}
-
-// SetMessage sets the Message field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetMessage(message string) {
-	g.Message = message
-	g.require(getJobLogsResponseDataItemFieldMessage)
-}
-
-// SetDurationMs sets the DurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetDurationMs(durationMs *float64) {
-	g.DurationMs = durationMs
-	g.require(getJobLogsResponseDataItemFieldDurationMs)
-}
-
-// SetMeta sets the Meta field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobLogsResponseDataItem) SetMeta(meta map[string]any) {
-	g.Meta = meta
-	g.require(getJobLogsResponseDataItemFieldMeta)
-}
-
-func (g *GetJobLogsResponseDataItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobLogsResponseDataItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobLogsResponseDataItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobLogsResponseDataItem) MarshalJSON() ([]byte, error) {
-	type embed GetJobLogsResponseDataItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobLogsResponseDataItem) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobMetricsResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobMetricsResponse struct {
-	Data []*GetJobMetricsResponseDataItem `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobMetricsResponse) GetData() []*GetJobMetricsResponseDataItem {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobMetricsResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobMetricsResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponse) SetData(data []*GetJobMetricsResponseDataItem) {
-	g.Data = data
-	g.require(getJobMetricsResponseFieldData)
-}
-
-func (g *GetJobMetricsResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobMetricsResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobMetricsResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobMetricsResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobMetricsResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobMetricsResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobMetricsResponseDataItemFieldTimestamp       = big.NewInt(1 << 0)
-	getJobMetricsResponseDataItemFieldCPUPct          = big.NewInt(1 << 1)
-	getJobMetricsResponseDataItemFieldCPUCores        = big.NewInt(1 << 2)
-	getJobMetricsResponseDataItemFieldAllocatedCores  = big.NewInt(1 << 3)
-	getJobMetricsResponseDataItemFieldMemUsedMb       = big.NewInt(1 << 4)
-	getJobMetricsResponseDataItemFieldMemLimitMb      = big.NewInt(1 << 5)
-	getJobMetricsResponseDataItemFieldThreads         = big.NewInt(1 << 6)
-	getJobMetricsResponseDataItemFieldCPUThrottledPct = big.NewInt(1 << 7)
-	getJobMetricsResponseDataItemFieldCPUPressurePct  = big.NewInt(1 << 8)
-	getJobMetricsResponseDataItemFieldMemPressurePct  = big.NewInt(1 << 9)
-	getJobMetricsResponseDataItemFieldIoPressurePct   = big.NewInt(1 << 10)
-	getJobMetricsResponseDataItemFieldDiskUsedMb      = big.NewInt(1 << 11)
-	getJobMetricsResponseDataItemFieldDiskRmBps       = big.NewInt(1 << 12)
-	getJobMetricsResponseDataItemFieldDiskWmBps       = big.NewInt(1 << 13)
-	getJobMetricsResponseDataItemFieldNetRxMBps       = big.NewInt(1 << 14)
-	getJobMetricsResponseDataItemFieldNetTxMBps       = big.NewInt(1 << 15)
-	getJobMetricsResponseDataItemFieldGpuPct          = big.NewInt(1 << 16)
-	getJobMetricsResponseDataItemFieldGpuMemUsedMb    = big.NewInt(1 << 17)
-	getJobMetricsResponseDataItemFieldGpuMemTotalMb   = big.NewInt(1 << 18)
-	getJobMetricsResponseDataItemFieldGpuTempC        = big.NewInt(1 << 19)
-	getJobMetricsResponseDataItemFieldGpuPowerW       = big.NewInt(1 << 20)
-	getJobMetricsResponseDataItemFieldGpuEncPct       = big.NewInt(1 << 21)
-	getJobMetricsResponseDataItemFieldGpuDecPct       = big.NewInt(1 << 22)
-	getJobMetricsResponseDataItemFieldGpuMemBwPct     = big.NewInt(1 << 23)
-)
-
-// getJobMetricsResponseDataItemNullableFields maps the wire names of GetJobMetricsResponseDataItem's nullable fields (required or optional) to their field bits.
-var getJobMetricsResponseDataItemNullableFields = map[string]*big.Int{
-	"cpuPct":          getJobMetricsResponseDataItemFieldCPUPct,
-	"allocatedCores":  getJobMetricsResponseDataItemFieldAllocatedCores,
-	"memLimitMB":      getJobMetricsResponseDataItemFieldMemLimitMb,
-	"threads":         getJobMetricsResponseDataItemFieldThreads,
-	"cpuThrottledPct": getJobMetricsResponseDataItemFieldCPUThrottledPct,
-	"cpuPressurePct":  getJobMetricsResponseDataItemFieldCPUPressurePct,
-	"memPressurePct":  getJobMetricsResponseDataItemFieldMemPressurePct,
-	"ioPressurePct":   getJobMetricsResponseDataItemFieldIoPressurePct,
-	"diskUsedMB":      getJobMetricsResponseDataItemFieldDiskUsedMb,
-	"diskRMBps":       getJobMetricsResponseDataItemFieldDiskRmBps,
-	"diskWMBps":       getJobMetricsResponseDataItemFieldDiskWmBps,
-	"netRxMBps":       getJobMetricsResponseDataItemFieldNetRxMBps,
-	"netTxMBps":       getJobMetricsResponseDataItemFieldNetTxMBps,
-	"gpuPct":          getJobMetricsResponseDataItemFieldGpuPct,
-	"gpuMemUsedMB":    getJobMetricsResponseDataItemFieldGpuMemUsedMb,
-	"gpuMemTotalMB":   getJobMetricsResponseDataItemFieldGpuMemTotalMb,
-	"gpuTempC":        getJobMetricsResponseDataItemFieldGpuTempC,
-	"gpuPowerW":       getJobMetricsResponseDataItemFieldGpuPowerW,
-	"gpuEncPct":       getJobMetricsResponseDataItemFieldGpuEncPct,
-	"gpuDecPct":       getJobMetricsResponseDataItemFieldGpuDecPct,
-	"gpuMemBwPct":     getJobMetricsResponseDataItemFieldGpuMemBwPct,
-}
-
-type GetJobMetricsResponseDataItem struct {
-	Timestamp       float64  `json:"timestamp" url:"timestamp"`
-	CPUPct          *float64 `json:"cpuPct,omitempty" url:"cpuPct,omitempty"`
-	CPUCores        float64  `json:"cpuCores" url:"cpuCores"`
-	AllocatedCores  *float64 `json:"allocatedCores,omitempty" url:"allocatedCores,omitempty"`
-	MemUsedMb       float64  `json:"memUsedMB" url:"memUsedMB"`
-	MemLimitMb      *float64 `json:"memLimitMB,omitempty" url:"memLimitMB,omitempty"`
-	Threads         *float64 `json:"threads,omitempty" url:"threads,omitempty"`
-	CPUThrottledPct *float64 `json:"cpuThrottledPct,omitempty" url:"cpuThrottledPct,omitempty"`
-	CPUPressurePct  *float64 `json:"cpuPressurePct,omitempty" url:"cpuPressurePct,omitempty"`
-	MemPressurePct  *float64 `json:"memPressurePct,omitempty" url:"memPressurePct,omitempty"`
-	IoPressurePct   *float64 `json:"ioPressurePct,omitempty" url:"ioPressurePct,omitempty"`
-	DiskUsedMb      *float64 `json:"diskUsedMB,omitempty" url:"diskUsedMB,omitempty"`
-	DiskRmBps       *float64 `json:"diskRMBps,omitempty" url:"diskRMBps,omitempty"`
-	DiskWmBps       *float64 `json:"diskWMBps,omitempty" url:"diskWMBps,omitempty"`
-	NetRxMBps       *float64 `json:"netRxMBps,omitempty" url:"netRxMBps,omitempty"`
-	NetTxMBps       *float64 `json:"netTxMBps,omitempty" url:"netTxMBps,omitempty"`
-	GpuPct          *float64 `json:"gpuPct,omitempty" url:"gpuPct,omitempty"`
-	GpuMemUsedMb    *float64 `json:"gpuMemUsedMB,omitempty" url:"gpuMemUsedMB,omitempty"`
-	GpuMemTotalMb   *float64 `json:"gpuMemTotalMB,omitempty" url:"gpuMemTotalMB,omitempty"`
-	GpuTempC        *float64 `json:"gpuTempC,omitempty" url:"gpuTempC,omitempty"`
-	GpuPowerW       *float64 `json:"gpuPowerW,omitempty" url:"gpuPowerW,omitempty"`
-	GpuEncPct       *float64 `json:"gpuEncPct,omitempty" url:"gpuEncPct,omitempty"`
-	GpuDecPct       *float64 `json:"gpuDecPct,omitempty" url:"gpuDecPct,omitempty"`
-	GpuMemBwPct     *float64 `json:"gpuMemBwPct,omitempty" url:"gpuMemBwPct,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobMetricsResponseDataItem) GetTimestamp() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.Timestamp
-}
-
-func (g *GetJobMetricsResponseDataItem) GetCPUPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetCPUCores() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.CPUCores
-}
-
-func (g *GetJobMetricsResponseDataItem) GetAllocatedCores() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.AllocatedCores
-}
-
-func (g *GetJobMetricsResponseDataItem) GetMemUsedMb() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.MemUsedMb
-}
-
-func (g *GetJobMetricsResponseDataItem) GetMemLimitMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.MemLimitMb
-}
-
-func (g *GetJobMetricsResponseDataItem) GetThreads() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Threads
-}
-
-func (g *GetJobMetricsResponseDataItem) GetCPUThrottledPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUThrottledPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetCPUPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUPressurePct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetMemPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.MemPressurePct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetIoPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.IoPressurePct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetDiskUsedMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskUsedMb
-}
-
-func (g *GetJobMetricsResponseDataItem) GetDiskRmBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskRmBps
-}
-
-func (g *GetJobMetricsResponseDataItem) GetDiskWmBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskWmBps
-}
-
-func (g *GetJobMetricsResponseDataItem) GetNetRxMBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.NetRxMBps
-}
-
-func (g *GetJobMetricsResponseDataItem) GetNetTxMBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.NetTxMBps
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuMemUsedMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemUsedMb
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuMemTotalMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemTotalMb
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuTempC() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuTempC
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuPowerW() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuPowerW
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuEncPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuEncPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuDecPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuDecPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetGpuMemBwPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemBwPct
-}
-
-func (g *GetJobMetricsResponseDataItem) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobMetricsResponseDataItem) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetTimestamp(timestamp float64) {
-	g.Timestamp = timestamp
-	g.require(getJobMetricsResponseDataItemFieldTimestamp)
-}
-
-// SetCPUPct sets the CPUPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetCPUPct(cpuPct *float64) {
-	g.CPUPct = cpuPct
-	g.require(getJobMetricsResponseDataItemFieldCPUPct)
-}
-
-// SetCPUCores sets the CPUCores field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetCPUCores(cpuCores float64) {
-	g.CPUCores = cpuCores
-	g.require(getJobMetricsResponseDataItemFieldCPUCores)
-}
-
-// SetAllocatedCores sets the AllocatedCores field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetAllocatedCores(allocatedCores *float64) {
-	g.AllocatedCores = allocatedCores
-	g.require(getJobMetricsResponseDataItemFieldAllocatedCores)
-}
-
-// SetMemUsedMb sets the MemUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetMemUsedMb(memUsedMb float64) {
-	g.MemUsedMb = memUsedMb
-	g.require(getJobMetricsResponseDataItemFieldMemUsedMb)
-}
-
-// SetMemLimitMb sets the MemLimitMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetMemLimitMb(memLimitMb *float64) {
-	g.MemLimitMb = memLimitMb
-	g.require(getJobMetricsResponseDataItemFieldMemLimitMb)
-}
-
-// SetThreads sets the Threads field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetThreads(threads *float64) {
-	g.Threads = threads
-	g.require(getJobMetricsResponseDataItemFieldThreads)
-}
-
-// SetCPUThrottledPct sets the CPUThrottledPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetCPUThrottledPct(cpuThrottledPct *float64) {
-	g.CPUThrottledPct = cpuThrottledPct
-	g.require(getJobMetricsResponseDataItemFieldCPUThrottledPct)
-}
-
-// SetCPUPressurePct sets the CPUPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetCPUPressurePct(cpuPressurePct *float64) {
-	g.CPUPressurePct = cpuPressurePct
-	g.require(getJobMetricsResponseDataItemFieldCPUPressurePct)
-}
-
-// SetMemPressurePct sets the MemPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetMemPressurePct(memPressurePct *float64) {
-	g.MemPressurePct = memPressurePct
-	g.require(getJobMetricsResponseDataItemFieldMemPressurePct)
-}
-
-// SetIoPressurePct sets the IoPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetIoPressurePct(ioPressurePct *float64) {
-	g.IoPressurePct = ioPressurePct
-	g.require(getJobMetricsResponseDataItemFieldIoPressurePct)
-}
-
-// SetDiskUsedMb sets the DiskUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetDiskUsedMb(diskUsedMb *float64) {
-	g.DiskUsedMb = diskUsedMb
-	g.require(getJobMetricsResponseDataItemFieldDiskUsedMb)
-}
-
-// SetDiskRmBps sets the DiskRmBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetDiskRmBps(diskRmBps *float64) {
-	g.DiskRmBps = diskRmBps
-	g.require(getJobMetricsResponseDataItemFieldDiskRmBps)
-}
-
-// SetDiskWmBps sets the DiskWmBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetDiskWmBps(diskWmBps *float64) {
-	g.DiskWmBps = diskWmBps
-	g.require(getJobMetricsResponseDataItemFieldDiskWmBps)
-}
-
-// SetNetRxMBps sets the NetRxMBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetNetRxMBps(netRxMBps *float64) {
-	g.NetRxMBps = netRxMBps
-	g.require(getJobMetricsResponseDataItemFieldNetRxMBps)
-}
-
-// SetNetTxMBps sets the NetTxMBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetNetTxMBps(netTxMBps *float64) {
-	g.NetTxMBps = netTxMBps
-	g.require(getJobMetricsResponseDataItemFieldNetTxMBps)
-}
-
-// SetGpuPct sets the GpuPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuPct(gpuPct *float64) {
-	g.GpuPct = gpuPct
-	g.require(getJobMetricsResponseDataItemFieldGpuPct)
-}
-
-// SetGpuMemUsedMb sets the GpuMemUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuMemUsedMb(gpuMemUsedMb *float64) {
-	g.GpuMemUsedMb = gpuMemUsedMb
-	g.require(getJobMetricsResponseDataItemFieldGpuMemUsedMb)
-}
-
-// SetGpuMemTotalMb sets the GpuMemTotalMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuMemTotalMb(gpuMemTotalMb *float64) {
-	g.GpuMemTotalMb = gpuMemTotalMb
-	g.require(getJobMetricsResponseDataItemFieldGpuMemTotalMb)
-}
-
-// SetGpuTempC sets the GpuTempC field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuTempC(gpuTempC *float64) {
-	g.GpuTempC = gpuTempC
-	g.require(getJobMetricsResponseDataItemFieldGpuTempC)
-}
-
-// SetGpuPowerW sets the GpuPowerW field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuPowerW(gpuPowerW *float64) {
-	g.GpuPowerW = gpuPowerW
-	g.require(getJobMetricsResponseDataItemFieldGpuPowerW)
-}
-
-// SetGpuEncPct sets the GpuEncPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuEncPct(gpuEncPct *float64) {
-	g.GpuEncPct = gpuEncPct
-	g.require(getJobMetricsResponseDataItemFieldGpuEncPct)
-}
-
-// SetGpuDecPct sets the GpuDecPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuDecPct(gpuDecPct *float64) {
-	g.GpuDecPct = gpuDecPct
-	g.require(getJobMetricsResponseDataItemFieldGpuDecPct)
-}
-
-// SetGpuMemBwPct sets the GpuMemBwPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobMetricsResponseDataItem) SetGpuMemBwPct(gpuMemBwPct *float64) {
-	g.GpuMemBwPct = gpuMemBwPct
-	g.require(getJobMetricsResponseDataItemFieldGpuMemBwPct)
-}
-
-func (g *GetJobMetricsResponseDataItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobMetricsResponseDataItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobMetricsResponseDataItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, getJobMetricsResponseDataItemNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		g.require(presentFields)
-	}
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobMetricsResponseDataItem) MarshalJSON() ([]byte, error) {
-	type embed GetJobMetricsResponseDataItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobMetricsResponseDataItem) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobResourcesResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobResourcesResponse struct {
-	Data []*GetJobResourcesResponseDataItem `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobResourcesResponse) GetData() []*GetJobResourcesResponseDataItem {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobResourcesResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobResourcesResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponse) SetData(data []*GetJobResourcesResponseDataItem) {
-	g.Data = data
-	g.require(getJobResourcesResponseFieldData)
-}
-
-func (g *GetJobResourcesResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobResourcesResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobResourcesResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobResourcesResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobResourcesResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobResourcesResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobResourcesResponseDataItemFieldTimestamp       = big.NewInt(1 << 0)
-	getJobResourcesResponseDataItemFieldCPUPct          = big.NewInt(1 << 1)
-	getJobResourcesResponseDataItemFieldCPUCores        = big.NewInt(1 << 2)
-	getJobResourcesResponseDataItemFieldAllocatedCores  = big.NewInt(1 << 3)
-	getJobResourcesResponseDataItemFieldMemUsedMb       = big.NewInt(1 << 4)
-	getJobResourcesResponseDataItemFieldMemLimitMb      = big.NewInt(1 << 5)
-	getJobResourcesResponseDataItemFieldThreads         = big.NewInt(1 << 6)
-	getJobResourcesResponseDataItemFieldCPUThrottledPct = big.NewInt(1 << 7)
-	getJobResourcesResponseDataItemFieldCPUPressurePct  = big.NewInt(1 << 8)
-	getJobResourcesResponseDataItemFieldMemPressurePct  = big.NewInt(1 << 9)
-	getJobResourcesResponseDataItemFieldIoPressurePct   = big.NewInt(1 << 10)
-	getJobResourcesResponseDataItemFieldDiskUsedMb      = big.NewInt(1 << 11)
-	getJobResourcesResponseDataItemFieldDiskRmBps       = big.NewInt(1 << 12)
-	getJobResourcesResponseDataItemFieldDiskWmBps       = big.NewInt(1 << 13)
-	getJobResourcesResponseDataItemFieldNetRxMBps       = big.NewInt(1 << 14)
-	getJobResourcesResponseDataItemFieldNetTxMBps       = big.NewInt(1 << 15)
-	getJobResourcesResponseDataItemFieldGpuPct          = big.NewInt(1 << 16)
-	getJobResourcesResponseDataItemFieldGpuMemUsedMb    = big.NewInt(1 << 17)
-	getJobResourcesResponseDataItemFieldGpuMemTotalMb   = big.NewInt(1 << 18)
-	getJobResourcesResponseDataItemFieldGpuTempC        = big.NewInt(1 << 19)
-	getJobResourcesResponseDataItemFieldGpuPowerW       = big.NewInt(1 << 20)
-	getJobResourcesResponseDataItemFieldGpuEncPct       = big.NewInt(1 << 21)
-	getJobResourcesResponseDataItemFieldGpuDecPct       = big.NewInt(1 << 22)
-	getJobResourcesResponseDataItemFieldGpuMemBwPct     = big.NewInt(1 << 23)
-)
-
-// getJobResourcesResponseDataItemNullableFields maps the wire names of GetJobResourcesResponseDataItem's nullable fields (required or optional) to their field bits.
-var getJobResourcesResponseDataItemNullableFields = map[string]*big.Int{
-	"cpuPct":          getJobResourcesResponseDataItemFieldCPUPct,
-	"allocatedCores":  getJobResourcesResponseDataItemFieldAllocatedCores,
-	"memLimitMB":      getJobResourcesResponseDataItemFieldMemLimitMb,
-	"threads":         getJobResourcesResponseDataItemFieldThreads,
-	"cpuThrottledPct": getJobResourcesResponseDataItemFieldCPUThrottledPct,
-	"cpuPressurePct":  getJobResourcesResponseDataItemFieldCPUPressurePct,
-	"memPressurePct":  getJobResourcesResponseDataItemFieldMemPressurePct,
-	"ioPressurePct":   getJobResourcesResponseDataItemFieldIoPressurePct,
-	"diskUsedMB":      getJobResourcesResponseDataItemFieldDiskUsedMb,
-	"diskRMBps":       getJobResourcesResponseDataItemFieldDiskRmBps,
-	"diskWMBps":       getJobResourcesResponseDataItemFieldDiskWmBps,
-	"netRxMBps":       getJobResourcesResponseDataItemFieldNetRxMBps,
-	"netTxMBps":       getJobResourcesResponseDataItemFieldNetTxMBps,
-	"gpuPct":          getJobResourcesResponseDataItemFieldGpuPct,
-	"gpuMemUsedMB":    getJobResourcesResponseDataItemFieldGpuMemUsedMb,
-	"gpuMemTotalMB":   getJobResourcesResponseDataItemFieldGpuMemTotalMb,
-	"gpuTempC":        getJobResourcesResponseDataItemFieldGpuTempC,
-	"gpuPowerW":       getJobResourcesResponseDataItemFieldGpuPowerW,
-	"gpuEncPct":       getJobResourcesResponseDataItemFieldGpuEncPct,
-	"gpuDecPct":       getJobResourcesResponseDataItemFieldGpuDecPct,
-	"gpuMemBwPct":     getJobResourcesResponseDataItemFieldGpuMemBwPct,
-}
-
-type GetJobResourcesResponseDataItem struct {
-	Timestamp       float64  `json:"timestamp" url:"timestamp"`
-	CPUPct          *float64 `json:"cpuPct,omitempty" url:"cpuPct,omitempty"`
-	CPUCores        float64  `json:"cpuCores" url:"cpuCores"`
-	AllocatedCores  *float64 `json:"allocatedCores,omitempty" url:"allocatedCores,omitempty"`
-	MemUsedMb       float64  `json:"memUsedMB" url:"memUsedMB"`
-	MemLimitMb      *float64 `json:"memLimitMB,omitempty" url:"memLimitMB,omitempty"`
-	Threads         *float64 `json:"threads,omitempty" url:"threads,omitempty"`
-	CPUThrottledPct *float64 `json:"cpuThrottledPct,omitempty" url:"cpuThrottledPct,omitempty"`
-	CPUPressurePct  *float64 `json:"cpuPressurePct,omitempty" url:"cpuPressurePct,omitempty"`
-	MemPressurePct  *float64 `json:"memPressurePct,omitempty" url:"memPressurePct,omitempty"`
-	IoPressurePct   *float64 `json:"ioPressurePct,omitempty" url:"ioPressurePct,omitempty"`
-	DiskUsedMb      *float64 `json:"diskUsedMB,omitempty" url:"diskUsedMB,omitempty"`
-	DiskRmBps       *float64 `json:"diskRMBps,omitempty" url:"diskRMBps,omitempty"`
-	DiskWmBps       *float64 `json:"diskWMBps,omitempty" url:"diskWMBps,omitempty"`
-	NetRxMBps       *float64 `json:"netRxMBps,omitempty" url:"netRxMBps,omitempty"`
-	NetTxMBps       *float64 `json:"netTxMBps,omitempty" url:"netTxMBps,omitempty"`
-	GpuPct          *float64 `json:"gpuPct,omitempty" url:"gpuPct,omitempty"`
-	GpuMemUsedMb    *float64 `json:"gpuMemUsedMB,omitempty" url:"gpuMemUsedMB,omitempty"`
-	GpuMemTotalMb   *float64 `json:"gpuMemTotalMB,omitempty" url:"gpuMemTotalMB,omitempty"`
-	GpuTempC        *float64 `json:"gpuTempC,omitempty" url:"gpuTempC,omitempty"`
-	GpuPowerW       *float64 `json:"gpuPowerW,omitempty" url:"gpuPowerW,omitempty"`
-	GpuEncPct       *float64 `json:"gpuEncPct,omitempty" url:"gpuEncPct,omitempty"`
-	GpuDecPct       *float64 `json:"gpuDecPct,omitempty" url:"gpuDecPct,omitempty"`
-	GpuMemBwPct     *float64 `json:"gpuMemBwPct,omitempty" url:"gpuMemBwPct,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobResourcesResponseDataItem) GetTimestamp() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.Timestamp
-}
-
-func (g *GetJobResourcesResponseDataItem) GetCPUPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetCPUCores() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.CPUCores
-}
-
-func (g *GetJobResourcesResponseDataItem) GetAllocatedCores() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.AllocatedCores
-}
-
-func (g *GetJobResourcesResponseDataItem) GetMemUsedMb() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.MemUsedMb
-}
-
-func (g *GetJobResourcesResponseDataItem) GetMemLimitMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.MemLimitMb
-}
-
-func (g *GetJobResourcesResponseDataItem) GetThreads() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Threads
-}
-
-func (g *GetJobResourcesResponseDataItem) GetCPUThrottledPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUThrottledPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetCPUPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.CPUPressurePct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetMemPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.MemPressurePct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetIoPressurePct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.IoPressurePct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetDiskUsedMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskUsedMb
-}
-
-func (g *GetJobResourcesResponseDataItem) GetDiskRmBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskRmBps
-}
-
-func (g *GetJobResourcesResponseDataItem) GetDiskWmBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.DiskWmBps
-}
-
-func (g *GetJobResourcesResponseDataItem) GetNetRxMBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.NetRxMBps
-}
-
-func (g *GetJobResourcesResponseDataItem) GetNetTxMBps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.NetTxMBps
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuMemUsedMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemUsedMb
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuMemTotalMb() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemTotalMb
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuTempC() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuTempC
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuPowerW() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuPowerW
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuEncPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuEncPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuDecPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuDecPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetGpuMemBwPct() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.GpuMemBwPct
-}
-
-func (g *GetJobResourcesResponseDataItem) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobResourcesResponseDataItem) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetTimestamp(timestamp float64) {
-	g.Timestamp = timestamp
-	g.require(getJobResourcesResponseDataItemFieldTimestamp)
-}
-
-// SetCPUPct sets the CPUPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetCPUPct(cpuPct *float64) {
-	g.CPUPct = cpuPct
-	g.require(getJobResourcesResponseDataItemFieldCPUPct)
-}
-
-// SetCPUCores sets the CPUCores field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetCPUCores(cpuCores float64) {
-	g.CPUCores = cpuCores
-	g.require(getJobResourcesResponseDataItemFieldCPUCores)
-}
-
-// SetAllocatedCores sets the AllocatedCores field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetAllocatedCores(allocatedCores *float64) {
-	g.AllocatedCores = allocatedCores
-	g.require(getJobResourcesResponseDataItemFieldAllocatedCores)
-}
-
-// SetMemUsedMb sets the MemUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetMemUsedMb(memUsedMb float64) {
-	g.MemUsedMb = memUsedMb
-	g.require(getJobResourcesResponseDataItemFieldMemUsedMb)
-}
-
-// SetMemLimitMb sets the MemLimitMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetMemLimitMb(memLimitMb *float64) {
-	g.MemLimitMb = memLimitMb
-	g.require(getJobResourcesResponseDataItemFieldMemLimitMb)
-}
-
-// SetThreads sets the Threads field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetThreads(threads *float64) {
-	g.Threads = threads
-	g.require(getJobResourcesResponseDataItemFieldThreads)
-}
-
-// SetCPUThrottledPct sets the CPUThrottledPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetCPUThrottledPct(cpuThrottledPct *float64) {
-	g.CPUThrottledPct = cpuThrottledPct
-	g.require(getJobResourcesResponseDataItemFieldCPUThrottledPct)
-}
-
-// SetCPUPressurePct sets the CPUPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetCPUPressurePct(cpuPressurePct *float64) {
-	g.CPUPressurePct = cpuPressurePct
-	g.require(getJobResourcesResponseDataItemFieldCPUPressurePct)
-}
-
-// SetMemPressurePct sets the MemPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetMemPressurePct(memPressurePct *float64) {
-	g.MemPressurePct = memPressurePct
-	g.require(getJobResourcesResponseDataItemFieldMemPressurePct)
-}
-
-// SetIoPressurePct sets the IoPressurePct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetIoPressurePct(ioPressurePct *float64) {
-	g.IoPressurePct = ioPressurePct
-	g.require(getJobResourcesResponseDataItemFieldIoPressurePct)
-}
-
-// SetDiskUsedMb sets the DiskUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetDiskUsedMb(diskUsedMb *float64) {
-	g.DiskUsedMb = diskUsedMb
-	g.require(getJobResourcesResponseDataItemFieldDiskUsedMb)
-}
-
-// SetDiskRmBps sets the DiskRmBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetDiskRmBps(diskRmBps *float64) {
-	g.DiskRmBps = diskRmBps
-	g.require(getJobResourcesResponseDataItemFieldDiskRmBps)
-}
-
-// SetDiskWmBps sets the DiskWmBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetDiskWmBps(diskWmBps *float64) {
-	g.DiskWmBps = diskWmBps
-	g.require(getJobResourcesResponseDataItemFieldDiskWmBps)
-}
-
-// SetNetRxMBps sets the NetRxMBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetNetRxMBps(netRxMBps *float64) {
-	g.NetRxMBps = netRxMBps
-	g.require(getJobResourcesResponseDataItemFieldNetRxMBps)
-}
-
-// SetNetTxMBps sets the NetTxMBps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetNetTxMBps(netTxMBps *float64) {
-	g.NetTxMBps = netTxMBps
-	g.require(getJobResourcesResponseDataItemFieldNetTxMBps)
-}
-
-// SetGpuPct sets the GpuPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuPct(gpuPct *float64) {
-	g.GpuPct = gpuPct
-	g.require(getJobResourcesResponseDataItemFieldGpuPct)
-}
-
-// SetGpuMemUsedMb sets the GpuMemUsedMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuMemUsedMb(gpuMemUsedMb *float64) {
-	g.GpuMemUsedMb = gpuMemUsedMb
-	g.require(getJobResourcesResponseDataItemFieldGpuMemUsedMb)
-}
-
-// SetGpuMemTotalMb sets the GpuMemTotalMb field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuMemTotalMb(gpuMemTotalMb *float64) {
-	g.GpuMemTotalMb = gpuMemTotalMb
-	g.require(getJobResourcesResponseDataItemFieldGpuMemTotalMb)
-}
-
-// SetGpuTempC sets the GpuTempC field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuTempC(gpuTempC *float64) {
-	g.GpuTempC = gpuTempC
-	g.require(getJobResourcesResponseDataItemFieldGpuTempC)
-}
-
-// SetGpuPowerW sets the GpuPowerW field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuPowerW(gpuPowerW *float64) {
-	g.GpuPowerW = gpuPowerW
-	g.require(getJobResourcesResponseDataItemFieldGpuPowerW)
-}
-
-// SetGpuEncPct sets the GpuEncPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuEncPct(gpuEncPct *float64) {
-	g.GpuEncPct = gpuEncPct
-	g.require(getJobResourcesResponseDataItemFieldGpuEncPct)
-}
-
-// SetGpuDecPct sets the GpuDecPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuDecPct(gpuDecPct *float64) {
-	g.GpuDecPct = gpuDecPct
-	g.require(getJobResourcesResponseDataItemFieldGpuDecPct)
-}
-
-// SetGpuMemBwPct sets the GpuMemBwPct field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobResourcesResponseDataItem) SetGpuMemBwPct(gpuMemBwPct *float64) {
-	g.GpuMemBwPct = gpuMemBwPct
-	g.require(getJobResourcesResponseDataItemFieldGpuMemBwPct)
-}
-
-func (g *GetJobResourcesResponseDataItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobResourcesResponseDataItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobResourcesResponseDataItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, getJobResourcesResponseDataItemNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		g.require(presentFields)
-	}
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobResourcesResponseDataItem) MarshalJSON() ([]byte, error) {
-	type embed GetJobResourcesResponseDataItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobResourcesResponseDataItem) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
 	getJobResponseFieldData = big.NewInt(1 << 0)
 )
 
@@ -24277,1600 +18805,6 @@ func (g *GetJobResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (g *GetJobResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobShareResponseFieldData = big.NewInt(1 << 0)
-)
-
-// getJobShareResponseNullableFields maps the wire names of GetJobShareResponse's nullable fields (required or optional) to their field bits.
-var getJobShareResponseNullableFields = map[string]*big.Int{
-	"data": getJobShareResponseFieldData,
-}
-
-type GetJobShareResponse struct {
-	Data *GetJobShareResponseData `json:"data,omitempty" url:"data,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobShareResponse) GetData() *GetJobShareResponseData {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobShareResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobShareResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobShareResponse) SetData(data *GetJobShareResponseData) {
-	g.Data = data
-	g.require(getJobShareResponseFieldData)
-}
-
-func (g *GetJobShareResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobShareResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobShareResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, getJobShareResponseNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		g.require(presentFields)
-	}
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobShareResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobShareResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobShareResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobShareResponseDataFieldShareID   = big.NewInt(1 << 0)
-	getJobShareResponseDataFieldShareURL  = big.NewInt(1 << 1)
-	getJobShareResponseDataFieldCreatedAt = big.NewInt(1 << 2)
-)
-
-type GetJobShareResponseData struct {
-	ShareID   string  `json:"shareId" url:"shareId"`
-	ShareURL  string  `json:"shareUrl" url:"shareUrl"`
-	CreatedAt float64 `json:"createdAt" url:"createdAt"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobShareResponseData) GetShareID() string {
-	if g == nil {
-		return ""
-	}
-	return g.ShareID
-}
-
-func (g *GetJobShareResponseData) GetShareURL() string {
-	if g == nil {
-		return ""
-	}
-	return g.ShareURL
-}
-
-func (g *GetJobShareResponseData) GetCreatedAt() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.CreatedAt
-}
-
-func (g *GetJobShareResponseData) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobShareResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetShareID sets the ShareID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobShareResponseData) SetShareID(shareID string) {
-	g.ShareID = shareID
-	g.require(getJobShareResponseDataFieldShareID)
-}
-
-// SetShareURL sets the ShareURL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobShareResponseData) SetShareURL(shareURL string) {
-	g.ShareURL = shareURL
-	g.require(getJobShareResponseDataFieldShareURL)
-}
-
-// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobShareResponseData) SetCreatedAt(createdAt float64) {
-	g.CreatedAt = createdAt
-	g.require(getJobShareResponseDataFieldCreatedAt)
-}
-
-func (g *GetJobShareResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobShareResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobShareResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobShareResponseData) MarshalJSON() ([]byte, error) {
-	type embed GetJobShareResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobShareResponseData) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-// Window (default 24h). `all` covers the org's whole history.
-type GetJobStatsRequestWindow string
-
-const (
-	GetJobStatsRequestWindowDay     GetJobStatsRequestWindow = "24h"
-	GetJobStatsRequestWindowWeek    GetJobStatsRequestWindow = "7d"
-	GetJobStatsRequestWindowMonth   GetJobStatsRequestWindow = "30d"
-	GetJobStatsRequestWindowQuarter GetJobStatsRequestWindow = "90d"
-	GetJobStatsRequestWindowYear    GetJobStatsRequestWindow = "365d"
-	GetJobStatsRequestWindowAll     GetJobStatsRequestWindow = "all"
-)
-
-func NewGetJobStatsRequestWindowFromString(s string) (GetJobStatsRequestWindow, error) {
-	switch s {
-	case "24h":
-		return GetJobStatsRequestWindowDay, nil
-	case "7d":
-		return GetJobStatsRequestWindowWeek, nil
-	case "30d":
-		return GetJobStatsRequestWindowMonth, nil
-	case "90d":
-		return GetJobStatsRequestWindowQuarter, nil
-	case "365d":
-		return GetJobStatsRequestWindowYear, nil
-	case "all":
-		return GetJobStatsRequestWindowAll, nil
-	}
-	var t GetJobStatsRequestWindow
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetJobStatsRequestWindow) Ptr() *GetJobStatsRequestWindow {
-	return &g
-}
-
-var (
-	getJobStatsResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobStatsResponse struct {
-	Data *GetJobStatsResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponse) GetData() *GetJobStatsResponseData {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobStatsResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponse) SetData(data *GetJobStatsResponseData) {
-	g.Data = data
-	g.require(getJobStatsResponseFieldData)
-}
-
-func (g *GetJobStatsResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobStatsResponseDataFieldWindow        = big.NewInt(1 << 0)
-	getJobStatsResponseDataFieldTotals        = big.NewInt(1 << 1)
-	getJobStatsResponseDataFieldSuccessRate   = big.NewInt(1 << 2)
-	getJobStatsResponseDataFieldAvgDurationMs = big.NewInt(1 << 3)
-	getJobStatsResponseDataFieldSpend         = big.NewInt(1 << 4)
-	getJobStatsResponseDataFieldActivity      = big.NewInt(1 << 5)
-)
-
-// getJobStatsResponseDataNullableFields maps the wire names of GetJobStatsResponseData's nullable fields (required or optional) to their field bits.
-var getJobStatsResponseDataNullableFields = map[string]*big.Int{
-	"successRate":   getJobStatsResponseDataFieldSuccessRate,
-	"avgDurationMs": getJobStatsResponseDataFieldAvgDurationMs,
-}
-
-type GetJobStatsResponseData struct {
-	Window        *GetJobStatsResponseDataWindow         `json:"window" url:"window"`
-	Totals        *GetJobStatsResponseDataTotals         `json:"totals" url:"totals"`
-	SuccessRate   *float64                               `json:"successRate,omitempty" url:"successRate,omitempty"`
-	AvgDurationMs *int                                   `json:"avgDurationMs,omitempty" url:"avgDurationMs,omitempty"`
-	Spend         *GetJobStatsResponseDataSpend          `json:"spend" url:"spend"`
-	Activity      []*GetJobStatsResponseDataActivityItem `json:"activity" url:"activity"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponseData) GetWindow() *GetJobStatsResponseDataWindow {
-	if g == nil {
-		return nil
-	}
-	return g.Window
-}
-
-func (g *GetJobStatsResponseData) GetTotals() *GetJobStatsResponseDataTotals {
-	if g == nil {
-		return nil
-	}
-	return g.Totals
-}
-
-func (g *GetJobStatsResponseData) GetSuccessRate() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.SuccessRate
-}
-
-func (g *GetJobStatsResponseData) GetAvgDurationMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.AvgDurationMs
-}
-
-func (g *GetJobStatsResponseData) GetSpend() *GetJobStatsResponseDataSpend {
-	if g == nil {
-		return nil
-	}
-	return g.Spend
-}
-
-func (g *GetJobStatsResponseData) GetActivity() []*GetJobStatsResponseDataActivityItem {
-	if g == nil {
-		return nil
-	}
-	return g.Activity
-}
-
-func (g *GetJobStatsResponseData) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetWindow sets the Window field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetWindow(window *GetJobStatsResponseDataWindow) {
-	g.Window = window
-	g.require(getJobStatsResponseDataFieldWindow)
-}
-
-// SetTotals sets the Totals field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetTotals(totals *GetJobStatsResponseDataTotals) {
-	g.Totals = totals
-	g.require(getJobStatsResponseDataFieldTotals)
-}
-
-// SetSuccessRate sets the SuccessRate field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetSuccessRate(successRate *float64) {
-	g.SuccessRate = successRate
-	g.require(getJobStatsResponseDataFieldSuccessRate)
-}
-
-// SetAvgDurationMs sets the AvgDurationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetAvgDurationMs(avgDurationMs *int) {
-	g.AvgDurationMs = avgDurationMs
-	g.require(getJobStatsResponseDataFieldAvgDurationMs)
-}
-
-// SetSpend sets the Spend field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetSpend(spend *GetJobStatsResponseDataSpend) {
-	g.Spend = spend
-	g.require(getJobStatsResponseDataFieldSpend)
-}
-
-// SetActivity sets the Activity field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseData) SetActivity(activity []*GetJobStatsResponseDataActivityItem) {
-	g.Activity = activity
-	g.require(getJobStatsResponseDataFieldActivity)
-}
-
-func (g *GetJobStatsResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, getJobStatsResponseDataNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		g.require(presentFields)
-	}
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponseData) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponseData) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobStatsResponseDataActivityItemFieldBucketStart = big.NewInt(1 << 0)
-	getJobStatsResponseDataActivityItemFieldSucceeded   = big.NewInt(1 << 1)
-	getJobStatsResponseDataActivityItemFieldFailed      = big.NewInt(1 << 2)
-	getJobStatsResponseDataActivityItemFieldOther       = big.NewInt(1 << 3)
-)
-
-type GetJobStatsResponseDataActivityItem struct {
-	BucketStart float64 `json:"bucketStart" url:"bucketStart"`
-	Succeeded   int     `json:"succeeded" url:"succeeded"`
-	Failed      int     `json:"failed" url:"failed"`
-	Other       int     `json:"other" url:"other"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponseDataActivityItem) GetBucketStart() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.BucketStart
-}
-
-func (g *GetJobStatsResponseDataActivityItem) GetSucceeded() int {
-	if g == nil {
-		return 0
-	}
-	return g.Succeeded
-}
-
-func (g *GetJobStatsResponseDataActivityItem) GetFailed() int {
-	if g == nil {
-		return 0
-	}
-	return g.Failed
-}
-
-func (g *GetJobStatsResponseDataActivityItem) GetOther() int {
-	if g == nil {
-		return 0
-	}
-	return g.Other
-}
-
-func (g *GetJobStatsResponseDataActivityItem) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponseDataActivityItem) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetBucketStart sets the BucketStart field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataActivityItem) SetBucketStart(bucketStart float64) {
-	g.BucketStart = bucketStart
-	g.require(getJobStatsResponseDataActivityItemFieldBucketStart)
-}
-
-// SetSucceeded sets the Succeeded field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataActivityItem) SetSucceeded(succeeded int) {
-	g.Succeeded = succeeded
-	g.require(getJobStatsResponseDataActivityItemFieldSucceeded)
-}
-
-// SetFailed sets the Failed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataActivityItem) SetFailed(failed int) {
-	g.Failed = failed
-	g.require(getJobStatsResponseDataActivityItemFieldFailed)
-}
-
-// SetOther sets the Other field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataActivityItem) SetOther(other int) {
-	g.Other = other
-	g.require(getJobStatsResponseDataActivityItemFieldOther)
-}
-
-func (g *GetJobStatsResponseDataActivityItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponseDataActivityItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponseDataActivityItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponseDataActivityItem) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponseDataActivityItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponseDataActivityItem) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobStatsResponseDataSpendFieldAmount    = big.NewInt(1 << 0)
-	getJobStatsResponseDataSpendFieldFormatted = big.NewInt(1 << 1)
-)
-
-type GetJobStatsResponseDataSpend struct {
-	Amount    int    `json:"amount" url:"amount"`
-	Formatted string `json:"formatted" url:"formatted"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponseDataSpend) GetAmount() int {
-	if g == nil {
-		return 0
-	}
-	return g.Amount
-}
-
-func (g *GetJobStatsResponseDataSpend) GetFormatted() string {
-	if g == nil {
-		return ""
-	}
-	return g.Formatted
-}
-
-func (g *GetJobStatsResponseDataSpend) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponseDataSpend) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataSpend) SetAmount(amount int) {
-	g.Amount = amount
-	g.require(getJobStatsResponseDataSpendFieldAmount)
-}
-
-// SetFormatted sets the Formatted field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataSpend) SetFormatted(formatted string) {
-	g.Formatted = formatted
-	g.require(getJobStatsResponseDataSpendFieldFormatted)
-}
-
-func (g *GetJobStatsResponseDataSpend) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponseDataSpend
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponseDataSpend(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponseDataSpend) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponseDataSpend
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponseDataSpend) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobStatsResponseDataTotalsFieldJobs      = big.NewInt(1 << 0)
-	getJobStatsResponseDataTotalsFieldSucceeded = big.NewInt(1 << 1)
-	getJobStatsResponseDataTotalsFieldFailed    = big.NewInt(1 << 2)
-	getJobStatsResponseDataTotalsFieldCancelled = big.NewInt(1 << 3)
-	getJobStatsResponseDataTotalsFieldRunning   = big.NewInt(1 << 4)
-)
-
-type GetJobStatsResponseDataTotals struct {
-	Jobs      int `json:"jobs" url:"jobs"`
-	Succeeded int `json:"succeeded" url:"succeeded"`
-	Failed    int `json:"failed" url:"failed"`
-	Cancelled int `json:"cancelled" url:"cancelled"`
-	Running   int `json:"running" url:"running"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponseDataTotals) GetJobs() int {
-	if g == nil {
-		return 0
-	}
-	return g.Jobs
-}
-
-func (g *GetJobStatsResponseDataTotals) GetSucceeded() int {
-	if g == nil {
-		return 0
-	}
-	return g.Succeeded
-}
-
-func (g *GetJobStatsResponseDataTotals) GetFailed() int {
-	if g == nil {
-		return 0
-	}
-	return g.Failed
-}
-
-func (g *GetJobStatsResponseDataTotals) GetCancelled() int {
-	if g == nil {
-		return 0
-	}
-	return g.Cancelled
-}
-
-func (g *GetJobStatsResponseDataTotals) GetRunning() int {
-	if g == nil {
-		return 0
-	}
-	return g.Running
-}
-
-func (g *GetJobStatsResponseDataTotals) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponseDataTotals) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetJobs sets the Jobs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataTotals) SetJobs(jobs int) {
-	g.Jobs = jobs
-	g.require(getJobStatsResponseDataTotalsFieldJobs)
-}
-
-// SetSucceeded sets the Succeeded field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataTotals) SetSucceeded(succeeded int) {
-	g.Succeeded = succeeded
-	g.require(getJobStatsResponseDataTotalsFieldSucceeded)
-}
-
-// SetFailed sets the Failed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataTotals) SetFailed(failed int) {
-	g.Failed = failed
-	g.require(getJobStatsResponseDataTotalsFieldFailed)
-}
-
-// SetCancelled sets the Cancelled field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataTotals) SetCancelled(cancelled int) {
-	g.Cancelled = cancelled
-	g.require(getJobStatsResponseDataTotalsFieldCancelled)
-}
-
-// SetRunning sets the Running field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataTotals) SetRunning(running int) {
-	g.Running = running
-	g.require(getJobStatsResponseDataTotalsFieldRunning)
-}
-
-func (g *GetJobStatsResponseDataTotals) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponseDataTotals
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponseDataTotals(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponseDataTotals) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponseDataTotals
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponseDataTotals) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobStatsResponseDataWindowFieldFrom = big.NewInt(1 << 0)
-	getJobStatsResponseDataWindowFieldTo   = big.NewInt(1 << 1)
-)
-
-type GetJobStatsResponseDataWindow struct {
-	From float64 `json:"from" url:"from"`
-	To   float64 `json:"to" url:"to"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobStatsResponseDataWindow) GetFrom() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.From
-}
-
-func (g *GetJobStatsResponseDataWindow) GetTo() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.To
-}
-
-func (g *GetJobStatsResponseDataWindow) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobStatsResponseDataWindow) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetFrom sets the From field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataWindow) SetFrom(from float64) {
-	g.From = from
-	g.require(getJobStatsResponseDataWindowFieldFrom)
-}
-
-// SetTo sets the To field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobStatsResponseDataWindow) SetTo(to float64) {
-	g.To = to
-	g.require(getJobStatsResponseDataWindowFieldTo)
-}
-
-func (g *GetJobStatsResponseDataWindow) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobStatsResponseDataWindow
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobStatsResponseDataWindow(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobStatsResponseDataWindow) MarshalJSON() ([]byte, error) {
-	type embed GetJobStatsResponseDataWindow
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobStatsResponseDataWindow) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobThroughputResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobThroughputResponse struct {
-	Data []*GetJobThroughputResponseDataItem `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobThroughputResponse) GetData() []*GetJobThroughputResponseDataItem {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobThroughputResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobThroughputResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputResponse) SetData(data []*GetJobThroughputResponseDataItem) {
-	g.Data = data
-	g.require(getJobThroughputResponseFieldData)
-}
-
-func (g *GetJobThroughputResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobThroughputResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobThroughputResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobThroughputResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobThroughputResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobThroughputResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobThroughputResponseDataItemFieldTimestamp = big.NewInt(1 << 0)
-	getJobThroughputResponseDataItemFieldFps       = big.NewInt(1 << 1)
-	getJobThroughputResponseDataItemFieldSpeed     = big.NewInt(1 << 2)
-	getJobThroughputResponseDataItemFieldFrame     = big.NewInt(1 << 3)
-)
-
-type GetJobThroughputResponseDataItem struct {
-	Timestamp float64  `json:"timestamp" url:"timestamp"`
-	Fps       *float64 `json:"fps,omitempty" url:"fps,omitempty"`
-	Speed     *float64 `json:"speed,omitempty" url:"speed,omitempty"`
-	Frame     *float64 `json:"frame,omitempty" url:"frame,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobThroughputResponseDataItem) GetTimestamp() float64 {
-	if g == nil {
-		return 0
-	}
-	return g.Timestamp
-}
-
-func (g *GetJobThroughputResponseDataItem) GetFps() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Fps
-}
-
-func (g *GetJobThroughputResponseDataItem) GetSpeed() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Speed
-}
-
-func (g *GetJobThroughputResponseDataItem) GetFrame() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Frame
-}
-
-func (g *GetJobThroughputResponseDataItem) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobThroughputResponseDataItem) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputResponseDataItem) SetTimestamp(timestamp float64) {
-	g.Timestamp = timestamp
-	g.require(getJobThroughputResponseDataItemFieldTimestamp)
-}
-
-// SetFps sets the Fps field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputResponseDataItem) SetFps(fps *float64) {
-	g.Fps = fps
-	g.require(getJobThroughputResponseDataItemFieldFps)
-}
-
-// SetSpeed sets the Speed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputResponseDataItem) SetSpeed(speed *float64) {
-	g.Speed = speed
-	g.require(getJobThroughputResponseDataItemFieldSpeed)
-}
-
-// SetFrame sets the Frame field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobThroughputResponseDataItem) SetFrame(frame *float64) {
-	g.Frame = frame
-	g.require(getJobThroughputResponseDataItemFieldFrame)
-}
-
-func (g *GetJobThroughputResponseDataItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobThroughputResponseDataItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobThroughputResponseDataItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobThroughputResponseDataItem) MarshalJSON() ([]byte, error) {
-	type embed GetJobThroughputResponseDataItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobThroughputResponseDataItem) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobTimingsResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetJobTimingsResponse struct {
-	Data *GetJobTimingsResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobTimingsResponse) GetData() *GetJobTimingsResponseData {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetJobTimingsResponse) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobTimingsResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponse) SetData(data *GetJobTimingsResponseData) {
-	g.Data = data
-	g.require(getJobTimingsResponseFieldData)
-}
-
-func (g *GetJobTimingsResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobTimingsResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobTimingsResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobTimingsResponse) MarshalJSON() ([]byte, error) {
-	type embed GetJobTimingsResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobTimingsResponse) String() string {
-	if g == nil {
-		return "<nil>"
-	}
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getJobTimingsResponseDataFieldJobID           = big.NewInt(1 << 0)
-	getJobTimingsResponseDataFieldAPITotalMs      = big.NewInt(1 << 1)
-	getJobTimingsResponseDataFieldAPIPrechecksMs  = big.NewInt(1 << 2)
-	getJobTimingsResponseDataFieldAPIValidationMs = big.NewInt(1 << 3)
-	getJobTimingsResponseDataFieldAPIDbInsertMs   = big.NewInt(1 << 4)
-	getJobTimingsResponseDataFieldAPIDispatchMs   = big.NewInt(1 << 5)
-	getJobTimingsResponseDataFieldExecDownloadMs  = big.NewInt(1 << 6)
-	getJobTimingsResponseDataFieldExecExecuteMs   = big.NewInt(1 << 7)
-	getJobTimingsResponseDataFieldExecUploadMs    = big.NewInt(1 << 8)
-	getJobTimingsResponseDataFieldExecTotalMs     = big.NewInt(1 << 9)
-	getJobTimingsResponseDataFieldQueueWaitMs     = big.NewInt(1 << 10)
-	getJobTimingsResponseDataFieldConsumerTotalMs = big.NewInt(1 << 11)
-)
-
-// getJobTimingsResponseDataNullableFields maps the wire names of GetJobTimingsResponseData's nullable fields (required or optional) to their field bits.
-var getJobTimingsResponseDataNullableFields = map[string]*big.Int{
-	"apiTotalMs":      getJobTimingsResponseDataFieldAPITotalMs,
-	"apiPrechecksMs":  getJobTimingsResponseDataFieldAPIPrechecksMs,
-	"apiValidationMs": getJobTimingsResponseDataFieldAPIValidationMs,
-	"apiDbInsertMs":   getJobTimingsResponseDataFieldAPIDbInsertMs,
-	"apiDispatchMs":   getJobTimingsResponseDataFieldAPIDispatchMs,
-	"execDownloadMs":  getJobTimingsResponseDataFieldExecDownloadMs,
-	"execExecuteMs":   getJobTimingsResponseDataFieldExecExecuteMs,
-	"execUploadMs":    getJobTimingsResponseDataFieldExecUploadMs,
-	"execTotalMs":     getJobTimingsResponseDataFieldExecTotalMs,
-	"queueWaitMs":     getJobTimingsResponseDataFieldQueueWaitMs,
-	"consumerTotalMs": getJobTimingsResponseDataFieldConsumerTotalMs,
-}
-
-type GetJobTimingsResponseData struct {
-	JobID           string `json:"jobId" url:"jobId"`
-	APITotalMs      *int   `json:"apiTotalMs,omitempty" url:"apiTotalMs,omitempty"`
-	APIPrechecksMs  *int   `json:"apiPrechecksMs,omitempty" url:"apiPrechecksMs,omitempty"`
-	APIValidationMs *int   `json:"apiValidationMs,omitempty" url:"apiValidationMs,omitempty"`
-	APIDbInsertMs   *int   `json:"apiDbInsertMs,omitempty" url:"apiDbInsertMs,omitempty"`
-	APIDispatchMs   *int   `json:"apiDispatchMs,omitempty" url:"apiDispatchMs,omitempty"`
-	ExecDownloadMs  *int   `json:"execDownloadMs,omitempty" url:"execDownloadMs,omitempty"`
-	ExecExecuteMs   *int   `json:"execExecuteMs,omitempty" url:"execExecuteMs,omitempty"`
-	ExecUploadMs    *int   `json:"execUploadMs,omitempty" url:"execUploadMs,omitempty"`
-	ExecTotalMs     *int   `json:"execTotalMs,omitempty" url:"execTotalMs,omitempty"`
-	QueueWaitMs     *int   `json:"queueWaitMs,omitempty" url:"queueWaitMs,omitempty"`
-	ConsumerTotalMs *int   `json:"consumerTotalMs,omitempty" url:"consumerTotalMs,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetJobTimingsResponseData) GetJobID() string {
-	if g == nil {
-		return ""
-	}
-	return g.JobID
-}
-
-func (g *GetJobTimingsResponseData) GetAPITotalMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.APITotalMs
-}
-
-func (g *GetJobTimingsResponseData) GetAPIPrechecksMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.APIPrechecksMs
-}
-
-func (g *GetJobTimingsResponseData) GetAPIValidationMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.APIValidationMs
-}
-
-func (g *GetJobTimingsResponseData) GetAPIDbInsertMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.APIDbInsertMs
-}
-
-func (g *GetJobTimingsResponseData) GetAPIDispatchMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.APIDispatchMs
-}
-
-func (g *GetJobTimingsResponseData) GetExecDownloadMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.ExecDownloadMs
-}
-
-func (g *GetJobTimingsResponseData) GetExecExecuteMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.ExecExecuteMs
-}
-
-func (g *GetJobTimingsResponseData) GetExecUploadMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.ExecUploadMs
-}
-
-func (g *GetJobTimingsResponseData) GetExecTotalMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.ExecTotalMs
-}
-
-func (g *GetJobTimingsResponseData) GetQueueWaitMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.QueueWaitMs
-}
-
-func (g *GetJobTimingsResponseData) GetConsumerTotalMs() *int {
-	if g == nil {
-		return nil
-	}
-	return g.ConsumerTotalMs
-}
-
-func (g *GetJobTimingsResponseData) GetExtraProperties() map[string]interface{} {
-	if g == nil {
-		return nil
-	}
-	return g.extraProperties
-}
-
-func (g *GetJobTimingsResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if g.explicitFields != nil {
-		next.Set(g.explicitFields)
-	}
-	next.Or(next, field)
-	g.explicitFields = next
-}
-
-// SetJobID sets the JobID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetJobID(jobID string) {
-	g.JobID = jobID
-	g.require(getJobTimingsResponseDataFieldJobID)
-}
-
-// SetAPITotalMs sets the APITotalMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetAPITotalMs(apiTotalMs *int) {
-	g.APITotalMs = apiTotalMs
-	g.require(getJobTimingsResponseDataFieldAPITotalMs)
-}
-
-// SetAPIPrechecksMs sets the APIPrechecksMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetAPIPrechecksMs(apiPrechecksMs *int) {
-	g.APIPrechecksMs = apiPrechecksMs
-	g.require(getJobTimingsResponseDataFieldAPIPrechecksMs)
-}
-
-// SetAPIValidationMs sets the APIValidationMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetAPIValidationMs(apiValidationMs *int) {
-	g.APIValidationMs = apiValidationMs
-	g.require(getJobTimingsResponseDataFieldAPIValidationMs)
-}
-
-// SetAPIDbInsertMs sets the APIDbInsertMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetAPIDbInsertMs(apiDbInsertMs *int) {
-	g.APIDbInsertMs = apiDbInsertMs
-	g.require(getJobTimingsResponseDataFieldAPIDbInsertMs)
-}
-
-// SetAPIDispatchMs sets the APIDispatchMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetAPIDispatchMs(apiDispatchMs *int) {
-	g.APIDispatchMs = apiDispatchMs
-	g.require(getJobTimingsResponseDataFieldAPIDispatchMs)
-}
-
-// SetExecDownloadMs sets the ExecDownloadMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetExecDownloadMs(execDownloadMs *int) {
-	g.ExecDownloadMs = execDownloadMs
-	g.require(getJobTimingsResponseDataFieldExecDownloadMs)
-}
-
-// SetExecExecuteMs sets the ExecExecuteMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetExecExecuteMs(execExecuteMs *int) {
-	g.ExecExecuteMs = execExecuteMs
-	g.require(getJobTimingsResponseDataFieldExecExecuteMs)
-}
-
-// SetExecUploadMs sets the ExecUploadMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetExecUploadMs(execUploadMs *int) {
-	g.ExecUploadMs = execUploadMs
-	g.require(getJobTimingsResponseDataFieldExecUploadMs)
-}
-
-// SetExecTotalMs sets the ExecTotalMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetExecTotalMs(execTotalMs *int) {
-	g.ExecTotalMs = execTotalMs
-	g.require(getJobTimingsResponseDataFieldExecTotalMs)
-}
-
-// SetQueueWaitMs sets the QueueWaitMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetQueueWaitMs(queueWaitMs *int) {
-	g.QueueWaitMs = queueWaitMs
-	g.require(getJobTimingsResponseDataFieldQueueWaitMs)
-}
-
-// SetConsumerTotalMs sets the ConsumerTotalMs field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetJobTimingsResponseData) SetConsumerTotalMs(consumerTotalMs *int) {
-	g.ConsumerTotalMs = consumerTotalMs
-	g.require(getJobTimingsResponseDataFieldConsumerTotalMs)
-}
-
-func (g *GetJobTimingsResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetJobTimingsResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetJobTimingsResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	presentFields, err := internal.ExplicitFieldsFromJSON(data, getJobTimingsResponseDataNullableFields)
-	if err != nil {
-		return err
-	}
-	if presentFields != nil {
-		g.require(presentFields)
-	}
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetJobTimingsResponseData) MarshalJSON() ([]byte, error) {
-	type embed GetJobTimingsResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetJobTimingsResponseData) String() string {
 	if g == nil {
 		return "<nil>"
 	}
@@ -26617,178 +19551,6 @@ func (l *ListJobsResponseMeta) String() string {
 	return fmt.Sprintf("%#v", l)
 }
 
-var (
-	retryDeliveriesResponseFieldData = big.NewInt(1 << 0)
-)
-
-type RetryDeliveriesResponse struct {
-	Data *RetryDeliveriesResponseData `json:"data" url:"data"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (r *RetryDeliveriesResponse) GetData() *RetryDeliveriesResponseData {
-	if r == nil {
-		return nil
-	}
-	return r.Data
-}
-
-func (r *RetryDeliveriesResponse) GetExtraProperties() map[string]interface{} {
-	if r == nil {
-		return nil
-	}
-	return r.extraProperties
-}
-
-func (r *RetryDeliveriesResponse) require(field *big.Int) {
-	next := new(big.Int)
-	if r.explicitFields != nil {
-		next.Set(r.explicitFields)
-	}
-	next.Or(next, field)
-	r.explicitFields = next
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (r *RetryDeliveriesResponse) SetData(data *RetryDeliveriesResponseData) {
-	r.Data = data
-	r.require(retryDeliveriesResponseFieldData)
-}
-
-func (r *RetryDeliveriesResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler RetryDeliveriesResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*r = RetryDeliveriesResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *r)
-	if err != nil {
-		return err
-	}
-	r.extraProperties = extraProperties
-	r.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (r *RetryDeliveriesResponse) MarshalJSON() ([]byte, error) {
-	type embed RetryDeliveriesResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*r),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, r.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (r *RetryDeliveriesResponse) String() string {
-	if r == nil {
-		return "<nil>"
-	}
-	if len(r.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(r.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(r); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", r)
-}
-
-var (
-	retryDeliveriesResponseDataFieldRetried = big.NewInt(1 << 0)
-)
-
-type RetryDeliveriesResponseData struct {
-	Retried int `json:"retried" url:"retried"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (r *RetryDeliveriesResponseData) GetRetried() int {
-	if r == nil {
-		return 0
-	}
-	return r.Retried
-}
-
-func (r *RetryDeliveriesResponseData) GetExtraProperties() map[string]interface{} {
-	if r == nil {
-		return nil
-	}
-	return r.extraProperties
-}
-
-func (r *RetryDeliveriesResponseData) require(field *big.Int) {
-	next := new(big.Int)
-	if r.explicitFields != nil {
-		next.Set(r.explicitFields)
-	}
-	next.Or(next, field)
-	r.explicitFields = next
-}
-
-// SetRetried sets the Retried field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (r *RetryDeliveriesResponseData) SetRetried(retried int) {
-	r.Retried = retried
-	r.require(retryDeliveriesResponseDataFieldRetried)
-}
-
-func (r *RetryDeliveriesResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler RetryDeliveriesResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*r = RetryDeliveriesResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *r)
-	if err != nil {
-		return err
-	}
-	r.extraProperties = extraProperties
-	r.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (r *RetryDeliveriesResponseData) MarshalJSON() ([]byte, error) {
-	type embed RetryDeliveriesResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*r),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, r.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (r *RetryDeliveriesResponseData) String() string {
-	if r == nil {
-		return "<nil>"
-	}
-	if len(r.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(r.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(r); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", r)
-}
-
 type SubmitJobRequest struct {
 	SubmitCaptionBurnJob     *SubmitCaptionBurnJob
 	SubmitCaptionsAnimateJob *SubmitCaptionsAnimateJob
@@ -27229,357 +19991,95 @@ func (s *SubmitJobResponse) String() string {
 }
 
 type SubmitJobResponseData struct {
-	SubmitJobResponseDataURL        *SubmitJobResponseDataURL
-	SubmitJobResponseDataIdempotent *SubmitJobResponseDataIdempotent
+	JobCompletedOnSubmit *JobCompletedOnSubmit
+	JobReplayed          *JobReplayed
 
 	typ string
 }
 
-func (s *SubmitJobResponseData) GetSubmitJobResponseDataURL() *SubmitJobResponseDataURL {
+func (s *SubmitJobResponseData) GetJobCompletedOnSubmit() *JobCompletedOnSubmit {
 	if s == nil {
 		return nil
 	}
-	return s.SubmitJobResponseDataURL
+	return s.JobCompletedOnSubmit
 }
 
-func (s *SubmitJobResponseData) GetSubmitJobResponseDataIdempotent() *SubmitJobResponseDataIdempotent {
+func (s *SubmitJobResponseData) GetJobReplayed() *JobReplayed {
 	if s == nil {
 		return nil
 	}
-	return s.SubmitJobResponseDataIdempotent
+	return s.JobReplayed
 }
 
 func (s *SubmitJobResponseData) UnmarshalJSON(data []byte) error {
 	if internal.MatchesObjectKeys(data, []string{"id", "status", "url"}, []string{"id", "status"}) {
-		valueSubmitJobResponseDataURL := new(SubmitJobResponseDataURL)
-		if err := json.Unmarshal(data, &valueSubmitJobResponseDataURL); err == nil {
-			s.typ = "SubmitJobResponseDataURL"
-			s.SubmitJobResponseDataURL = valueSubmitJobResponseDataURL
+		valueJobCompletedOnSubmit := new(JobCompletedOnSubmit)
+		if err := json.Unmarshal(data, &valueJobCompletedOnSubmit); err == nil {
+			s.typ = "JobCompletedOnSubmit"
+			s.JobCompletedOnSubmit = valueJobCompletedOnSubmit
 			return nil
 		}
 	}
 	if internal.MatchesObjectKeys(data, []string{"id", "status", "idempotent"}, []string{"id", "status", "idempotent"}) {
-		valueSubmitJobResponseDataIdempotent := new(SubmitJobResponseDataIdempotent)
-		if err := json.Unmarshal(data, &valueSubmitJobResponseDataIdempotent); err == nil {
-			s.typ = "SubmitJobResponseDataIdempotent"
-			s.SubmitJobResponseDataIdempotent = valueSubmitJobResponseDataIdempotent
+		valueJobReplayed := new(JobReplayed)
+		if err := json.Unmarshal(data, &valueJobReplayed); err == nil {
+			s.typ = "JobReplayed"
+			s.JobReplayed = valueJobReplayed
 			return nil
 		}
 	}
 	if internal.HasObjectKeys(data, []string{"id", "status"}) {
-		valueSubmitJobResponseDataURL := new(SubmitJobResponseDataURL)
-		if err := json.Unmarshal(data, &valueSubmitJobResponseDataURL); err == nil {
-			s.typ = "SubmitJobResponseDataURL"
-			s.SubmitJobResponseDataURL = valueSubmitJobResponseDataURL
+		valueJobCompletedOnSubmit := new(JobCompletedOnSubmit)
+		if err := json.Unmarshal(data, &valueJobCompletedOnSubmit); err == nil {
+			s.typ = "JobCompletedOnSubmit"
+			s.JobCompletedOnSubmit = valueJobCompletedOnSubmit
 			return nil
 		}
 	}
 	if internal.HasObjectKeys(data, []string{"id", "status", "idempotent"}) {
-		valueSubmitJobResponseDataIdempotent := new(SubmitJobResponseDataIdempotent)
-		if err := json.Unmarshal(data, &valueSubmitJobResponseDataIdempotent); err == nil {
-			s.typ = "SubmitJobResponseDataIdempotent"
-			s.SubmitJobResponseDataIdempotent = valueSubmitJobResponseDataIdempotent
+		valueJobReplayed := new(JobReplayed)
+		if err := json.Unmarshal(data, &valueJobReplayed); err == nil {
+			s.typ = "JobReplayed"
+			s.JobReplayed = valueJobReplayed
 			return nil
 		}
 	}
-	valueSubmitJobResponseDataURL := new(SubmitJobResponseDataURL)
-	if err := json.Unmarshal(data, &valueSubmitJobResponseDataURL); err == nil {
-		s.typ = "SubmitJobResponseDataURL"
-		s.SubmitJobResponseDataURL = valueSubmitJobResponseDataURL
+	valueJobCompletedOnSubmit := new(JobCompletedOnSubmit)
+	if err := json.Unmarshal(data, &valueJobCompletedOnSubmit); err == nil {
+		s.typ = "JobCompletedOnSubmit"
+		s.JobCompletedOnSubmit = valueJobCompletedOnSubmit
 		return nil
 	}
-	valueSubmitJobResponseDataIdempotent := new(SubmitJobResponseDataIdempotent)
-	if err := json.Unmarshal(data, &valueSubmitJobResponseDataIdempotent); err == nil {
-		s.typ = "SubmitJobResponseDataIdempotent"
-		s.SubmitJobResponseDataIdempotent = valueSubmitJobResponseDataIdempotent
+	valueJobReplayed := new(JobReplayed)
+	if err := json.Unmarshal(data, &valueJobReplayed); err == nil {
+		s.typ = "JobReplayed"
+		s.JobReplayed = valueJobReplayed
 		return nil
 	}
 	return fmt.Errorf("%s cannot be deserialized as a %T", data, s)
 }
 
 func (s SubmitJobResponseData) MarshalJSON() ([]byte, error) {
-	if s.typ == "SubmitJobResponseDataURL" || s.SubmitJobResponseDataURL != nil {
-		return json.Marshal(s.SubmitJobResponseDataURL)
+	if s.typ == "JobCompletedOnSubmit" || s.JobCompletedOnSubmit != nil {
+		return json.Marshal(s.JobCompletedOnSubmit)
 	}
-	if s.typ == "SubmitJobResponseDataIdempotent" || s.SubmitJobResponseDataIdempotent != nil {
-		return json.Marshal(s.SubmitJobResponseDataIdempotent)
+	if s.typ == "JobReplayed" || s.JobReplayed != nil {
+		return json.Marshal(s.JobReplayed)
 	}
 	return nil, fmt.Errorf("type %T does not include a non-empty union type", s)
 }
 
 type SubmitJobResponseDataVisitor interface {
-	VisitSubmitJobResponseDataURL(*SubmitJobResponseDataURL) error
-	VisitSubmitJobResponseDataIdempotent(*SubmitJobResponseDataIdempotent) error
+	VisitJobCompletedOnSubmit(*JobCompletedOnSubmit) error
+	VisitJobReplayed(*JobReplayed) error
 }
 
 func (s *SubmitJobResponseData) Accept(visitor SubmitJobResponseDataVisitor) error {
-	if s.typ == "SubmitJobResponseDataURL" || s.SubmitJobResponseDataURL != nil {
-		return visitor.VisitSubmitJobResponseDataURL(s.SubmitJobResponseDataURL)
+	if s.typ == "JobCompletedOnSubmit" || s.JobCompletedOnSubmit != nil {
+		return visitor.VisitJobCompletedOnSubmit(s.JobCompletedOnSubmit)
 	}
-	if s.typ == "SubmitJobResponseDataIdempotent" || s.SubmitJobResponseDataIdempotent != nil {
-		return visitor.VisitSubmitJobResponseDataIdempotent(s.SubmitJobResponseDataIdempotent)
+	if s.typ == "JobReplayed" || s.JobReplayed != nil {
+		return visitor.VisitJobReplayed(s.JobReplayed)
 	}
 	return fmt.Errorf("type %T does not include a non-empty union type", s)
-}
-
-var (
-	submitJobResponseDataIdempotentFieldID         = big.NewInt(1 << 0)
-	submitJobResponseDataIdempotentFieldStatus     = big.NewInt(1 << 1)
-	submitJobResponseDataIdempotentFieldIdempotent = big.NewInt(1 << 2)
-)
-
-type SubmitJobResponseDataIdempotent struct {
-	// Job ID of the earlier submit
-	ID string `json:"id" url:"id"`
-	// That job's current status
-	Status string `json:"status" url:"status"`
-	// This submit replayed an earlier one instead of creating a job
-	Idempotent bool `json:"idempotent" url:"idempotent"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (s *SubmitJobResponseDataIdempotent) GetID() string {
-	if s == nil {
-		return ""
-	}
-	return s.ID
-}
-
-func (s *SubmitJobResponseDataIdempotent) GetStatus() string {
-	if s == nil {
-		return ""
-	}
-	return s.Status
-}
-
-func (s *SubmitJobResponseDataIdempotent) GetIdempotent() bool {
-	if s == nil {
-		return false
-	}
-	return s.Idempotent
-}
-
-func (s *SubmitJobResponseDataIdempotent) GetExtraProperties() map[string]interface{} {
-	if s == nil {
-		return nil
-	}
-	return s.extraProperties
-}
-
-func (s *SubmitJobResponseDataIdempotent) require(field *big.Int) {
-	next := new(big.Int)
-	if s.explicitFields != nil {
-		next.Set(s.explicitFields)
-	}
-	next.Or(next, field)
-	s.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataIdempotent) SetID(id string) {
-	s.ID = id
-	s.require(submitJobResponseDataIdempotentFieldID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataIdempotent) SetStatus(status string) {
-	s.Status = status
-	s.require(submitJobResponseDataIdempotentFieldStatus)
-}
-
-// SetIdempotent sets the Idempotent field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataIdempotent) SetIdempotent(idempotent bool) {
-	s.Idempotent = idempotent
-	s.require(submitJobResponseDataIdempotentFieldIdempotent)
-}
-
-func (s *SubmitJobResponseDataIdempotent) UnmarshalJSON(data []byte) error {
-	type unmarshaler SubmitJobResponseDataIdempotent
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*s = SubmitJobResponseDataIdempotent(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *s)
-	if err != nil {
-		return err
-	}
-	s.extraProperties = extraProperties
-	s.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (s *SubmitJobResponseDataIdempotent) MarshalJSON() ([]byte, error) {
-	type embed SubmitJobResponseDataIdempotent
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*s),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (s *SubmitJobResponseDataIdempotent) String() string {
-	if s == nil {
-		return "<nil>"
-	}
-	if len(s.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(s); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", s)
-}
-
-var (
-	submitJobResponseDataURLFieldID     = big.NewInt(1 << 0)
-	submitJobResponseDataURLFieldStatus = big.NewInt(1 << 1)
-	submitJobResponseDataURLFieldURL    = big.NewInt(1 << 2)
-)
-
-type SubmitJobResponseDataURL struct {
-	// Job ID
-	ID string `json:"id" url:"id"`
-	// Completed synchronously
-	Status SubmitJobResponseDataURLStatus `json:"status" url:"status"`
-	// Data URL of the result
-	URL *string `json:"url,omitempty" url:"url,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (s *SubmitJobResponseDataURL) GetID() string {
-	if s == nil {
-		return ""
-	}
-	return s.ID
-}
-
-func (s *SubmitJobResponseDataURL) GetStatus() SubmitJobResponseDataURLStatus {
-	if s == nil {
-		return ""
-	}
-	return s.Status
-}
-
-func (s *SubmitJobResponseDataURL) GetURL() *string {
-	if s == nil {
-		return nil
-	}
-	return s.URL
-}
-
-func (s *SubmitJobResponseDataURL) GetExtraProperties() map[string]interface{} {
-	if s == nil {
-		return nil
-	}
-	return s.extraProperties
-}
-
-func (s *SubmitJobResponseDataURL) require(field *big.Int) {
-	next := new(big.Int)
-	if s.explicitFields != nil {
-		next.Set(s.explicitFields)
-	}
-	next.Or(next, field)
-	s.explicitFields = next
-}
-
-// SetID sets the ID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataURL) SetID(id string) {
-	s.ID = id
-	s.require(submitJobResponseDataURLFieldID)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataURL) SetStatus(status SubmitJobResponseDataURLStatus) {
-	s.Status = status
-	s.require(submitJobResponseDataURLFieldStatus)
-}
-
-// SetURL sets the URL field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SubmitJobResponseDataURL) SetURL(url *string) {
-	s.URL = url
-	s.require(submitJobResponseDataURLFieldURL)
-}
-
-func (s *SubmitJobResponseDataURL) UnmarshalJSON(data []byte) error {
-	type unmarshaler SubmitJobResponseDataURL
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*s = SubmitJobResponseDataURL(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *s)
-	if err != nil {
-		return err
-	}
-	s.extraProperties = extraProperties
-	s.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (s *SubmitJobResponseDataURL) MarshalJSON() ([]byte, error) {
-	type embed SubmitJobResponseDataURL
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*s),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (s *SubmitJobResponseDataURL) String() string {
-	if s == nil {
-		return "<nil>"
-	}
-	if len(s.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(s); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", s)
-}
-
-// Completed synchronously
-type SubmitJobResponseDataURLStatus string
-
-const (
-	SubmitJobResponseDataURLStatusComplete SubmitJobResponseDataURLStatus = "complete"
-)
-
-func NewSubmitJobResponseDataURLStatusFromString(s string) (SubmitJobResponseDataURLStatus, error) {
-	switch s {
-	case "complete":
-		return SubmitJobResponseDataURLStatusComplete, nil
-	}
-	var t SubmitJobResponseDataURLStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (s SubmitJobResponseDataURLStatus) Ptr() *SubmitJobResponseDataURLStatus {
-	return &s
 }

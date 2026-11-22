@@ -1,0 +1,30 @@
+name: examples-live
+# Runs every example against staging: by hand, every Monday, and on the release PR,
+# so a release is checked live before merging it tags the version.
+# Staging jobs run and are billed: seven short ones per run.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    branches: [main]
+concurrency:
+  group: examples-live
+permissions:
+  contents: read
+jobs:
+  live:
+    # On pull requests, only the release PR. Other PRs run the examples in mock mode (ci.yml).
+    if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: examples/go.sum
+      - name: Examples (live mode)
+        env:
+          RENDOBAR_API_KEY: ${{ secrets.RENDOBAR_STAGING_API_KEY }}
+          RENDOBAR_API_URL: ${{ secrets.RENDOBAR_STAGING_API_URL }}
+        run: ./examples/run.sh --mode live

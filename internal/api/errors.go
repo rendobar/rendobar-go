@@ -7,37 +7,6 @@ import (
 	core "github.com/rendobar/rendobar-go/internal/api/core"
 )
 
-// Payment service unavailable
-type BadGatewayError struct {
-	*core.APIError
-	Body *ErrorResponse
-}
-
-func (b *BadGatewayError) UnmarshalJSON(data []byte) error {
-	var body *ErrorResponse
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	b.StatusCode = 502
-	b.Body = body
-	return nil
-}
-
-func (b *BadGatewayError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(b.Body)
-}
-
-func (b *BadGatewayError) Unwrap() error {
-	return b.APIError
-}
-
-func (b *BadGatewayError) GetBody() *ErrorResponse {
-	if b == nil {
-		return nil
-	}
-	return b.Body
-}
-
 // Validation error
 type BadRequestError struct {
 	*core.APIError
@@ -69,7 +38,7 @@ func (b *BadRequestError) GetBody() *ErrorResponse {
 	return b.Body
 }
 
-// Job cannot be cancelled in current status
+// The idempotency key is already bound to another request, or to a job that failed with a retryable error. `error.details.jobId` names that job.
 type ConflictError struct {
 	*core.APIError
 	Body *ErrorResponse
@@ -94,37 +63,6 @@ func (c *ConflictError) Unwrap() error {
 }
 
 func (c *ConflictError) GetBody() *ErrorResponse {
-	if c == nil {
-		return nil
-	}
-	return c.Body
-}
-
-// File exceeds the plan's upload size limit
-type ContentTooLargeError struct {
-	*core.APIError
-	Body *ErrorResponse
-}
-
-func (c *ContentTooLargeError) UnmarshalJSON(data []byte) error {
-	var body *ErrorResponse
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	c.StatusCode = 413
-	c.Body = body
-	return nil
-}
-
-func (c *ContentTooLargeError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.Body)
-}
-
-func (c *ContentTooLargeError) Unwrap() error {
-	return c.APIError
-}
-
-func (c *ContentTooLargeError) GetBody() *ErrorResponse {
 	if c == nil {
 		return nil
 	}
@@ -162,38 +100,7 @@ func (f *ForbiddenError) GetBody() *ErrorResponse {
 	return f.Body
 }
 
-// Session expired
-type GoneError struct {
-	*core.APIError
-	Body *ErrorResponse
-}
-
-func (g *GoneError) UnmarshalJSON(data []byte) error {
-	var body *ErrorResponse
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	g.StatusCode = 410
-	g.Body = body
-	return nil
-}
-
-func (g *GoneError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(g.Body)
-}
-
-func (g *GoneError) Unwrap() error {
-	return g.APIError
-}
-
-func (g *GoneError) GetBody() *ErrorResponse {
-	if g == nil {
-		return nil
-	}
-	return g.Body
-}
-
-// Checkout creation failed
+// Plan not configured or checkout creation failed
 type InternalServerError struct {
 	*core.APIError
 	Body *ErrorResponse
@@ -255,37 +162,6 @@ func (n *NotFoundError) GetBody() *ErrorResponse {
 	return n.Body
 }
 
-// Not implemented
-type NotImplementedError struct {
-	*core.APIError
-	Body *ErrorResponse
-}
-
-func (n *NotImplementedError) UnmarshalJSON(data []byte) error {
-	var body *ErrorResponse
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	n.StatusCode = 501
-	n.Body = body
-	return nil
-}
-
-func (n *NotImplementedError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(n.Body)
-}
-
-func (n *NotImplementedError) Unwrap() error {
-	return n.APIError
-}
-
-func (n *NotImplementedError) GetBody() *ErrorResponse {
-	if n == nil {
-		return nil
-	}
-	return n.Body
-}
-
 // Insufficient credits
 type PaymentRequiredError struct {
 	*core.APIError
@@ -315,37 +191,6 @@ func (p *PaymentRequiredError) GetBody() *ErrorResponse {
 		return nil
 	}
 	return p.Body
-}
-
-// One-click AWS connect is not set up on this deployment
-type ServiceUnavailableError struct {
-	*core.APIError
-	Body *ErrorResponse
-}
-
-func (s *ServiceUnavailableError) UnmarshalJSON(data []byte) error {
-	var body *ErrorResponse
-	if err := json.Unmarshal(data, &body); err != nil {
-		return err
-	}
-	s.StatusCode = 503
-	s.Body = body
-	return nil
-}
-
-func (s *ServiceUnavailableError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.Body)
-}
-
-func (s *ServiceUnavailableError) Unwrap() error {
-	return s.APIError
-}
-
-func (s *ServiceUnavailableError) GetBody() *ErrorResponse {
-	if s == nil {
-		return nil
-	}
-	return s.Body
 }
 
 // Rate limited

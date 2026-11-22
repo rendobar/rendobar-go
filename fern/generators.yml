@@ -3,6 +3,19 @@
 api:
   specs:
     - openapi: ./openapi.json
+      # Generate only what the root package calls, so the module does not ship
+      # clients for endpoints nobody can reach. Add an endpoint here with its public method.
+      settings:
+        filter:
+          endpoints:
+            - GET /jobs/types
+            - GET /jobs/types/{type}/schema
+            - POST /jobs
+            - GET /jobs
+            - GET /jobs/{id}
+            - POST /jobs/{id}/cancel
+            - GET /account/capabilities
+            - POST /billing/checkout/pro
 groups:
   go:
     generators:

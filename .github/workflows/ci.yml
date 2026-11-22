@@ -39,8 +39,19 @@ jobs:
           done
           echo "The conformance mock did not come up:"; cat mock.log; exit 1
       - run: go vet ./...
+      - name: Generated types match fern/openapi.json
+        run: go generate ./... && git diff --exit-code -- spec_gen.go webhooks/events_gen.go
+      - name: staticcheck (hand-written packages; internal/api is generated)
+        if: matrix.go == 'stable'
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 . ./webhooks ./realtime ./internal/cmd/...
       - name: Tests (conformance scenarios, webhook vectors, examples)
+        # A skipped conformance scenario fails CI: the mock from rendobar/openapi has every route.
+        env:
+          RENDOBAR_CONFORMANCE_REQUIRE: "1"
         run: go test -count=1 ./...
+      - name: Tests on a 32-bit platform (386)
+        if: matrix.go == 'stable'
+        run: GOARCH=386 go test -count=1 . ./webhooks ./realtime
       - name: Breaking-change check against the last release
         if: matrix.go == 'stable'
         run: |
@@ -54,3 +65,34 @@ jobs:
       - name: Public-surface deny-list
         if: matrix.go == 'stable'
         run: python3 -I .openapi/scripts/deny_list.py
+  examples:
+    # Every example in examples/, against the conformance mock. A change that breaks one cannot merge.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: rendobar/openapi
+          path: .openapi
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: examples/go.sum
+      - name: Start the conformance mock
+        run: |
+          python3 -I .openapi/conformance/mock_server.py fern/openapi.json 4100 requests.jsonl > mock.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -X POST http://127.0.0.1:4100/__reset; then echo "mock is up"; exit 0; fi
+            sleep 0.5
+          done
+          echo "The conformance mock did not come up:"; cat mock.log; exit 1
+      - name: go.mod and go.sum are tidy
+        working-directory: examples
+        run: go mod tidy -diff
+      - name: staticcheck
+        working-directory: examples
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - name: Examples (mock mode)
+        env:
+          RENDOBAR_WEBHOOK_VECTORS: ${{ github.workspace }}/.openapi/conformance/webhook-vectors.json
+        run: ./examples/run.sh --mode mock

@@ -75,14 +75,14 @@ func TestC02GetUnwrapsTheJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Status == "" {
+	if job.Status() == "" {
 		t.Fatal("no status")
 	}
 }
 
 func TestC03CreateReturnsTheJobID(t *testing.T) {
 	reset(t, "")
-	created, err := client().Jobs.Create(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "https://x/a.mp4"}})
+	created, err := client().Jobs.Create(context.Background(), CreateParams{Params: FfprobeParams{Command: "https://x/a.mp4"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestC05TypedNotFound(t *testing.T) {
 	reset(t, "")
 	_, err := client().Jobs.Get(context.Background(), "job_404")
 	var apiErr *Error
-	if !errors.As(err, &apiErr) || apiErr.Code != "NOT_FOUND" || apiErr.StatusCode != 404 || !IsNotFound(err) {
+	if !errors.As(err, &apiErr) || apiErr.Code != "NOT_FOUND" || apiErr.StatusCode != 404 {
 		t.Fatalf("got %v", err)
 	}
 }
@@ -124,7 +124,7 @@ func TestC06RetriesAfterRetryAfter(t *testing.T) {
 	if d := time.Since(started); d < 900*time.Millisecond || d > 3*time.Second {
 		t.Fatalf("waited %v, want about 1s", d)
 	}
-	if job.Status == "" {
+	if job.Status() == "" {
 		t.Fatal("no job")
 	}
 }
@@ -156,19 +156,21 @@ func TestC09UnknownStatusDoesNotFail(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Status != "paused" {
-		t.Fatalf("status %q", job.Status)
+	if job.Status() != "paused" {
+		t.Fatalf("status %q", job.Status())
 	}
 }
 
 func TestC10DownloadReturnsTheBytes(t *testing.T) {
 	reset(t, "")
-	b, err := client().Jobs.Download(context.Background(), "job_x")
+	d, err := client().Jobs.Download(context.Background(), "job_x")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(b) != 1024 {
-		t.Fatalf("%d bytes", len(b))
+	defer d.Body.Close()
+	b, err := io.ReadAll(d.Body)
+	if err != nil || len(b) != 1024 || d.ContentType != "video/mp4" {
+		t.Fatalf("%d bytes, %q, %v", len(b), d.ContentType, err)
 	}
 }
 
@@ -202,7 +204,7 @@ func TestC13RetriedSubmitCreatesOneJob(t *testing.T) {
 	reset(t, "?lose_submit=1")
 	rec := &recorder{}
 	c := client(WithHTTPClient(&http.Client{Transport: rec}))
-	if _, err := c.Jobs.Create(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "https://x/a.mp4"}}); err != nil {
+	if _, err := c.Jobs.Create(context.Background(), CreateParams{Params: FfprobeParams{Command: "https://x/a.mp4"}}); err != nil {
 		t.Fatal(err)
 	}
 	var keys []string
@@ -246,6 +248,7 @@ func TestC14DeprecatedEndpointReportedOnce(t *testing.T) {
 	}
 	// No public Go method maps to a deprecated route, so call one through the core.
 	for i := 0; i < 2; i++ {
+		//lint:ignore SA1019 C14 needs a deprecated route, and this is the one the core keeps.
 		_, _ = c.core.Billing.CreateProCheckout(context.Background())
 	}
 	if len(notices) != 1 || notices[0].Path != "/billing/checkout/pro" || notices[0].DeprecatedAt.Format("2006-01-02") != "2026-10-17" {
@@ -269,6 +272,7 @@ func TestC15ReadsTheKeyFromTheEnvironment(t *testing.T) {
 func TestDeprecationHandlerThatPanicsDoesNotBreakTheCall(t *testing.T) {
 	reset(t, "")
 	c := client(WithDeprecationHandler(func(DeprecationNotice) { panic("logger down") }))
+	//lint:ignore SA1019 the test needs a route that answers with a Deprecation header.
 	if _, err := c.core.Billing.CreateProCheckout(context.Background()); err != nil {
 		var apiErr *Error
 		if errors.As(fromGenerated(err), &apiErr) {
@@ -281,12 +285,12 @@ func TestDeprecationHandlerThatPanicsDoesNotBreakTheCall(t *testing.T) {
 func TestC16RunCompletes(t *testing.T) {
 	reset(t, "")
 	var seen []string
-	job, err := client().Jobs.Run(context.Background(), CreateParams{Type: "ffprobe", Params: map[string]any{"command": "https://x/a.mp4"}},
-		&WaitOptions{Interval: 20 * time.Millisecond, OnProgress: func(j *Job) { seen = append(seen, j.Status) }})
+	job, err := client().Jobs.Run(context.Background(), CreateParams{Params: FfprobeParams{Command: "https://x/a.mp4"}},
+		&WaitOptions{Interval: 20 * time.Millisecond, OnProgress: func(j *Job) { seen = append(seen, string(j.Status())) }})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Status != "complete" || job.Complete == nil || job.Complete.Output == nil || job.Complete.Output.File == nil || job.Complete.Output.File.URL == "" {
+	if job.Status() != StatusComplete || job.Complete == nil || job.Complete.Output.File == nil || job.Complete.Output.File.URL == "" {
 		t.Fatalf("job %+v", job)
 	}
 	if strings.Join(seen, ",") != "running,complete" {
@@ -300,7 +304,7 @@ func TestC17WaitOnAFailedJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if job.Status != "failed" || job.Failed == nil || job.Failed.Error == nil || job.Failed.Error.Code == "" {
+	if job.Status() != StatusFailed || job.Failed == nil || job.Failed.Error.Code == "" {
 		t.Fatalf("job %+v", job)
 	}
 	failed := &JobFailedError{Job: job}
