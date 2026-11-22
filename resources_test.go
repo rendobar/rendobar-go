@@ -1,7 +1,7 @@
 package rendobar
 
-// The resource methods beyond jobs: each sends the method, path, query and
-// body the spec names, and reads the response the spec describes.
+// The resource methods: each sends the method, path, query and body the spec
+// names, and reads the response the spec describes.
 
 import (
 	"context"
@@ -65,16 +65,76 @@ func sortedQuery(raw string) string {
 	return q.Encode()
 }
 
-func TestEveryResourceMethodSendsAndReads(t *testing.T) {
+// resourceCall is one call of a public method: the response that answers it,
+// the request it must send, and the call itself, which checks what it read on t.
+type resourceCall struct {
+	name   string
+	status int
+	resp   string
+	want   sent
+	run    func(c *Client) error
+}
+
+// resourceCalls calls every public method that sends one request.
+func resourceCalls(t *testing.T) []resourceCall {
 	ctx := context.Background()
-	for _, tc := range []struct {
-		name   string
-		status int
-		resp   string
-		want   sent
-		run    func(c *Client) error
-	}{
+	return []resourceCall{
 		// Jobs
+		{"Jobs.Create", 201, `{"data":{"id":"job_1","status":"waiting"}}`,
+			sent{"POST", "/jobs", "", `{"type":"ffprobe","params":{"command":"https://x.test/a.mp4"},"idempotencyKey":"key_1"}`}, func(c *Client) error {
+				cr, err := c.Jobs.Create(ctx, CreateParams{Params: FfprobeParams{Command: "https://x.test/a.mp4"}, IdempotencyKey: "key_1"})
+				if err == nil && (cr.ID != "job_1" || cr.Status != StatusWaiting || cr.Replayed) {
+					t.Errorf("created %+v", cr)
+				}
+				return err
+			}},
+		{"Jobs.Get", 200, `{"data":{"id":"job_1","type":"ffprobe","status":"running"}}`,
+			sent{"GET", "/jobs/job_1", "", ""}, func(c *Client) error {
+				j, err := c.Jobs.Get(ctx, "job_1")
+				if err == nil && (j.ID() != "job_1" || j.Running == nil) {
+					t.Errorf("job %+v", j)
+				}
+				return err
+			}},
+		{"Jobs.List", 200, `{"data":[{"id":"job_1","type":"ffprobe","status":"failed"}],"meta":{"total":1,"limit":10,"offset":0}}`,
+			sent{"GET", "/jobs", "limit=10&status=failed", ""}, func(c *Client) error {
+				p, err := c.Jobs.List(ctx, ListParams{Status: StatusFailed, Limit: 10})
+				if err == nil && (len(p.Jobs) != 1 || p.Jobs[0].Status() != StatusFailed || p.Total != 1) {
+					t.Errorf("page %+v", p)
+				}
+				return err
+			}},
+		{"Jobs.Cancel", 200, `{"data":{"id":"job_1","status":"cancelled"}}`,
+			sent{"POST", "/jobs/job_1/cancel", "", ""}, func(c *Client) error { return c.Jobs.Cancel(ctx, "job_1") }},
+		{"Jobs.Download", 200, `abc`,
+			sent{"GET", "/jobs/job_1/download", "", ""}, func(c *Client) error {
+				d, err := c.Jobs.Download(ctx, "job_1")
+				if err != nil {
+					return err
+				}
+				defer d.Body.Close()
+				b, err := io.ReadAll(d.Body)
+				if err == nil && string(b) != "abc" {
+					t.Errorf("body %q", b)
+				}
+				return err
+			}},
+		{"Jobs.Types", 200, `{"data":[{"type":"ffprobe","tag":"media","summary":"Probe a file"}]}`,
+			sent{"GET", "/jobs/types", "", ""}, func(c *Client) error {
+				ts, err := c.Jobs.Types(ctx)
+				if err == nil && (len(ts) != 1 || ts[0].Type != JobTypeFfprobe) {
+					t.Errorf("types %+v", ts)
+				}
+				return err
+			}},
+		{"Jobs.Schema", 200, `{"data":{"type":"ffprobe","fields":[],"inputs":{"fields":[]},"jsonSchema":{}}}`,
+			sent{"GET", "/jobs/types/ffprobe/schema", "", ""}, func(c *Client) error {
+				s, err := c.Jobs.Schema(ctx, JobTypeFfprobe)
+				if err == nil && s.Type != JobTypeFfprobe {
+					t.Errorf("schema %+v", s)
+				}
+				return err
+			}},
 		{"Jobs.Logs", 200, `{"data":[{"timestamp":1763700000000,"level":"info","event":"step.done","message":"ok","durationMs":3000000000,"meta":{"k":1}}]}`,
 			sent{"GET", "/jobs/job_1/logs", "", ""}, func(c *Client) error {
 				logs, err := c.Jobs.Logs(ctx, "job_1")
@@ -515,6 +575,16 @@ func TestEveryResourceMethodSendsAndReads(t *testing.T) {
 		{"Orgs.Invitations.Revoke", 200, `{"data":{"revoked":true}}`,
 			sent{"DELETE", "/orgs/current/invitations/inv_1", "", ""}, func(c *Client) error { return c.Orgs.Invitations.Revoke(ctx, "inv_1") }},
 
+		// Account
+		{"Account.Capabilities", 200, `{"data":{"plan":{"slug":"pro","name":"Pro"},"limits":{},"features":{}}}`,
+			sent{"GET", "/account/capabilities", "", ""}, func(c *Client) error {
+				a, err := c.Account.Capabilities(ctx)
+				if err == nil && a.Plan.Slug != "pro" {
+					t.Errorf("capabilities %+v", a)
+				}
+				return err
+			}},
+
 		// Compose
 		{"Compose.Effects", 200, `{"data":{"effects":[{"type":"blur","group":"stylize","medium":"picture","summary":"Blur","params":{"radius":{"kind":"number","description":"px","min":0,"max":100,"default":4,"unit":"px","keyframes":true}},"required":[]}]}}`,
 			sent{"GET", "/compose/effects", "", ""}, func(c *Client) error {
@@ -602,7 +672,11 @@ func TestEveryResourceMethodSendsAndReads(t *testing.T) {
 				}
 				return err
 			}},
-	} {
+	}
+}
+
+func TestEveryResourceMethodSendsAndReads(t *testing.T) {
+	for _, tc := range resourceCalls(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, got, hits := recordingServer(t, tc.status, tc.resp)
 			if err := tc.run(c); err != nil {
