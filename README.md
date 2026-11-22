@@ -268,6 +268,11 @@ rb := rendobar.New(
 - `WithApp` names your application in requests, 1 to 32 letters, digits or `. _ + -`. Another name makes every call return an `INVALID_ARGUMENT` error.
 - `WithDeprecationHandler` is called once per deprecated endpoint you use. The default logs to stderr.
 
+## Examples
+
+[`examples/`](examples) has small programs that use the SDK the way your code would: a quickstart, a
+trim and download, a batch worker, a webhook receiver and an account read.
+
 ## Support policy
 
 This module supports Go 1.23 and newer, as its `go.mod` states. CI tests Go 1.23 and the two newest Go releases. It runs the shared Rendobar conformance scenarios from [rendobar/openapi](https://github.com/rendobar/openapi).

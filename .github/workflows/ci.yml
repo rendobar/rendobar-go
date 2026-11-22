@@ -66,3 +66,37 @@ jobs:
       - name: Public-surface deny-list
         if: matrix.go == 'stable'
         run: python3 -I .openapi/scripts/deny_list.py
+  examples:
+    # Every example in examples/, against the conformance mock. A change that breaks one cannot merge.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: rendobar/openapi
+          # The examples need the mock from rendobar/openapi PR #2 (409 on a reused key,
+          # a running job before a complete one). Drop this ref once that PR merges.
+          ref: feat/parity-scenarios
+          path: .openapi
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: examples/go.sum
+      - name: Start the conformance mock
+        run: |
+          python3 -I .openapi/conformance/mock_server.py fern/openapi.json 4100 requests.jsonl > mock.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -X POST http://127.0.0.1:4100/__reset; then echo "mock is up"; exit 0; fi
+            sleep 0.5
+          done
+          echo "The conformance mock did not come up:"; cat mock.log; exit 1
+      - name: go.mod and go.sum are tidy
+        working-directory: examples
+        run: go mod tidy -diff
+      - name: staticcheck
+        working-directory: examples
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
+      - name: Examples (mock mode)
+        env:
+          RENDOBAR_WEBHOOK_VECTORS: ${{ github.workspace }}/.openapi/conformance/webhook-vectors.json
+        run: ./examples/run.sh --mode mock

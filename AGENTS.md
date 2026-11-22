@@ -47,5 +47,10 @@ For coding agents changing this SDK. Users of the SDK want the README.
   (oasdiff) blocks a breaking spec change before it is live.
 - `fern/` ships in the module because the regenerate workflow and the CI mock read `fern/openapi.json`.
 
+- `examples/` is its own module with a `replace` to the root, so `go test ./...` at the root skips it.
+  Every example must pass `examples/run.sh --mode mock` (CI job `examples`) and stay free of `any`
+  and casts. A step the mock cannot answer prints `SKIP (mock: <why>)`. `examples-live.yml` runs
+  them against staging, seven billed jobs per run, so keep new live steps to short clips.
+
 Checks: `go vet ./...`, `go test ./...` with the conformance mock on `RENDOBAR_MOCK`, serving
 `fern/openapi.json` as CI does.
