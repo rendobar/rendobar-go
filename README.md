@@ -1,12 +1,45 @@
-# Rendobar Go SDK
+<p align="center">
+  <a href="https://rendobar.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://cdn.rendobar.com/assets/brand/logo-mark.svg">
+      <img alt="Rendobar" src="https://cdn.rendobar.com/assets/brand/logo-mark-black.svg" width="80">
+    </picture>
+  </a>
+</p>
 
-The Go client for [Rendobar](https://rendobar.com). Run FFmpeg commands, render timeline videos, burn captions and generate images through one API, and get back a hosted URL. It covers the whole API: jobs, uploads and assets, webhooks, storage, billing, API keys, workspaces, notifications and realtime events.
+<h1 align="center">Rendobar Go SDK</h1>
+
+<p align="center"><code>github.com/rendobar/rendobar-go</code></p>
+
+<p align="center">
+  <strong>The official Go client for Rendobar's media processing and AI generation API.</strong>
+</p>
+
+<p align="center">
+  <a href="https://rendobar.com/docs/sdk/go">Docs</a> &nbsp;·&nbsp;
+  <a href="https://rendobar.com/integrations/go-sdk/">Guide</a> &nbsp;·&nbsp;
+  <a href="https://api.rendobar.com/reference">API reference</a> &nbsp;·&nbsp;
+  <a href="https://pkg.go.dev/github.com/rendobar/rendobar-go">pkg.go.dev</a> &nbsp;·&nbsp;
+  <a href="https://app.rendobar.com">Get an API key</a> &nbsp;·&nbsp;
+  <a href="https://discord.com/invite/kAGqjBzx8N">Discord</a>
+</p>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/rendobar/rendobar-go"><img src="https://img.shields.io/badge/go.dev-reference-059669?style=flat-square&logo=go&logoColor=white" alt="Go reference"></a>
+  <a href="https://github.com/rendobar/rendobar-go/tags"><img src="https://img.shields.io/github/v/tag/rendobar/rendobar-go?sort=semver&style=flat-square&color=059669&label=version" alt="Version"></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/rendobar/rendobar-go?style=flat-square&color=059669" alt="Go version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/rendobar/rendobar-go?style=flat-square&color=059669" alt="License"></a>
+</p>
+
+The official Go client for Rendobar's media processing and AI generation API. Submit an FFmpeg command, a caption burn or an image generation as a job, wait for it, and get back a hosted URL. Each job type has a params struct generated from the API's schema, so a misspelt field fails to compile. The client retries rate limits and server errors without creating a second job, and it covers the whole API: jobs, uploads and assets, webhooks, storage, billing, API keys, workspaces, notifications and realtime events.
+
+## Install
 
 ```bash
 go get github.com/rendobar/rendobar-go
 ```
 
-Requires Go 1.23 or newer.
+Requires Go 1.23 or newer. Set `RENDOBAR_API_KEY` to a key from [app.rendobar.com](https://app.rendobar.com).
 
 ## Quickstart
 
@@ -64,46 +97,15 @@ if s := probe.Summary; s != nil && s.Video != nil {
 
 `FfprobeSummary` holds one variant per kind of media (`Video`, `Audio`, `Image`, `Other`), matching `Kind`. A number ffprobe could not read is a nil pointer.
 
-## Job params
+## Let your AI assistant do it
 
-Each job type has its own params struct, generated from the API's published schema: `FfmpegParams`, `FfprobeParams`, `CompressTargetParams`, `CaptionBurnParams`, `CaptionsAnimateParams`, `ImageUpscaleParams`, and one struct per model for image generation and editing, such as `ImageGenerateFlux2DevParams`. The struct sets the job type, so a misspelt param or a wrong value type fails to compile.
+Paste this one line into Claude, ChatGPT, or Cursor and the assistant reads the
+full integration playbook, detects your stack, and wires Rendobar into your
+codebase. Your API key stays in your env file, never in the chat.
 
-- A field with a fixed set of values has its own type and constants, such as `FfmpegComputeGPU`.
-- A field that takes one of several shapes is an interface. Set it to one of the types its godoc lists, such as `ImageUpscaleSizingHeight` or `CompressTargetTargetPresetBalanced`.
-- Every number and boolean is a pointer, required or not, so the Go type never changes when the API makes a field optional. `rendobar.Ptr` makes one: `Timeout: rendobar.Ptr[int64](600)`. Integers are always `int64`. Strings and enums are values, and `""` means unset.
-
-```go
-rendobar.CreateParams{
-	Params: rendobar.ImageUpscaleParams{
-		Model:  rendobar.ImageUpscaleModelSeedvr27b,
-		Sizing: rendobar.ImageUpscaleSizingHeight{Height: rendobar.Ptr[int64](2160)},
-	},
-	Inputs: map[string]rendobar.Input{"source": rendobar.URL("https://example.com/photo.jpg")},
-}
+```text
+Add Rendobar to my app: read and follow https://rendobar.com/prompts/integrate.md
 ```
-
-`Jobs.Create` checks the params against the schema before it sends anything, and refuses them with an `*rendobar.Error` whose code is `INVALID_ARGUMENT`, one `Problem` per mistake. `Params.Validate()` runs the same check on its own.
-
-`Inputs` maps an input name to its value. `Jobs.Schema` lists the names a type takes. ffmpeg and ffprobe accept any file name, and the command refers to the file by it. A value is one of:
-
-- `rendobar.URL("https://...")`: one file the API fetches. An uploaded asset's content URL works too.
-- `rendobar.URLs{...}`: a list of files, such as image.edit's `"images"`, one to four pictures to edit.
-- `rendobar.Content("...")`: a small text file sent inline, up to 64 KiB, such as an ffmpeg concat list.
-- `rendobar.FromJob("job_...")`: a completed job's output, to chain ffmpeg jobs.
-- `rendobar.Fonts{{Family: "Display", Src: "https://..."}}`: font files for text, under names the params use.
-
-```go
-rendobar.CreateParams{
-	Params: rendobar.ImageEditQwenImageEdit2511Params{Prompt: "make the sky purple"},
-	Inputs: map[string]rendobar.Input{"images": rendobar.URLs{"https://example.com/photo.jpg"}},
-}
-```
-
-`rendobar.CustomParams{Type: ..., Fields: map[string]any{...}}` is the one unchecked path. It takes any job type: one this SDK predates, or a typed one when you need a param or value the API added after this release. The SDK checks only the type name, and the API checks the rest. `rendobar.JobTypeFfmpeg` and the other `JobType` constants name the types this SDK has structs for.
-
-Compose jobs also go through `CustomParams`. The API keeps compose out of the typed submit schema on purpose, because its nested timeline objects have no stable names to generate from. `Jobs.Schema("compose")` describes its params.
-
-`CreateParams.Callback` asks the API to POST the job's result to your URL when the job ends. It carries the same envelope as a webhook, so `webhooks.Parse` reads it.
 
 ## Jobs
 
@@ -158,9 +160,46 @@ fmt.Println(job.Complete.Output.File.URL)
 
 `Jobs.Wait` gives up after 5 minutes until the job reports its own time limit from your plan. It then waits that limit plus 2 minutes from the moment the job reported it. On a timeout it returns `*rendobar.WaitTimeoutError` with the job ID, the last status and the last job read. The job may still finish. `WaitOptions` sets your own `Timeout`, the poll interval and an `OnProgress` callback.
 
-### Idempotency
+## Job params
 
-A retried submit never creates a second job. Each `Jobs.Create` call sends one idempotency key on every retry. Pass `IdempotencyKey` yourself, or one from `rendobar.GenerateIdempotencyKey`, to make separate calls safe to repeat. Repeating a key with the same params returns the job it created, with `Created.Replayed` set. Reusing a key with different params returns a 409 error with code `CONFLICT`.
+Each job type has its own params struct, generated from the API's published schema: `FfmpegParams`, `FfprobeParams`, `CompressTargetParams`, `CaptionBurnParams`, `CaptionsAnimateParams`, `ImageUpscaleParams`, and one struct per model for image generation and editing, such as `ImageGenerateFlux2DevParams`. The struct sets the job type, so a misspelt param or a wrong value type fails to compile.
+
+- A field with a fixed set of values has its own type and constants, such as `FfmpegComputeGPU`.
+- A field that takes one of several shapes is an interface. Set it to a value of one of the types its godoc lists, such as an `ImageUpscaleSizingHeight` struct or the constant `CompressTargetTargetPresetBalanced`, whose type `CompressTargetTargetPreset` is one of the shapes `Target` takes.
+- Every number and boolean is a pointer, required or not, so the Go type never changes when the API makes a field optional. `rendobar.Ptr` makes one: `Timeout: rendobar.Ptr[int64](600)`. Integers are always `int64`. Strings and enums are values, and `""` means unset.
+
+```go
+rendobar.CreateParams{
+	Params: rendobar.ImageUpscaleParams{
+		Model:  rendobar.ImageUpscaleModelSeedvr27b,
+		Sizing: rendobar.ImageUpscaleSizingHeight{Height: rendobar.Ptr[int64](2160)},
+	},
+	Inputs: map[string]rendobar.Input{"source": rendobar.URL("https://example.com/photo.jpg")},
+}
+```
+
+`Jobs.Create` checks the params against the schema before it sends anything, and refuses them with an `*rendobar.Error` whose code is `INVALID_ARGUMENT`, one `Problem` per mistake. `Params.Validate()` runs the same check on its own.
+
+`Inputs` maps an input name to its value. `Jobs.Schema` lists the names a type takes. ffmpeg and ffprobe accept any file name, and the command refers to the file by it. A value is one of:
+
+- `rendobar.URL("https://...")`: one file the API fetches. An uploaded asset's content URL works too.
+- `rendobar.URLs{...}`: a list of files, such as image.edit's `"images"`, one to four pictures to edit.
+- `rendobar.Content("...")`: a small text file sent inline, up to 64 KiB, such as an ffmpeg concat list.
+- `rendobar.FromJob("job_...")`: a completed job's output, to chain ffmpeg jobs.
+- `rendobar.Fonts{{Family: "Display", Src: "https://..."}}`: font files for text, under names the params use.
+
+```go
+rendobar.CreateParams{
+	Params: rendobar.ImageEditQwenImageEdit2511Params{Prompt: "make the sky purple"},
+	Inputs: map[string]rendobar.Input{"images": rendobar.URLs{"https://example.com/photo.jpg"}},
+}
+```
+
+`rendobar.CustomParams{Type: ..., Fields: map[string]any{...}}` is the one unchecked path. It takes any job type: one this SDK predates, or a typed one when you need a param or value the API added after this release. The SDK checks only the type name, and the API checks the rest. `rendobar.JobTypeFfmpeg` and the other `JobType` constants name the types this SDK has structs for.
+
+Compose jobs also go through `CustomParams`. The API keeps compose out of the typed submit schema on purpose, because its nested timeline objects have no stable names to generate from. `Jobs.Schema("compose")` describes its params.
+
+`CreateParams.Callback` asks the API to POST the job's result to your URL when the job ends. It carries the same envelope as a webhook, so `webhooks.Parse` reads it.
 
 ## Uploads and assets
 
@@ -205,7 +244,9 @@ Every resource of the API has its own field on the client, under the names `@ren
 | `Webhooks` | `Create`, `List`, `Get`, `Update`, `Delete`, `RotateSecret`, `Test`, `ListDeliveries`, `RetryDelivery` |
 | `Storage` | `Create`, `List`, `Get`, `Update`, `Delete`, `Test`, `Stats`, `ListObjects`, `PrepareAWS`, `ListAccountBuckets`, `LookUpS3Bucket`, `StartSupabase`, `ListSupabaseProjects`, `ListSupabaseBuckets`, `FinishSupabase` |
 | `APIKeys` | `Create`, `List`, `Update`, `Revoke` |
-| `Orgs` | `List`, `Current`, `Create`, `Update`, `Delete`, `GetSettings`, `UpdateSettings`; `Orgs.Members`: `Invite`, `ChangeRole`, `Remove`; `Orgs.Invitations`: `Revoke` |
+| `Orgs` | `List`, `Current`, `Create`, `Update`, `Delete`, `GetSettings`, `UpdateSettings` |
+| `Orgs.Members` | `Invite`, `ChangeRole`, `Remove` |
+| `Orgs.Invitations` | `Revoke` |
 | `Account` | `Capabilities` |
 | `Compose` | `Effects`, `EngineEffects`, `Validate` |
 | `Notifications` | `List`, `MarkRead` |
@@ -275,7 +316,9 @@ if errors.As(err, &cutOff) {
 
 When your `ctx` is cancelled or its deadline passes after the submit, `Jobs.Run` and `Jobs.Wait` return `*rendobar.ContextError`. The job keeps running. `JobID` names it and `Job` is the last state read, so you can call `Jobs.Get`, `Jobs.Wait` or `Jobs.Cancel` later. `errors.Is(err, context.DeadlineExceeded)` and `errors.Is(err, context.Canceled)` work on it.
 
-### Retries
+## Retries and idempotency
+
+A retried submit never creates a second job. Each `Jobs.Create` call sends one idempotency key on every retry. Pass `IdempotencyKey` yourself, or one from `rendobar.GenerateIdempotencyKey`, to make separate calls safe to repeat. Repeating a key with the same params returns the job it created, with `Created.Replayed` set. Reusing a key with different params returns a 409 error with code `CONFLICT`.
 
 A 429 is retried twice on every call, because the API did nothing with the request. A 500, 502, 503 or 504 and a connection error are retried twice on a read (GET) and on a job submit, which carries its idempotency key. A create, update or delete that fails that way returns the error at once, because the API may have acted on it: read the state back before you send it again. Retries back off from half a second and honour a `Retry-After` of up to 60 seconds. Nothing else is retried. A 408, a 409, a 501 or any other 4xx fails at once, and so does an attempt that ran out its timeout. When `Retry-After` is longer than 60 seconds, or the wait would outlast your `ctx` deadline, the client returns the error at once with `Error.RetryAfter` set. `rendobar.WithMaxRetries(0)` sends each request once.
 
@@ -349,7 +392,7 @@ for ev, err := range rt.Job(ctx, created.ID) {
 
 `Client.Events` streams every event of the workspace, such as `*realtime.BalanceUpdated` and `*realtime.Notification`, until your `ctx` ends. It yields `*realtime.Connected` on each connection, the events the workspace kept, `*realtime.ReplayDone`, then live events. The stream reconnects with backoff and resumes after the last event it yielded, so you never see one twice. To resume in a later process, store `ev.EventID()` and pass it as `EventsParams.LastEventID`. `*realtime.Resync` says events were lost: read your state again. A refusal no reconnect fixes, such as a revoked key or one without the `jobs:read` scope, ends the stream with a `*rendobar.Error`. The key travels in the `Authorization` header, never in the URL.
 
-## Options
+## Configuration
 
 ```go
 rb := rendobar.New(
@@ -369,14 +412,30 @@ rb := rendobar.New(
 
 ## Examples
 
-[`examples/`](examples) has small programs that use the SDK the way your code would: a quickstart, an
-upload, trim and download, a batch worker, a webhook receiver that manages its own endpoint, and an
-account admin.
+[`examples/`](examples) has small programs that use the SDK the way your code would. CI runs each one against a mock on every pull request.
 
-## Support policy
+- [`quickstart`](examples/quickstart): probes a public video and prints its duration, resolution and codecs.
+- [`upload-process-download`](examples/upload-process-download): uploads a clip, trims it, streams the output to disk and checks it, then shares and deletes it.
+- [`batch-worker`](examples/batch-worker): submits keyed jobs, triggers each error type, pages through jobs and cancels one.
+- [`webhook-receiver`](examples/webhook-receiver): manages its own webhook endpoint and verifies typed deliveries in a `net/http` server.
+- [`account-admin`](examples/account-admin): reads the plan, billing, usage, API keys, the workspace and its settings, and checks a compose timeline.
+
+[`examples/README.md`](examples/README.md) explains how to run them.
+
+## Other Rendobar SDKs
+
+- TypeScript: [`@rendobar/sdk`](https://www.npmjs.com/package/@rendobar/sdk) on npm, for Node 18 or later, Cloudflare Workers, Deno and Bun.
+- Python: [`rendobar`](https://pypi.org/project/rendobar/) on PyPI, with sync and asyncio clients.
+- Go: this module, [`github.com/rendobar/rendobar-go`](https://pkg.go.dev/github.com/rendobar/rendobar-go) on pkg.go.dev.
+- NestJS: [`@rendobar/nestjs`](https://www.npmjs.com/package/@rendobar/nestjs) on npm, an injectable client and webhook verification for NestJS apps.
+- Agent toolkit: [`@rendobar/agent-toolkit`](https://www.npmjs.com/package/@rendobar/agent-toolkit) on npm, media processing and AI generation tools for AI agents.
+
+## Versioning and support
+
+This module follows semantic versioning. While it is at 0.x, a minor release may tighten types, and the changelog says so when it does. Rendobar announces a deprecation before it removes anything. A deprecated endpoint keeps working until then, and `WithDeprecationHandler` reports each one you call. See the [versioning policy](https://rendobar.com/docs/support/versioning) and the [changelog](https://rendobar.com/changelog/).
 
 This module supports Go 1.23 and newer, as its `go.mod` states. CI tests Go 1.23 and the two newest Go releases. It runs the shared Rendobar conformance scenarios from [rendobar/openapi](https://github.com/rendobar/openapi).
 
 ## License
 
-MIT. Rendobar is a product of Craftobar LLC.
+MIT, see [LICENSE](LICENSE). Rendobar is a product of Craftobar LLC.

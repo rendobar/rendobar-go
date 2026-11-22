@@ -1,4 +1,6 @@
-// Package rendobar is the Go client for the Rendobar API: media processing and AI generation.
+// Package rendobar is the official Go client for Rendobar's media processing
+// and AI generation API. Submit a job, wait for it, and read the hosted URL of
+// its output.
 //
 // Each job type has a typed params struct generated from the API's schema.
 // An ffmpeg job writes files, and Output.File is the one it wrote:
@@ -23,8 +25,17 @@
 //	}
 //	probe, err := job.Complete.Ffprobe()
 //
-// Errors are *Error values: check them with errors.As and compare Code with
-// the Code constants. The webhooks package verifies and reads deliveries.
+// The Client has one field per resource of the API, such as Jobs, Uploads,
+// Assets, Webhooks, Storage, Billing, APIKeys and Orgs. Errors are *Error
+// values: check them with errors.As and compare Code with the Code constants.
+//
+// Two subpackages cover the rest. Package
+// github.com/rendobar/rendobar-go/webhooks verifies and reads webhook
+// deliveries and per-job callbacks. Package
+// github.com/rendobar/rendobar-go/realtime streams a workspace's events over a
+// WebSocket, and only programs that import it build in its WebSocket library.
+//
+// Docs: https://rendobar.com/docs/sdk/go
 package rendobar
 
 import (

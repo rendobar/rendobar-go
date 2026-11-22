@@ -1,15 +1,15 @@
 # Examples
 
-Small programs that use the Go SDK the way your code would. Each folder is one `main` package. They
+Small programs that use the [Rendobar Go SDK](../README.md) the way your code would. Each folder is one `main` package. They
 are also the SDK's regression gate: CI runs every one, and a change that breaks one cannot merge.
 
 | Folder | What it does | Jobs (live) |
 |---|---|---|
-| `quickstart` | Probes a public video and prints its duration, resolution and codecs. | 1 ffprobe |
-| `upload-process-download` | Uploads `fixtures/clip.mp4` with `Uploads.Create`, trims it with the upload as the input (`asset://`), streams the output to disk and checks its size and SHA-256, shares the output, then lists, reads and deletes the asset. | 1 ffmpeg |
-| `batch-worker` | Submits jobs with idempotency keys, resubmits one, reuses a key with other params (409), triggers each error type, reads a job's logs and timings and the day's job counts, pages with `Jobs.All`, hits a wait timeout and a context deadline, cancels a job and reads a failed one. | 3 ffprobe, 2 ffmpeg |
-| `webhook-receiver` | Creates a webhook endpoint and walks it through list, get, update, test, deliveries, retry and secret rotation, then deletes it. A `net/http` server verifies deliveries signed with that endpoint's secret and switches on typed events, with a default branch for events newer than the SDK. | none |
-| `account-admin` | Reads the plan and limits, billing state, usage, transactions and invoices, API keys, the org and its settings (flips one and restores it), notifications, storage connections, job types, one type's schema and the compose effect catalogue, and checks a compose timeline. | none |
+| [`quickstart`](quickstart) | Probes a public video and prints its duration, resolution and codecs. | 1 ffprobe |
+| [`upload-process-download`](upload-process-download) | Uploads `fixtures/clip.mp4` with `Uploads.Create`, trims it with the upload as the input (`asset://`), streams the output to disk and checks its size and SHA-256, shares the output, then lists, reads and deletes the asset. | 1 ffmpeg |
+| [`batch-worker`](batch-worker) | Submits jobs with idempotency keys, resubmits one, reuses a key with other params (409), triggers each error type, reads a job's logs and timings and the day's job counts, pages with `Jobs.All`, hits a wait timeout and a context deadline, cancels a job and reads a failed one. | 3 ffprobe, 2 ffmpeg |
+| [`webhook-receiver`](webhook-receiver) | Creates a webhook endpoint and walks it through list, get, update, test, deliveries, retry and secret rotation, then deletes it. A `net/http` server verifies deliveries signed with that endpoint's secret and switches on typed events, with a default branch for events newer than the SDK. | none |
+| [`account-admin`](account-admin) | Reads the plan and limits, billing state, usage, transactions and invoices, API keys, the org and its settings (flips one and restores it), notifications, storage connections, job types, one type's schema and the compose effect catalogue, and checks a compose timeline. | none |
 
 ## Run them
 
