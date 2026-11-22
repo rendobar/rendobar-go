@@ -1,6 +1,6 @@
 # Rendobar Go SDK
 
-The Go client for [Rendobar](https://rendobar.com). Run FFmpeg commands, render timeline videos, burn captions and generate images through one API, and get back a hosted URL. It covers the whole API: jobs, uploads and assets, webhooks, storage, billing, API keys, workspaces and notifications.
+The Go client for [Rendobar](https://rendobar.com). Run FFmpeg commands, render timeline videos, burn captions and generate images through one API, and get back a hosted URL. It covers the whole API: jobs, uploads and assets, webhooks, storage, billing, API keys, workspaces, notifications and realtime events.
 
 ```bash
 go get github.com/rendobar/rendobar-go
@@ -321,6 +321,33 @@ Each delivery carries two headers:
 - `X-Rendobar-Signature` is `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<raw body>`, keyed with your endpoint's signing secret. A signature without the `sha256=` prefix is refused.
 
 While you rotate the secret, deliveries also carry `X-Rendobar-Signature-Previous`, signed with the old secret. Parse accepts either header, so your handler keeps working until you switch secrets. It refuses deliveries more than 5 minutes old or ahead (`ErrTimestamp`), a signature that does not match (`ErrSignature`), an empty or whitespace-only secret (`ErrNoSecret`) and a body that is not an event (`ErrPayload`). `webhooks.Verify` runs only the check and returns a bool. `ParseWith` and `VerifyWith` take your own tolerance and clock.
+
+## Realtime
+
+Import `github.com/rendobar/rendobar-go/realtime` to stream events as they happen. It is its own package, so programs that do not import it do not build in its WebSocket library. `Client.Job` follows one job and returns after its final status:
+
+```go
+rt := realtime.New() // reads RENDOBAR_API_KEY, like rendobar.New
+for ev, err := range rt.Job(ctx, created.ID) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	switch e := ev.(type) {
+	case *realtime.JobProgress:
+		if e.Progress != nil {
+			fmt.Printf("%s %.0f%%\n", e.Phase, *e.Progress*100)
+		}
+	case *realtime.JobLog:
+		fmt.Println(e.Level, e.Message)
+	case *realtime.JobStatusChanged:
+		fmt.Println("status", e.Status)
+	default:
+		// another event, or *realtime.Unknown for one newer than this SDK
+	}
+}
+```
+
+`Client.Events` streams every event of the workspace, such as `*realtime.BalanceUpdated` and `*realtime.Notification`, until your `ctx` ends. It yields `*realtime.Connected` on each connection, the events the workspace kept, `*realtime.ReplayDone`, then live events. The stream reconnects with backoff and resumes after the last event it yielded, so you never see one twice. To resume in a later process, store `ev.EventID()` and pass it as `EventsParams.LastEventID`. `*realtime.Resync` says events were lost: read your state again. A refusal no reconnect fixes, such as a revoked key or one without the `jobs:read` scope, ends the stream with a `*rendobar.Error`. The key travels in the `Authorization` header, never in the URL.
 
 ## Options
 

@@ -73,3 +73,9 @@ For coding agents changing this SDK. Users of the SDK want the README.
 
 Checks: `go vet ./...`, `go test ./...` with the conformance mock on `RENDOBAR_MOCK`, serving
 `fern/openapi.json` as CI does.
+
+- `realtime/` streams events over a WebSocket (`github.com/coder/websocket`, imported only there). The
+  event shapes are not in the OpenAPI spec, so `realtime/events.go` is hand-written from the API's event
+  schema: a message of a known type that fails to decode, or lacks a field `required` lists, reads as
+  `*Unknown`. `Client.Job` uses `/events/ws/job/{id}` and drops the workspace's other events, which that
+  socket also replays. The key rides in `Authorization`, not `?token=`.

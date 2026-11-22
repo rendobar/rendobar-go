@@ -53,7 +53,8 @@ Each step that cannot run in a mode prints a `SKIP (<mode>: <why>)` line where i
   `JobFailedError` (every job the mock creates completes), and the checks that a new webhook
   endpoint is listed and a compose timeline is refused.
 - `account-admin` reads storage connections only when the key holds the `storage:read` scope.
-- Realtime progress has no example: the Go SDK has no realtime client yet.
+- `realtime-progress` is a TypeScript-only example in the shared set. The Go `realtime` package
+  has its own tests, and the main README shows it.
 
 ## CI
 
