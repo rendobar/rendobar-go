@@ -1,12 +1,12 @@
 // Batch-worker submits a batch of jobs the way a queue worker would: each
 // with its own idempotency key, so a retried submit never runs a job twice.
 // It then walks the error types a worker has to handle, pages through the job
-// list, and cancels a job it no longer needs.
+// list, reads a job's logs and timings and the workspace's job counts, and
+// cancels a job it no longer needs.
 //
 //	RENDOBAR_API_KEY=rb_... go run ./batch-worker -mode live
 //
 // Five jobs: three ffprobe, one ffmpeg that is cancelled and one ffmpeg that fails.
-// The Go SDK has no job logs API, so there is no logs step (see ../README.md).
 package main
 
 import (
@@ -65,6 +65,9 @@ func run(mode string) error {
 	}
 	fmt.Println("batch of", len(ids), "complete")
 
+	if err := inspect(ctx, rb, ids[0], mock); err != nil {
+		return err
+	}
 	if err := page(ctx, rb); err != nil {
 		return err
 	}
@@ -170,6 +173,45 @@ func checkErrors(ctx context.Context, rb *rendobar.Client, opts []rendobar.Optio
 		return fmt.Errorf("cancelled submit: got %v, want a *SubmitError with a key wrapping context.Canceled", err)
 	}
 	fmt.Println("cancelled submit: SubmitError with key", submitErr.IdempotencyKey)
+	return nil
+}
+
+// inspect reads what a worker logs when a job needs a closer look: its log
+// entries, how long each stage took, and the workspace's counts for the day.
+func inspect(ctx context.Context, rb *rendobar.Client, id string, mock bool) error {
+	logs, err := rb.Jobs.Logs(ctx, id)
+	if err != nil {
+		return fmt.Errorf("logs %s: %w", id, err)
+	}
+	if len(logs) == 0 {
+		return fmt.Errorf("job %s has no log entries", id)
+	}
+	for _, e := range logs {
+		if e.Message == "" || e.Timestamp.Time().IsZero() {
+			return fmt.Errorf("log entry %+v has no message or time", e)
+		}
+	}
+	fmt.Printf("job %s logged %d entries, first %q\n", id, len(logs), logs[0].Message)
+
+	timings, err := rb.Jobs.Timings(ctx, id)
+	if err != nil {
+		return fmt.Errorf("timings %s: %w", id, err)
+	}
+	if !mock && timings.JobID != id {
+		return fmt.Errorf("timings are for job %s, want %s", timings.JobID, id)
+	}
+	if timings.APITotalMs != nil {
+		fmt.Println("the API took", time.Duration(*timings.APITotalMs)*time.Millisecond, "to accept it")
+	}
+
+	stats, err := rb.Jobs.Stats(ctx, rendobar.StatsParams{Window: rendobar.StatsWindowDay})
+	if err != nil {
+		return fmt.Errorf("stats: %w", err)
+	}
+	if stats.Totals == nil || stats.Totals.Jobs < 1 {
+		return fmt.Errorf("stats count no jobs today: %+v", stats.Totals)
+	}
+	fmt.Println("jobs in the last 24 hours:", stats.Totals.Jobs, "succeeded:", stats.Totals.Succeeded)
 	return nil
 }
 

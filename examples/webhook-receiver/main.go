@@ -1,15 +1,19 @@
 // Webhook-receiver is a net/http server that verifies Rendobar webhook
-// deliveries and switches on their typed events.
+// deliveries and switches on their typed events. It also manages the endpoint
+// that sends them: create, list, get, update, send a test, read and retry its
+// deliveries, rotate its secret and delete it.
 //
 // Serve deliveries with your endpoint's signing secret:
 //
 //	RENDOBAR_WEBHOOK_SECRET=whsec_... go run ./webhook-receiver -serve :8080
 //
-// Without -serve it tests itself: it starts the server on a local port and
-// sends it signed deliveries, a forged one, a stale one and an event newer
-// than this SDK. In mock mode it also replays the shared webhook vectors
-// (RENDOBAR_WEBHOOK_VECTORS, by default ../webhooks/testdata/webhook-vectors.json).
-// The Go SDK has no API for webhook endpoints, so no endpoint is created (see ../README.md).
+// Without -serve it tests itself. It creates an endpoint (its URL need not
+// answer), walks it through every call and deletes it. Rendobar cannot reach
+// a local server, so it then starts this server on a local port and sends it
+// deliveries signed with that endpoint's real secret, a forged one, a stale
+// one and an event newer than this SDK. In mock mode it also replays the
+// shared webhook vectors (RENDOBAR_WEBHOOK_VECTORS, by default
+// ../webhooks/testdata/webhook-vectors.json). No jobs.
 package main
 
 import (
@@ -34,6 +38,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rendobar/rendobar-go"
 	"github.com/rendobar/rendobar-go/webhooks"
 )
 
@@ -153,17 +158,41 @@ func (rc *receiver) last() string {
 	return rc.handled[len(rc.handled)-1]
 }
 
-func selfTest(mode string) error {
+func selfTest(mode string) (err error) {
 	if mode != "mock" && mode != "live" {
 		return fmt.Errorf("-mode must be mock or live, got %q", mode)
 	}
-	fmt.Println("SKIP (sdk: the Go SDK has no webhook endpoints API) create, list, get, update, rotate, test, deliveries, retry and delete an endpoint")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	var opts []rendobar.Option
+	if u := os.Getenv("RENDOBAR_API_URL"); u != "" {
+		opts = append(opts, rendobar.WithBaseURL(u))
+	}
+	rb := rendobar.New(opts...)
 
-	var key [32]byte
-	if _, err := rand.Read(key[:]); err != nil {
+	endpoint, err := rb.Webhooks.Create(ctx, rendobar.CreateWebhookParams{
+		Name:             "examples-go " + suffix(),
+		URL:              "https://example.com/rendobar-webhook",
+		SubscribedEvents: []rendobar.WebhookEvent{webhooks.JobCompleted, webhooks.JobFailed},
+	})
+	if err != nil {
+		return fmt.Errorf("create endpoint: %w", err)
+	}
+	defer func() {
+		// Delete it even when a step failed.
+		if derr := rb.Webhooks.Delete(context.Background(), endpoint.ID); derr != nil {
+			if err == nil {
+				err = fmt.Errorf("delete endpoint: %w", derr)
+			}
+			return
+		}
+		fmt.Println("deleted endpoint", endpoint.ID)
+	}()
+	secret, err := manage(ctx, rb, endpoint, mode == "mock")
+	if err != nil {
 		return err
 	}
-	secret := "whsec_" + hex.EncodeToString(key[:])
+
 	rc := &receiver{secret: secret}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -215,6 +244,120 @@ func selfTest(mode string) error {
 		return nil
 	}
 	return replayVectors()
+}
+
+// manage walks an endpoint through every call and returns its newest signing secret.
+func manage(ctx context.Context, rb *rendobar.Client, endpoint *rendobar.WebhookEndpoint, mock bool) (string, error) {
+	if endpoint.ID == "" || endpoint.SigningSecret == "" {
+		return "", fmt.Errorf("created endpoint %+v has no id or signing secret", endpoint)
+	}
+	if !mock && (!endpoint.Active || len(endpoint.SubscribedEvents) != 2) {
+		return "", fmt.Errorf("created endpoint is active %v with events %v, want active with 2", endpoint.Active, endpoint.SubscribedEvents)
+	}
+	fmt.Println("created endpoint", endpoint.ID, "for", endpoint.SubscribedEvents)
+	id := endpoint.ID
+
+	list, err := rb.Webhooks.List(ctx)
+	if err != nil {
+		return "", fmt.Errorf("list endpoints: %w", err)
+	}
+	listed := slices.ContainsFunc(list.Endpoints, func(e *rendobar.WebhookEndpoint) bool { return e.ID == id })
+	switch {
+	case mock && len(list.Endpoints) > 0:
+		fmt.Println("SKIP (mock: lists one endpoint of its own) the new endpoint is listed")
+	case !listed:
+		return "", fmt.Errorf("endpoint %s is not among the %d listed", id, list.Total)
+	default:
+		fmt.Println("listed", list.Total, "endpoints, the new one among them")
+	}
+
+	got, err := rb.Webhooks.Get(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("get endpoint: %w", err)
+	}
+	if !mock && (got.ID != id || got.URL != endpoint.URL) {
+		return "", fmt.Errorf("got endpoint %s at %s, want %s at %s", got.ID, got.URL, id, endpoint.URL)
+	}
+
+	updated, err := rb.Webhooks.Update(ctx, id, rendobar.UpdateWebhookParams{
+		Name:             "examples-go renamed",
+		SubscribedEvents: []rendobar.WebhookEvent{webhooks.JobCompleted},
+	})
+	if err != nil {
+		return "", fmt.Errorf("update endpoint: %w", err)
+	}
+	if !mock && (updated.Name != "examples-go renamed" || len(updated.SubscribedEvents) != 1) {
+		return "", fmt.Errorf("updated endpoint is %q with %v", updated.Name, updated.SubscribedEvents)
+	}
+	fmt.Println("renamed it and kept only", webhooks.JobCompleted)
+
+	// example.com takes no webhooks: the test is sent and answered, not delivered.
+	result, err := rb.Webhooks.Test(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("test endpoint: %w", err)
+	}
+	code := "no answer"
+	if result.StatusCode != nil {
+		code = strconv.Itoa(int(*result.StatusCode))
+	}
+	fmt.Printf("test delivery: delivered %v, status %s, %d ms\n", result.Delivered, code, result.ResponseTimeMs)
+
+	if err := deliveries(ctx, rb, id, mock); err != nil {
+		return "", err
+	}
+
+	rotated, err := rb.Webhooks.RotateSecret(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("rotate secret: %w", err)
+	}
+	if rotated.SigningSecret == "" || (!mock && rotated.SigningSecret == endpoint.SigningSecret) {
+		return "", errors.New("rotating the secret did not give a new one")
+	}
+	fmt.Println("rotated the signing secret; the old one still verifies for now:", rotated.RotationActive)
+	return rotated.SigningSecret, nil
+}
+
+// deliveries finds the test delivery in the endpoint's log and sends it again.
+func deliveries(ctx context.Context, rb *rendobar.Client, id string, mock bool) error {
+	var page *rendobar.DeliveryPage
+	for attempt := 0; ; attempt++ {
+		var err error
+		page, err = rb.Webhooks.ListDeliveries(ctx, rendobar.ListDeliveriesParams{EndpointID: id, Limit: 10})
+		if err != nil {
+			return fmt.Errorf("list deliveries: %w", err)
+		}
+		if len(page.Deliveries) > 0 || attempt == 10 {
+			break
+		}
+		time.Sleep(time.Second) // the test is recorded a moment after it is sent
+	}
+	if len(page.Deliveries) == 0 {
+		return fmt.Errorf("endpoint %s has no deliveries after its test", id)
+	}
+	d := page.Deliveries[0]
+	if !mock && (d.EndpointID != id || d.Attempts < 1) {
+		return fmt.Errorf("delivery %+v is not this endpoint's, or was never attempted", d)
+	}
+	fmt.Println("delivery", d.ID, "of", d.Event, "is", d.Status, "after", d.Attempts, "attempts")
+
+	retried, err := rb.Webhooks.RetryDelivery(ctx, d.ID)
+	if err != nil {
+		return fmt.Errorf("retry delivery: %w", err)
+	}
+	if !mock && retried.ID != d.ID {
+		return fmt.Errorf("retried delivery %s, want %s", retried.ID, d.ID)
+	}
+	fmt.Println("retried it:", retried.Status)
+	return nil
+}
+
+// suffix keeps the names of endpoints from parallel runs apart.
+func suffix() string {
+	var b [4]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(err) // crypto/rand does not fail on a supported platform
+	}
+	return hex.EncodeToString(b[:])
 }
 
 // replayVectors runs the shared webhook vectors through the same handler, at
