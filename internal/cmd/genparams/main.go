@@ -171,7 +171,7 @@ func (n *node) raw() string {
 var initialisms = map[string]string{
 	"id": "ID", "url": "URL", "cpu": "CPU", "gpu": "GPU", "fps": "FPS", "http": "HTTP", "json": "JSON",
 	"hls": "HLS", "dash": "DASH", "ssim": "SSIM", "vmaf": "VMAF", "api": "API", "rgb": "RGB", "hsv": "HSV",
-	"lab": "LAB", "eta": "ETA", "usd": "USD",
+	"lab": "LAB", "eta": "ETA", "usd": "USD", "aws": "AWS", "ids": "IDs", "arn": "ARN", "ok": "OK",
 }
 
 // pascal turns "max-bytes", "maxBytes" or "seedvr2-3b" into MaxBytes, MaxBytes, Seedvr23b.
@@ -219,6 +219,14 @@ type gen struct {
 	types    map[string]bool
 	patterns map[string]string
 	known    []string // job types with a typed struct, for CustomParams
+
+	// Set for the request bodies of the resource methods (resources.go), never
+	// for job params, so their generated code does not change.
+	requests bool
+	shared   map[string]string // a generated name to the shared type it is written as
+	kinds    map[string]string // a shared type already written, to its kind
+	shapes   map[string]string // the JSON of an object already written, to its type
+	override map[string]string // "Type.prop" to a Go type the SDK already has, sent unchecked
 }
 
 func (g *gen) p(format string, args ...any) { fmt.Fprintf(&g.out, format, args...) }
@@ -313,6 +321,25 @@ type field struct {
 
 // typeOf works out a property's Go type, emitting any named type it needs.
 func (g *gen) typeOf(name string, n *node) (goType, kind string) {
+	if s, ok := g.shared[name]; ok {
+		name = s
+		if k, done := g.kinds[name]; done {
+			return name, k
+		}
+	}
+	if g.requests && isObject(n) && !isUnion(n) {
+		if t, ok := g.shapes[canon(n)]; ok {
+			return t, "object" // the same object as a type already written, such as one set of storage keys
+		}
+	}
+	goType, kind = g.typeOfNew(name, n)
+	if _, ok := g.kinds[name]; !ok && g.kinds != nil && g.types[name] {
+		g.kinds[name] = kind
+	}
+	return goType, kind
+}
+
+func (g *gen) typeOfNew(name string, n *node) (goType, kind string) {
 	if isUnion(n) {
 		bs, _ := branches(n)
 		if len(bs) == 1 {
@@ -338,12 +365,24 @@ func (g *gen) typeOf(name string, n *node) (goType, kind string) {
 	case "object":
 		g.object(name, n, "", "", "")
 		return name, "object"
+	case "array":
+		if !g.requests || n.fields["items"] == nil {
+			break
+		}
+		elem, kind := g.typeOf(name+"Item", n.fields["items"])
+		return "[]" + elem, "array/" + kind
 	}
 	log.Fatalf("genparams: %s: unsupported schema %v", name, n.keys)
 	return "", ""
 }
 
 func (g *gen) enum(name string, n *node, values []string, validated bool) {
+	if s, ok := g.shared[name]; ok {
+		name = s
+	}
+	if g.requests && g.types[name] {
+		return // a shared enum, such as MemberRole, already written
+	}
 	g.claim(name)
 	// A request value is checked against this list, so a new value arrives by
 	// regeneration. A response value is never checked, so the API may add one.
@@ -359,21 +398,23 @@ func (g *gen) enum(name string, n *node, values []string, validated bool) {
 	g.p("type %s string\n\n", name)
 	g.p("// The %s values this SDK knows.\nconst (\n", name)
 	seen := map[string]string{}
-	for _, v := range values {
+	var cs []string
+	varnames := n.strings("x-enum-varnames")
+	for i, v := range values {
 		c := name + pascal(v)
+		if g.requests && len(varnames) == len(values) {
+			c = name + varnames[i] // such as StatsWindowDay for "24h"
+		}
 		if prev, dup := seen[c]; dup {
 			log.Fatalf("genparams: %q and %q both name %s", prev, v, c)
 		}
 		seen[c] = v
+		cs = append(cs, c)
 		g.p("\t%s %s = %q\n", c, name, v)
 	}
 	g.p(")\n\n")
 	if validated {
 		g.p("func (v %s) known() bool {\n\tswitch v {\n\tcase ", name)
-		var cs []string
-		for _, val := range values {
-			cs = append(cs, name+pascal(val))
-		}
 		g.p("%s:\n\t\treturn true\n\t}\n\treturn false\n}\n\n", strings.Join(cs, ", "))
 	}
 }
@@ -395,7 +436,17 @@ func (g *gen) union(name string, n *node, bs []*node) {
 		if bn == "" {
 			bn = branchName(b)
 		}
-		list = append(list, branch{name + bn, b})
+		if _, val := enumDiscriminator(b); g.requests && val != "" {
+			bn = pascal(val)
+		}
+		full := name + bn
+		if s, ok := g.shared[full]; ok {
+			full = s
+		}
+		if t, ok := g.shapes[canon(b)]; g.requests && ok {
+			full = t // the same object as a branch already written
+		}
+		list = append(list, branch{full, b})
 	}
 	var names []string
 	for _, b := range list {
@@ -405,8 +456,13 @@ func (g *gen) union(name string, n *node, bs []*node) {
 	g.p("type %s interface {\n\tis%s()\n\tvalidate(c *check, path string)\n}\n\n", name, name)
 	for _, b := range list {
 		switch {
+		case g.types[b.name]:
+			// written for another union already: it only joins this one
 		case b.n.str("type") == "object":
 			disc, val := discriminator(b.n)
+			if g.requests {
+				disc, val = enumDiscriminator(b.n)
+			}
 			g.object(b.name, b.n, disc, val, "")
 		case b.n.str("type") == "string" && b.n.has("enum"):
 			g.enum(b.name, b.n, b.n.strings("enum"), true)
@@ -460,10 +516,31 @@ func discriminator(n *node) (prop, value string) {
 	return "", ""
 }
 
+// enumDiscriminator also takes a property with a one-value enum, the way the
+// request bodies of the resource methods mark their branches.
+func enumDiscriminator(n *node) (prop, value string) {
+	if prop, value = discriminator(n); prop != "" {
+		return prop, value
+	}
+	props := n.fields["properties"]
+	if props == nil {
+		return "", ""
+	}
+	for _, k := range props.keys {
+		if vs := props.fields[k].strings("enum"); len(vs) == 1 && props.fields[k].str("type") == "string" {
+			return k, vs[0]
+		}
+	}
+	return "", ""
+}
+
 // object emits a struct. disc/discValue name a const property that the
 // struct sends but does not expose. jobType, when set, makes it a JobParams.
 func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 	g.claim(name)
+	if g.shapes != nil {
+		g.shapes[canon(n)] = name
+	}
 	props := n.fields["properties"]
 	required := map[string]bool{}
 	for _, r := range n.strings("required") {
@@ -477,7 +554,11 @@ func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 				continue
 			}
 			f := field{goName: pascal(k), wire: k, required: required[k], schema: prop}
-			f.goType, f.kind = g.typeOf(strings.TrimSuffix(name, "Params")+pascal(k), prop)
+			if t, ok := g.override[name+"."+k]; ok {
+				f.goType, f.kind = t, "raw"
+			} else {
+				f.goType, f.kind = g.typeOf(strings.TrimSuffix(name, "Params")+pascal(k), prop)
+			}
 			_, nullable := branches(prop)
 			if _, null := prop.schemaType(); null || nullable {
 				f.required = false
@@ -528,7 +609,16 @@ func (g *gen) object(name string, n *node, disc, discValue, jobType string) {
 func (g *gen) fieldChecks(f field) {
 	ref := "v." + f.goName
 	path := fmt.Sprintf("join(path, %q)", f.wire)
+	if elem, ok := strings.CutPrefix(f.kind, "array/"); ok {
+		g.arrayChecks(f, elem, ref, path)
+		return
+	}
 	switch f.kind {
+	case "raw":
+		if f.required {
+			g.p("\tif len(%s) == 0 {\n\t\tc.fail(%s, \"is required\")\n\t}\n", ref, path)
+		}
+		return
 	case "union":
 		if f.required {
 			g.p("\tif %s == nil {\n\t\tc.fail(%s, \"is required\")\n\t} else {\n\t\t%s.validate(c, %s)\n\t}\n", ref, path, ref, path)
@@ -716,6 +806,9 @@ func main() {
 	root.named("FfprobeResult", schemas.fields["FfprobeResult"])
 	g.out.Write(root.out.Bytes())
 
+	// The request bodies and responses of the resource methods.
+	g.resources(spec, schemas)
+
 	// Webhook events: one data type per event, behind Event.Payload.
 	hooks := &resp{
 		schemas: schemas, qual: "rendobar.", done: map[string]bool{},
@@ -750,7 +843,7 @@ func main() {
 
 	var src bytes.Buffer
 	src.WriteString("// Code generated by genparams from fern/openapi.json. DO NOT EDIT.\n\npackage rendobar\n\n")
-	src.WriteString("import (\n\t\"encoding/json\"\n\t\"regexp\"\n\t\"unicode/utf8\"\n)\n\n")
+	src.WriteString("import (\n\t\"encoding/json\"\n\t\"regexp\"\n\t\"strconv\"\n\t\"unicode/utf8\"\n)\n\n")
 	src.Write(g.vars.Bytes())
 	src.Write(g.out.Bytes())
 	write(*outPath, src.Bytes())
@@ -796,7 +889,7 @@ func writeWebhooks(spec *node, r *resp, path string) {
 	head.WriteString("// The events this SDK knows. The API may add events: an unknown one still\n// parses, with its own Type, so keep a default branch.\nconst (\n")
 	for _, e := range events {
 		desc := strings.Join(strings.Fields(spec.get("webhooks", e.name, "post").str("summary")), " ")
-		fmt.Fprintf(&head, "\t%s EventType = %q // %s\n", e.constant, e.name, desc)
+		fmt.Fprintf(&head, "\t%s rendobar.WebhookEvent = %q // %s\n", e.constant, e.name, desc)
 	}
 	head.WriteString(")\n\n")
 	for _, e := range events {

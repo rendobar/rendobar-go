@@ -21,7 +21,12 @@ const (
 )
 
 // retrier sends each request and retries a 429, 500, 502, 503 or 504 or a
-// connection error, honouring Retry-After up to 60 seconds. When the wait
+// connection error, honouring Retry-After up to 60 seconds. A 429 is retried
+// on every method, because the API did not act on the request. A 5xx or a
+// connection error is retried only when sending the request twice is safe: a
+// GET or HEAD, or a request marked with idempotent, such as a job submit,
+// which carries an idempotency key. A create, update or delete that fails that
+// way returns the error at once, since the API may have acted on it. When the wait
 // before a retry would outlast that cap or the context's deadline, it returns
 // what the last attempt got instead of waiting. Nothing else is retried: a
 // 408, a 409 or a 501 is the API's answer, not a transient failure. Each attempt goes through client.Do, so the
@@ -52,7 +57,7 @@ func (r *retrier) Do(req *http.Request) (*http.Response, error) {
 			req.Body = body
 		}
 		res, err := r.client.Do(req)
-		if attempt >= r.maxRetries || !retryable(req.Context(), res, err) {
+		if attempt >= r.maxRetries || !retryable(req, res, err) {
 			return res, err
 		}
 		delay := backoff(attempt)
@@ -83,7 +88,24 @@ func (r *retrier) Do(req *http.Request) (*http.Response, error) {
 	}
 }
 
-func retryable(ctx context.Context, res *http.Response, err error) bool {
+// idempotentKey marks a request context whose request is safe to send twice.
+type idempotentKey struct{}
+
+// idempotent marks ctx: a request sent with it may be retried after a 5xx or
+// a connection error, as a GET is.
+func idempotent(ctx context.Context) context.Context {
+	return context.WithValue(ctx, idempotentKey{}, true)
+}
+
+func retryable(req *http.Request, res *http.Response, err error) bool {
+	ctx := req.Context()
+	repeatable := req.Method == http.MethodGet || req.Method == http.MethodHead || ctx.Value(idempotentKey{}) != nil
+	if res != nil && res.StatusCode == http.StatusTooManyRequests {
+		return err == nil
+	}
+	if !repeatable {
+		return false // the API may have acted on it: a second copy could act twice
+	}
 	if err != nil {
 		if ctx.Err() != nil {
 			return false // the caller gave up

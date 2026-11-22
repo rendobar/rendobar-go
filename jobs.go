@@ -178,7 +178,7 @@ func (j *Jobs) Create(ctx context.Context, p CreateParams) (*Created, error) {
 	if p.ForceAsync {
 		body.ForceAsync = &p.ForceAsync
 	}
-	res, err := j.client.core.Jobs.SubmitJob(ctx, &api.SubmitJobRequest{SubmitAnyJob: body})
+	res, err := j.client.core.Jobs.SubmitJob(idempotent(ctx), &api.SubmitJobRequest{SubmitAnyJob: body})
 	if err != nil {
 		return nil, submitError(ctx, err, key)
 	}

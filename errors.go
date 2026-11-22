@@ -25,6 +25,7 @@ const (
 	CodeInvalidAPIKey   ErrorCode = "INVALID_API_KEY"  // the key does not start with rb_
 	CodeInvalidArgument ErrorCode = "INVALID_ARGUMENT" // params, an id or paging the SDK refused
 	CodeUnknown         ErrorCode = "UNKNOWN_ERROR"    // the API answered without its error envelope
+	CodeUploadFailed    ErrorCode = "UPLOAD_FAILED"    // a file part did not reach storage (Uploads.Create)
 )
 
 // Codes the API sends.

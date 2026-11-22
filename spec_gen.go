@@ -5,14 +5,21 @@ package rendobar
 import (
 	"encoding/json"
 	"regexp"
+	"strconv"
 	"unicode/utf8"
 )
 
 var (
-	pattern1 = regexp.MustCompile("^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
-	pattern2 = regexp.MustCompile("^#?[0-9a-fA-F]{6}$")
-	pattern4 = regexp.MustCompile("^#[0-9a-fA-F]{6}$")
-	pattern3 = regexp.MustCompile("^\\d+(\\.\\d+)?\\s?(b|kb|mb|gb)$")
+	pattern1  = regexp.MustCompile("^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
+	pattern2  = regexp.MustCompile("^#?[0-9a-fA-F]{6}$")
+	pattern4  = regexp.MustCompile("^#[0-9a-fA-F]{6}$")
+	pattern6  = regexp.MustCompile("^[0-9a-f]{32}$")
+	pattern8  = regexp.MustCompile("^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+	pattern7  = regexp.MustCompile("^[a-z0-9-]{2,40}$")
+	pattern5  = regexp.MustCompile("^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
+	pattern9  = regexp.MustCompile("^[a-z]{20}$")
+	pattern3  = regexp.MustCompile("^\\d+(\\.\\d+)?\\s?(b|kb|mb|gb)$")
+	pattern10 = regexp.MustCompile("^arn:aws:iam::\\d{12}:role\\/[\\w+=,.@/-]+$")
 )
 
 // Spoken language for auto-transcription as an ISO-639-1 code (e.g. en, es, ja), or 'auto' to detect. Ignored when a subtitle file is provided. Default: "auto".
@@ -2968,4 +2975,1820 @@ type FfprobeResult struct {
 	Stderr string `json:"stderr"`
 	// The complete report, when a frame or packet dump was too big to inline
 	ReportURL string `json:"reportUrl"`
+}
+
+// CreateAPIKeyParams is what APIKeys.Create sends. It is checked before anything is sent.
+type CreateAPIKeyParams struct {
+	// Descriptive name for the key (defaults to 'API Key')
+	Name string `json:"name,omitempty"`
+	// Expiration in seconds (e.g., 2592000 = 30 days). Omit for no expiry.
+	ExpiresIn *int64 `json:"expiresIn,omitempty"`
+	// What this key may do. Defaults to everything your role can grant. Never more than you can do yourself, and never keys:write, which a key can never hold. `write` includes `read` for the same resource.
+	Scopes []string `json:"scopes,omitempty"`
+}
+
+func (v CreateAPIKeyParams) validate(c *check, path string) {
+	if v.ExpiresIn != nil {
+		if float64(*v.ExpiresIn) <= 0 {
+			c.fail(join(path, "expiresIn"), "must be more than 0")
+		}
+	}
+	for i, e := range v.Scopes {
+		if e == "" {
+			c.fail(join(join(path, "scopes"), strconv.Itoa(i)), "is empty")
+		}
+	}
+}
+
+// UpdateAPIKeyParams is what APIKeys.Update sends. It is checked before anything is sent.
+type UpdateAPIKeyParams struct {
+	Name    string `json:"name,omitempty"`
+	Enabled *bool  `json:"enabled,omitempty"`
+}
+
+func (v UpdateAPIKeyParams) validate(c *check, path string) {
+	if v.Name != "" {
+		if utf8.RuneCountInString(string(v.Name)) > 200 {
+			c.fail(join(path, "name"), "must be at most 200 characters")
+		}
+	}
+}
+
+// CreateWebhookParams is what Webhooks.Create sends. It is checked before anything is sent.
+type CreateWebhookParams struct {
+	// Endpoint name (1-50 chars)
+	Name string `json:"name,omitempty"`
+	// Webhook endpoint URL (HTTPS only)
+	URL string `json:"url,omitempty"`
+	// Events to subscribe to
+	SubscribedEvents []WebhookEvent `json:"subscribedEvents,omitempty"`
+}
+
+func (v CreateWebhookParams) validate(c *check, path string) {
+	if v.Name == "" {
+		c.fail(join(path, "name"), "is required")
+	} else {
+		if utf8.RuneCountInString(string(v.Name)) > 50 {
+			c.fail(join(path, "name"), "must be at most 50 characters")
+		}
+	}
+	if v.URL == "" {
+		c.fail(join(path, "url"), "is required")
+	}
+	if len(v.SubscribedEvents) == 0 {
+		c.fail(join(path, "subscribedEvents"), "is required")
+	}
+}
+
+// UpdateWebhookParams is what Webhooks.Update sends. It is checked before anything is sent.
+type UpdateWebhookParams struct {
+	// Endpoint name (1-50 chars)
+	Name string `json:"name,omitempty"`
+	// Webhook endpoint URL (HTTPS only)
+	URL string `json:"url,omitempty"`
+	// Events to subscribe to
+	SubscribedEvents []WebhookEvent `json:"subscribedEvents,omitempty"`
+	// Enable or disable the endpoint
+	Active *bool `json:"active,omitempty"`
+}
+
+func (v UpdateWebhookParams) validate(c *check, path string) {
+	if v.Name != "" {
+		if utf8.RuneCountInString(string(v.Name)) > 50 {
+			c.fail(join(path, "name"), "must be at most 50 characters")
+		}
+	}
+}
+
+// CreateOrgParams is what Orgs.Create sends. It is checked before anything is sent.
+type CreateOrgParams struct {
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+}
+
+func (v CreateOrgParams) validate(c *check, path string) {
+	if v.Name == "" {
+		c.fail(join(path, "name"), "is required")
+	} else {
+		if utf8.RuneCountInString(string(v.Name)) < 2 {
+			c.fail(join(path, "name"), "must be at least 2 characters")
+		}
+		if utf8.RuneCountInString(string(v.Name)) > 50 {
+			c.fail(join(path, "name"), "must be at most 50 characters")
+		}
+	}
+	if v.Slug == "" {
+		c.fail(join(path, "slug"), "is required")
+	} else {
+		if utf8.RuneCountInString(string(v.Slug)) < 3 {
+			c.fail(join(path, "slug"), "must be at least 3 characters")
+		}
+		if utf8.RuneCountInString(string(v.Slug)) > 48 {
+			c.fail(join(path, "slug"), "must be at most 48 characters")
+		}
+		if !pattern5.MatchString(string(v.Slug)) {
+			c.fail(join(path, "slug"), "must match ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
+		}
+	}
+}
+
+// UpdateOrgParams is what Orgs.Update sends. It is checked before anything is sent.
+type UpdateOrgParams struct {
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+}
+
+func (v UpdateOrgParams) validate(c *check, path string) {
+	if v.Name != "" {
+		if utf8.RuneCountInString(string(v.Name)) < 2 {
+			c.fail(join(path, "name"), "must be at least 2 characters")
+		}
+		if utf8.RuneCountInString(string(v.Name)) > 50 {
+			c.fail(join(path, "name"), "must be at most 50 characters")
+		}
+	}
+	if v.Slug != "" {
+		if utf8.RuneCountInString(string(v.Slug)) < 2 {
+			c.fail(join(path, "slug"), "must be at least 2 characters")
+		}
+		if utf8.RuneCountInString(string(v.Slug)) > 50 {
+			c.fail(join(path, "slug"), "must be at most 50 characters")
+		}
+		if !pattern5.MatchString(string(v.Slug)) {
+			c.fail(join(path, "slug"), "must match ^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$")
+		}
+	}
+}
+
+// UpdateOrgSettingsParams is what Orgs.UpdateSettings sends. It is checked before anything is sent.
+// Region is a string from a fixed list. Validate refuses a value outside the list below.
+type Region string
+
+// The Region values this SDK knows.
+const (
+	RegionAuto       Region = "auto"
+	RegionUsEast1    Region = "us-east-1"
+	RegionEuCentral1 Region = "eu-central-1"
+)
+
+func (v Region) known() bool {
+	switch v {
+	case RegionAuto, RegionUsEast1, RegionEuCentral1:
+		return true
+	}
+	return false
+}
+
+type UpdateOrgSettingsParams struct {
+	BillingEmailsEnabled    *bool  `json:"billingEmailsEnabled,omitempty"`
+	DefaultRegion           Region `json:"defaultRegion,omitempty"`
+	RegionPinned            *bool  `json:"regionPinned,omitempty"`
+	ProductAnalyticsEnabled *bool  `json:"productAnalyticsEnabled,omitempty"`
+}
+
+func (v UpdateOrgSettingsParams) validate(c *check, path string) {
+	if v.DefaultRegion != "" && !v.DefaultRegion.known() {
+		c.fail(join(path, "defaultRegion"), "is not one of the known values")
+	}
+}
+
+// InviteMemberParams is what Orgs.Members.Invite sends. It is checked before anything is sent.
+// MemberRole is a string from a fixed list. Validate refuses a value outside the list below.
+type MemberRole string
+
+// The MemberRole values this SDK knows.
+const (
+	MemberRoleOwner  MemberRole = "owner"
+	MemberRoleAdmin  MemberRole = "admin"
+	MemberRoleMember MemberRole = "member"
+)
+
+func (v MemberRole) known() bool {
+	switch v {
+	case MemberRoleOwner, MemberRoleAdmin, MemberRoleMember:
+		return true
+	}
+	return false
+}
+
+type InviteMemberParams struct {
+	Email string     `json:"email,omitempty"`
+	Role  MemberRole `json:"role,omitempty"`
+}
+
+func (v InviteMemberParams) validate(c *check, path string) {
+	if v.Email == "" {
+		c.fail(join(path, "email"), "is required")
+	}
+	if v.Role == "" {
+		c.fail(join(path, "role"), "is required")
+	} else if !v.Role.known() {
+		c.fail(join(path, "role"), "is not one of the known values")
+	}
+}
+
+// ChangeRoleParams is what Orgs.Members.ChangeRole sends. It is checked before anything is sent.
+type ChangeRoleParams struct {
+	Role MemberRole `json:"role,omitempty"`
+}
+
+func (v ChangeRoleParams) validate(c *check, path string) {
+	if v.Role == "" {
+		c.fail(join(path, "role"), "is required")
+	} else if !v.Role.known() {
+		c.fail(join(path, "role"), "is not one of the known values")
+	}
+}
+
+// MarkReadParams is what Notifications.MarkRead sends. It is checked before anything is sent.
+type MarkReadParams struct {
+	IDs []string `json:"ids,omitempty"`
+}
+
+func (v MarkReadParams) validate(c *check, path string) {
+	if len(v.IDs) == 0 {
+		c.fail(join(path, "ids"), "is required")
+	}
+	if len(v.IDs) > 50 {
+		c.fail(join(path, "ids"), "must have at most 50 items")
+	}
+	for i, e := range v.IDs {
+		if e == "" {
+			c.fail(join(join(path, "ids"), strconv.Itoa(i)), "is empty")
+		}
+	}
+}
+
+// CheckoutCreditsParams is what Billing.CheckoutCredits sends. It is checked before anything is sent.
+// Omit for a one-time purchase. "month" starts a recurring top-up of the same amount every month.
+//
+// Validate refuses a value outside the list below.
+type CheckoutCreditsInterval string
+
+// The CheckoutCreditsInterval values this SDK knows.
+const (
+	CheckoutCreditsIntervalMonth CheckoutCreditsInterval = "month"
+)
+
+func (v CheckoutCreditsInterval) known() bool {
+	switch v {
+	case CheckoutCreditsIntervalMonth:
+		return true
+	}
+	return false
+}
+
+type CheckoutCreditsParams struct {
+	// Amount in dollars (minimum $10)
+	Amount *float64 `json:"amount,omitempty"`
+	// Omit for a one-time purchase. "month" starts a recurring top-up of the same amount every month.
+	Interval CheckoutCreditsInterval `json:"interval,omitempty"`
+}
+
+func (v CheckoutCreditsParams) validate(c *check, path string) {
+	if v.Amount == nil {
+		c.fail(join(path, "amount"), "is required")
+	} else {
+		if float64(*v.Amount) < 10 {
+			c.fail(join(path, "amount"), "must be at least 10")
+		}
+	}
+	if v.Interval != "" && !v.Interval.known() {
+		c.fail(join(path, "interval"), "is not one of the known values")
+	}
+}
+
+// CheckoutPlanParams is what Billing.CheckoutPlan sends. It is checked before anything is sent.
+type CheckoutPlanParams struct {
+	Plan PlanSlug `json:"plan,omitempty"`
+}
+
+func (v CheckoutPlanParams) validate(c *check, path string) {
+	if len(v.Plan) == 0 {
+		c.fail(join(path, "plan"), "is required")
+	}
+}
+
+// CreateStorageParams is what Storage.Create sends. It is checked before anything is sent.
+//
+// It is one of: CreateStorageR2Params, CreateStorageSupabaseParams, CreateStorageS3Params, CreateStorageS3CompatibleParams.
+type CreateStorageParams interface {
+	isCreateStorageParams()
+	validate(c *check, path string)
+}
+
+// R2Jurisdiction is a string from a fixed list. Validate refuses a value outside the list below.
+type R2Jurisdiction string
+
+// The R2Jurisdiction values this SDK knows.
+const (
+	R2JurisdictionEu      R2Jurisdiction = "eu"
+	R2JurisdictionFedramp R2Jurisdiction = "fedramp"
+	R2JurisdictionUs      R2Jurisdiction = "us"
+)
+
+func (v R2Jurisdiction) known() bool {
+	switch v {
+	case R2JurisdictionEu, R2JurisdictionFedramp, R2JurisdictionUs:
+		return true
+	}
+	return false
+}
+
+// Set it to one of: StorageKeys, StorageCloudflareToken.
+type CreateStorageR2Credentials interface {
+	isCreateStorageR2Credentials()
+	validate(c *check, path string)
+}
+
+type StorageKeys struct {
+	AccessKeyID     string `json:"accessKeyId,omitempty"`
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+}
+
+// MarshalJSON sends type "keys" with the fields.
+func (v StorageKeys) MarshalJSON() ([]byte, error) {
+	type plain StorageKeys
+	return marshalWith(plain(v), "type", "keys")
+}
+
+func (v StorageKeys) validate(c *check, path string) {
+	if v.AccessKeyID == "" {
+		c.fail(join(path, "accessKeyId"), "is required")
+	}
+	if v.SecretAccessKey == "" {
+		c.fail(join(path, "secretAccessKey"), "is required")
+	}
+}
+
+func (StorageKeys) isCreateStorageR2Credentials() {}
+
+type StorageCloudflareToken struct {
+	Token string `json:"token,omitempty"`
+}
+
+// MarshalJSON sends type "cloudflare-token" with the fields.
+func (v StorageCloudflareToken) MarshalJSON() ([]byte, error) {
+	type plain StorageCloudflareToken
+	return marshalWith(plain(v), "type", "cloudflare-token")
+}
+
+func (v StorageCloudflareToken) validate(c *check, path string) {
+	if v.Token == "" {
+		c.fail(join(path, "token"), "is required")
+	}
+}
+
+func (StorageCloudflareToken) isCreateStorageR2Credentials() {}
+
+type CreateStorageR2Params struct {
+	AccountID     string                     `json:"accountId,omitempty"`
+	Jurisdiction  R2Jurisdiction             `json:"jurisdiction,omitempty"`
+	Credentials   CreateStorageR2Credentials `json:"credentials,omitempty"`
+	ID            string                     `json:"id,omitempty"`
+	Bucket        string                     `json:"bucket,omitempty"`
+	PublicBaseURL string                     `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool                      `json:"createBucket,omitempty"`
+}
+
+// MarshalJSON sends provider "r2" with the fields.
+func (v CreateStorageR2Params) MarshalJSON() ([]byte, error) {
+	type plain CreateStorageR2Params
+	return marshalWith(plain(v), "provider", "r2")
+}
+
+func (v CreateStorageR2Params) validate(c *check, path string) {
+	if v.AccountID != "" {
+		if !pattern6.MatchString(string(v.AccountID)) {
+			c.fail(join(path, "accountId"), "must match ^[0-9a-f]{32}$")
+		}
+	}
+	if v.Jurisdiction != "" && !v.Jurisdiction.known() {
+		c.fail(join(path, "jurisdiction"), "is not one of the known values")
+	}
+	if v.Credentials == nil {
+		c.fail(join(path, "credentials"), "is required")
+	} else {
+		v.Credentials.validate(c, join(path, "credentials"))
+	}
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+}
+
+func (CreateStorageR2Params) isCreateStorageParams() {}
+
+// Set it to one of: StorageKeys, StorageSupabaseSession.
+type CreateStorageSupabaseCredentials interface {
+	isCreateStorageSupabaseCredentials()
+	validate(c *check, path string)
+}
+
+func (StorageKeys) isCreateStorageSupabaseCredentials() {}
+
+type StorageSupabaseSession struct {
+	AnonKey      string `json:"anonKey,omitempty"`
+	SessionToken string `json:"sessionToken,omitempty"`
+}
+
+// MarshalJSON sends type "supabase-session" with the fields.
+func (v StorageSupabaseSession) MarshalJSON() ([]byte, error) {
+	type plain StorageSupabaseSession
+	return marshalWith(plain(v), "type", "supabase-session")
+}
+
+func (v StorageSupabaseSession) validate(c *check, path string) {
+	if v.AnonKey == "" {
+		c.fail(join(path, "anonKey"), "is required")
+	}
+	if v.SessionToken == "" {
+		c.fail(join(path, "sessionToken"), "is required")
+	}
+}
+
+func (StorageSupabaseSession) isCreateStorageSupabaseCredentials() {}
+
+type CreateStorageSupabaseParams struct {
+	ProjectRef    string                           `json:"projectRef,omitempty"`
+	Endpoint      string                           `json:"endpoint,omitempty"`
+	Region        string                           `json:"region,omitempty"`
+	Credentials   CreateStorageSupabaseCredentials `json:"credentials,omitempty"`
+	ID            string                           `json:"id,omitempty"`
+	Bucket        string                           `json:"bucket,omitempty"`
+	PublicBaseURL string                           `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool                            `json:"createBucket,omitempty"`
+}
+
+// MarshalJSON sends provider "supabase" with the fields.
+func (v CreateStorageSupabaseParams) MarshalJSON() ([]byte, error) {
+	type plain CreateStorageSupabaseParams
+	return marshalWith(plain(v), "provider", "supabase")
+}
+
+func (v CreateStorageSupabaseParams) validate(c *check, path string) {
+	if v.ProjectRef != "" {
+		if !pattern9.MatchString(string(v.ProjectRef)) {
+			c.fail(join(path, "projectRef"), "must match ^[a-z]{20}$")
+		}
+	}
+	if v.Region == "" {
+		c.fail(join(path, "region"), "is required")
+	}
+	if v.Credentials == nil {
+		c.fail(join(path, "credentials"), "is required")
+	} else {
+		v.Credentials.validate(c, join(path, "credentials"))
+	}
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+}
+
+func (CreateStorageSupabaseParams) isCreateStorageParams() {}
+
+// Set it to one of: StorageKeys, StorageAWSRole.
+type CreateStorageS3Credentials interface {
+	isCreateStorageS3Credentials()
+	validate(c *check, path string)
+}
+
+func (StorageKeys) isCreateStorageS3Credentials() {}
+
+type StorageAWSRole struct {
+	RoleARN string `json:"roleArn,omitempty"`
+}
+
+// MarshalJSON sends type "aws-role" with the fields.
+func (v StorageAWSRole) MarshalJSON() ([]byte, error) {
+	type plain StorageAWSRole
+	return marshalWith(plain(v), "type", "aws-role")
+}
+
+func (v StorageAWSRole) validate(c *check, path string) {
+	if v.RoleARN == "" {
+		c.fail(join(path, "roleArn"), "is required")
+	} else {
+		if !pattern10.MatchString(string(v.RoleARN)) {
+			c.fail(join(path, "roleArn"), "must match ^arn:aws:iam::\\d{12}:role\\/[\\w+=,.@/-]+$")
+		}
+	}
+}
+
+func (StorageAWSRole) isCreateStorageS3Credentials() {}
+
+type CreateStorageS3Params struct {
+	Region        string                     `json:"region,omitempty"`
+	Credentials   CreateStorageS3Credentials `json:"credentials,omitempty"`
+	ID            string                     `json:"id,omitempty"`
+	Bucket        string                     `json:"bucket,omitempty"`
+	PublicBaseURL string                     `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool                      `json:"createBucket,omitempty"`
+}
+
+// MarshalJSON sends provider "s3" with the fields.
+func (v CreateStorageS3Params) MarshalJSON() ([]byte, error) {
+	type plain CreateStorageS3Params
+	return marshalWith(plain(v), "provider", "s3")
+}
+
+func (v CreateStorageS3Params) validate(c *check, path string) {
+	if v.Credentials == nil {
+		c.fail(join(path, "credentials"), "is required")
+	} else {
+		v.Credentials.validate(c, join(path, "credentials"))
+	}
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+}
+
+func (CreateStorageS3Params) isCreateStorageParams() {}
+
+type CreateStorageS3CompatibleParams struct {
+	Endpoint      string       `json:"endpoint,omitempty"`
+	Region        string       `json:"region,omitempty"`
+	PathStyle     *bool        `json:"pathStyle,omitempty"`
+	Credentials   *StorageKeys `json:"credentials,omitempty"`
+	ID            string       `json:"id,omitempty"`
+	Bucket        string       `json:"bucket,omitempty"`
+	PublicBaseURL string       `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool        `json:"createBucket,omitempty"`
+}
+
+// MarshalJSON sends provider "s3-compatible" with the fields.
+func (v CreateStorageS3CompatibleParams) MarshalJSON() ([]byte, error) {
+	type plain CreateStorageS3CompatibleParams
+	return marshalWith(plain(v), "provider", "s3-compatible")
+}
+
+func (v CreateStorageS3CompatibleParams) validate(c *check, path string) {
+	if v.Endpoint == "" {
+		c.fail(join(path, "endpoint"), "is required")
+	}
+	if v.Region == "" {
+		c.fail(join(path, "region"), "is required")
+	}
+	if v.Credentials == nil {
+		c.fail(join(path, "credentials"), "is required")
+	} else {
+		v.Credentials.validate(c, join(path, "credentials"))
+	}
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+}
+
+func (CreateStorageS3CompatibleParams) isCreateStorageParams() {}
+
+// UpdateStorageParams is what Storage.Update sends. It is checked before anything is sent.
+//
+// Set it to one of: StorageKeys, StorageCloudflareToken, StorageAWSRole, StorageSupabaseSession.
+type UpdateStorageCredentials interface {
+	isUpdateStorageCredentials()
+	validate(c *check, path string)
+}
+
+func (StorageKeys) isUpdateStorageCredentials() {}
+
+func (StorageCloudflareToken) isUpdateStorageCredentials() {}
+
+func (StorageAWSRole) isUpdateStorageCredentials() {}
+
+func (StorageSupabaseSession) isUpdateStorageCredentials() {}
+
+// StorageOnConflict is a string from a fixed list. Validate refuses a value outside the list below.
+type StorageOnConflict string
+
+// The StorageOnConflict values this SDK knows.
+const (
+	StorageOnConflictSuffix  StorageOnConflict = "suffix"
+	StorageOnConflictReplace StorageOnConflict = "replace"
+)
+
+func (v StorageOnConflict) known() bool {
+	switch v {
+	case StorageOnConflictSuffix, StorageOnConflictReplace:
+		return true
+	}
+	return false
+}
+
+type UpdateStorageParams struct {
+	Credentials        UpdateStorageCredentials `json:"credentials,omitempty"`
+	PublicBaseURL      string                   `json:"publicBaseUrl,omitempty"`
+	PathTemplate       string                   `json:"pathTemplate,omitempty"`
+	OnConflict         StorageOnConflict        `json:"onConflict,omitempty"`
+	DefaultDestination *bool                    `json:"defaultDestination,omitempty"`
+}
+
+func (v UpdateStorageParams) validate(c *check, path string) {
+	if v.Credentials != nil {
+		v.Credentials.validate(c, join(path, "credentials"))
+	}
+	if v.PathTemplate != "" {
+		if utf8.RuneCountInString(string(v.PathTemplate)) > 512 {
+			c.fail(join(path, "pathTemplate"), "must be at most 512 characters")
+		}
+	}
+	if v.OnConflict != "" && !v.OnConflict.known() {
+		c.fail(join(path, "onConflict"), "is not one of the known values")
+	}
+}
+
+// PrepareAWSStorageParams is what Storage.PrepareAWS sends. It is checked before anything is sent.
+// StorageAccess is a string from a fixed list. Validate refuses a value outside the list below.
+type StorageAccess string
+
+// The StorageAccess values this SDK knows.
+const (
+	StorageAccessDeliver StorageAccess = "deliver"
+	StorageAccessRead    StorageAccess = "read"
+)
+
+func (v StorageAccess) known() bool {
+	switch v {
+	case StorageAccessDeliver, StorageAccessRead:
+		return true
+	}
+	return false
+}
+
+type PrepareAWSStorageParams struct {
+	ID            string        `json:"id,omitempty"`
+	Bucket        string        `json:"bucket,omitempty"`
+	Region        string        `json:"region,omitempty"`
+	PublicBaseURL string        `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool         `json:"createBucket,omitempty"`
+	Access        StorageAccess `json:"access,omitempty"`
+}
+
+func (v PrepareAWSStorageParams) validate(c *check, path string) {
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+	if v.Access != "" && !v.Access.known() {
+		c.fail(join(path, "access"), "is not one of the known values")
+	}
+}
+
+// FinishSupabaseParams is what Storage.FinishSupabase sends. It is checked before anything is sent.
+type FinishSupabaseParams struct {
+	State         string `json:"state,omitempty"`
+	ProjectRef    string `json:"projectRef,omitempty"`
+	ID            string `json:"id,omitempty"`
+	Bucket        string `json:"bucket,omitempty"`
+	PublicBaseURL string `json:"publicBaseUrl,omitempty"`
+	CreateBucket  *bool  `json:"createBucket,omitempty"`
+}
+
+func (v FinishSupabaseParams) validate(c *check, path string) {
+	if v.State == "" {
+		c.fail(join(path, "state"), "is required")
+	}
+	if v.ProjectRef == "" {
+		c.fail(join(path, "projectRef"), "is required")
+	} else {
+		if !pattern9.MatchString(string(v.ProjectRef)) {
+			c.fail(join(path, "projectRef"), "must match ^[a-z]{20}$")
+		}
+	}
+	if v.ID == "" {
+		c.fail(join(path, "id"), "is required")
+	} else {
+		if !pattern7.MatchString(string(v.ID)) {
+			c.fail(join(path, "id"), "must match ^[a-z0-9-]{2,40}$")
+		}
+	}
+	if v.Bucket == "" {
+		c.fail(join(path, "bucket"), "is required")
+	} else {
+		if !pattern8.MatchString(string(v.Bucket)) {
+			c.fail(join(path, "bucket"), "must match ^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,253}[A-Za-z0-9])?$")
+		}
+	}
+}
+
+// StorageProvider names where a storage connection's bucket lives.
+//
+// The API may add values, so keep a default branch.
+type StorageProvider string
+
+// The StorageProvider values this SDK knows.
+const (
+	StorageProviderR2           StorageProvider = "r2"
+	StorageProviderSupabase     StorageProvider = "supabase"
+	StorageProviderS3           StorageProvider = "s3"
+	StorageProviderS3Compatible StorageProvider = "s3-compatible"
+)
+
+// Filter by asset kind
+//
+// The API may add values, so keep a default branch.
+type AssetKind string
+
+// The AssetKind values this SDK knows.
+const (
+	AssetKindMedia       AssetKind = "media"
+	AssetKindPsdTemplate AssetKind = "psd_template"
+	AssetKindFont        AssetKind = "font"
+	AssetKindOther       AssetKind = "other"
+)
+
+// Filter by scope (defaults to org assets)
+//
+// The API may add values, so keep a default branch.
+type AssetScope string
+
+// The AssetScope values this SDK knows.
+const (
+	AssetScopeOrg    AssetScope = "org"
+	AssetScopeSystem AssetScope = "system"
+)
+
+// Filter by status
+//
+// The API may add values, so keep a default branch.
+type AssetStatus string
+
+// The AssetStatus values this SDK knows.
+const (
+	AssetStatusPending   AssetStatus = "pending"
+	AssetStatusUploading AssetStatus = "uploading"
+	AssetStatusReady     AssetStatus = "ready"
+	AssetStatusFailed    AssetStatus = "failed"
+	AssetStatusExpired   AssetStatus = "expired"
+)
+
+// Filter by lifecycle
+//
+// The API may add values, so keep a default branch.
+type AssetLifecycle string
+
+// The AssetLifecycle values this SDK knows.
+const (
+	AssetLifecycleEphemeral AssetLifecycle = "ephemeral"
+	AssetLifecyclePersisted AssetLifecycle = "persisted"
+)
+
+// Window (default 24h). `all` covers the org's whole history. Default: "24h".
+//
+// The API may add values, so keep a default branch.
+type StatsWindow string
+
+// The StatsWindow values this SDK knows.
+const (
+	StatsWindowDay     StatsWindow = "24h"
+	StatsWindowWeek    StatsWindow = "7d"
+	StatsWindowMonth   StatsWindow = "30d"
+	StatsWindowQuarter StatsWindow = "90d"
+	StatsWindowYear    StatsWindow = "365d"
+	StatsWindowAll     StatsWindow = "all"
+)
+
+// Who created the key. Null when that account no longer exists.
+type APIKeyCreatedBy struct {
+	Name string `json:"name"`
+	// False once the creator has left the workspace. The key stays.
+	InWorkspace bool `json:"inWorkspace"`
+	// The creator's email, as the Team page shows it. Null once they have left, or when the caller cannot read the team.
+	Email string `json:"email"`
+	// The creator's role in this workspace now. Null once they have left, or when the caller cannot read the team.
+	Role *MemberRole `json:"role"`
+}
+
+// Who disabled the key. Null when it is enabled, or was disabled before this was recorded.
+type APIKeyDisabledBy struct {
+	Name string `json:"name"`
+}
+
+// APIKey is read from the API. Fields it does not send are zero.
+type APIKey struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// Key prefix (rb_xxx)
+	Prefix string `json:"prefix"`
+	// False when the key is disabled (soft-revoked)
+	Enabled bool `json:"enabled"`
+	// Unix ms
+	CreatedAt  UnixMillis `json:"createdAt"`
+	LastUsedAt UnixMillis `json:"lastUsedAt"`
+	ExpiresAt  UnixMillis `json:"expiresAt"`
+	// What the key may do, `write` including `read`. Set when the key is created and never changed by its creator's role. Never keys:write.
+	Scopes []string `json:"scopes"`
+	// Who created the key. Null when that account no longer exists.
+	CreatedBy *APIKeyCreatedBy `json:"createdBy"`
+	// Whether the caller may rename, disable or revoke this key.
+	Manageable bool `json:"manageable"`
+	// Who disabled the key. Null when it is enabled, or was disabled before this was recorded.
+	DisabledBy *APIKeyDisabledBy `json:"disabledBy"`
+	// Unix ms the key was disabled, when recorded.
+	DisabledAt UnixMillis `json:"disabledAt"`
+	// Full API key value (rb_xxx...). Only returned once!
+	Key string `json:"key"`
+}
+
+// WebhookEndpoint is read from the API. Fields it does not send are zero.
+type WebhookEndpoint struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
+	// Masked signing secret
+	SigningSecret       string         `json:"signingSecret"`
+	Active              bool           `json:"active"`
+	DisabledReason      string         `json:"disabledReason"`
+	ConsecutiveFailures int64          `json:"consecutiveFailures"`
+	SubscribedEvents    []WebhookEvent `json:"subscribedEvents"`
+	RotationActive      bool           `json:"rotationActive"`
+	SecretExpiresAt     UnixMillis     `json:"secretExpiresAt"`
+	CreatedAt           UnixMillis     `json:"createdAt"`
+	UpdatedAt           UnixMillis     `json:"updatedAt"`
+}
+
+// WebhookTestResult is read from the API. Fields it does not send are zero.
+type WebhookTestResult struct {
+	Delivered      bool     `json:"delivered"`
+	StatusCode     *float64 `json:"statusCode"`
+	ResponseTimeMs int64    `json:"responseTimeMs"`
+}
+
+// WebhookDeliveryStatus is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type WebhookDeliveryStatus string
+
+// The WebhookDeliveryStatus values this SDK knows.
+const (
+	WebhookDeliveryStatusPending   WebhookDeliveryStatus = "pending"
+	WebhookDeliveryStatusDelivered WebhookDeliveryStatus = "delivered"
+	WebhookDeliveryStatusFailed    WebhookDeliveryStatus = "failed"
+	WebhookDeliveryStatusCancelled WebhookDeliveryStatus = "cancelled"
+)
+
+// WebhookDelivery is read from the API. Fields it does not send are zero.
+type WebhookDelivery struct {
+	ID            string                `json:"id"`
+	EndpointID    string                `json:"endpointId"`
+	EndpointName  string                `json:"endpointName"`
+	JobID         string                `json:"jobId"`
+	Event         WebhookEvent          `json:"event"`
+	Payload       string                `json:"payload"`
+	Status        WebhookDeliveryStatus `json:"status"`
+	StatusCode    *int64                `json:"statusCode"`
+	ResponseBody  string                `json:"responseBody"`
+	Attempts      int64                 `json:"attempts"`
+	LastAttemptAt UnixMillis            `json:"lastAttemptAt"`
+	CreatedAt     UnixMillis            `json:"createdAt"`
+}
+
+// RetriedDelivery is read from the API. Fields it does not send are zero.
+type RetriedDelivery struct {
+	ID         string                `json:"id"`
+	Status     WebhookDeliveryStatus `json:"status"`
+	Event      WebhookEvent          `json:"event"`
+	EndpointID string                `json:"endpointId"`
+}
+
+// OffsetMeta is read from the API. Fields it does not send are zero.
+type OffsetMeta struct {
+	// Total matching assets
+	Total int64 `json:"total"`
+	// Items per page
+	Limit int64 `json:"limit"`
+	// Current offset
+	Offset int64 `json:"offset"`
+}
+
+// PageMeta is read from the API. Fields it does not send are zero.
+type PageMeta struct {
+	Total int64 `json:"total"`
+	Page  int64 `json:"page"`
+	Limit int64 `json:"limit"`
+}
+
+// DeliveryPageMeta is read from the API. Fields it does not send are zero.
+type DeliveryPageMeta struct {
+	Total  int64   `json:"total"`
+	Limit  int64   `json:"limit"`
+	Offset float64 `json:"offset"`
+}
+
+// BillingStateBalance is read from the API. Fields it does not send are zero.
+type BillingStateBalance struct {
+	// Balance in dollars
+	Amount float64 `json:"amount"`
+}
+
+// BillingStatePlanLimits is read from the API. Fields it does not send are zero.
+type BillingStatePlanLimits struct {
+	ConcurrentJobs       int64 `json:"concurrentJobs"`
+	APIRequestsPerMinute int64 `json:"apiRequestsPerMinute"`
+	MaxJobTimeout        int64 `json:"maxJobTimeout"`
+	MaxInputFileSize     int64 `json:"maxInputFileSize"`
+	// Members the organization may hold, pending invitations included
+	TeamMembers int64 `json:"teamMembers"`
+}
+
+// BillingStatePlan is read from the API. Fields it does not send are zero.
+type BillingStatePlan struct {
+	// The plan id: free, pro, studio for a self-serve plan, or an enterprise plan's own id.
+	Slug PlanSlug `json:"slug"`
+	// Display name
+	Name string `json:"name"`
+	// Monthly price in dollars
+	Price  float64                 `json:"price"`
+	Limits *BillingStatePlanLimits `json:"limits"`
+}
+
+// BillingStateSubscription is read from the API. Fields it does not send are zero.
+type BillingStateSubscription struct {
+	Status             string     `json:"status"`
+	CancelAtPeriodEnd  bool       `json:"cancelAtPeriodEnd"`
+	CurrentPeriodEnd   UnixMillis `json:"currentPeriodEnd"`
+	CurrentPeriodStart UnixMillis `json:"currentPeriodStart"`
+	// True when a change to another paid plan moves this subscription, billed or credited pro rata. False when it opens a checkout.
+	ChangesInPlace bool `json:"changesInPlace"`
+}
+
+// BillingStateUsage is read from the API. Fields it does not send are zero.
+type BillingStateUsage struct {
+	// Spend in dollars for the current period
+	CurrentPeriodSpend float64 `json:"currentPeriodSpend"`
+	// Jobs in the current period
+	JobCount int64 `json:"jobCount"`
+	// Milliseconds the org's jobs spent waiting for a concurrency slot over the reporting window: the last 30 days on Free, the current billing period on a paid plan. Counts only jobs whose wait passed the dispatch floor, so a job that never queued adds nothing.
+	SlotWaitMs int64 `json:"slotWaitMs"`
+	// Jobs that waited for a concurrency slot over the same window
+	SlotWaitJobs int64 `json:"slotWaitJobs"`
+	// Milliseconds the plan's extra concurrency slots saved the org's jobs over the same window: what the same jobs would have waited behind the free plan's single slot, beyond what they did. Counts only jobs whose saving passed the dispatch floor. Always 0 on Free.
+	SlotWaitSavedMs int64 `json:"slotWaitSavedMs"`
+	// Jobs whose saving passed the dispatch floor over the same window. Always 0 on Free.
+	SlotWaitSavedJobs int64 `json:"slotWaitSavedJobs"`
+}
+
+// BillingStateCreditsAdded is read from the API. Fields it does not send are zero.
+type BillingStateCreditsAdded struct {
+	// Dollars bought, lifetime, net of any plan bonus
+	Purchased float64 `json:"purchased"`
+	// Dollars the plan added on top of purchases, lifetime
+	Bonus float64 `json:"bonus"`
+	// Dollars granted by a plan's monthly credits, lifetime
+	Included float64 `json:"included"`
+	// Dollars from the signup grant
+	Granted float64 `json:"granted"`
+}
+
+// Active recurring credit top-up, or null when the org has none
+type BillingStateCreditSchedule struct {
+	// Amount added each month, in cents
+	AmountCents int64 `json:"amountCents"`
+	// Unix ms of the next charge
+	CurrentPeriodEnd UnixMillis `json:"currentPeriodEnd"`
+	// True when the schedule ends at the current period
+	CancelAtPeriodEnd bool `json:"cancelAtPeriodEnd"`
+}
+
+// Next plan up for upgrade comparison. Null if on highest plan.
+type BillingStateUpgradePlan struct {
+	// Plan slug
+	ID string `json:"id"`
+	// Display name
+	Name string `json:"name"`
+	// Monthly price in dollars
+	Price  float64                 `json:"price"`
+	Limits *BillingStatePlanLimits `json:"limits"`
+}
+
+// BillingState is read from the API. Fields it does not send are zero.
+type BillingState struct {
+	Balance      *BillingStateBalance      `json:"balance"`
+	Plan         *BillingStatePlan         `json:"plan"`
+	Subscription *BillingStateSubscription `json:"subscription"`
+	Usage        *BillingStateUsage        `json:"usage"`
+	// True on any paid plan
+	IsPro bool `json:"isPro"`
+	// Bonus multiplier on credit purchases
+	CreditBonusRate float64                   `json:"creditBonusRate"`
+	CreditsAdded    *BillingStateCreditsAdded `json:"creditsAdded"`
+	// Active recurring credit top-up, or null when the org has none
+	CreditSchedule *BillingStateCreditSchedule `json:"creditSchedule"`
+	// Next plan up for upgrade comparison. Null if on highest plan.
+	UpgradePlan *BillingStateUpgradePlan `json:"upgradePlan"`
+}
+
+// UsageByJobTypeValue is read from the API. Fields it does not send are zero.
+type UsageByJobTypeValue struct {
+	JobCount        int64  `json:"jobCount"`
+	AmountCharged   int64  `json:"amountCharged"`
+	AmountFormatted string `json:"amountFormatted"`
+	ComputeSeconds  int64  `json:"computeSeconds"`
+}
+
+// UsageDailyItem is read from the API. Fields it does not send are zero.
+type UsageDailyItem struct {
+	Date           string  `json:"date"`
+	JobType        JobType `json:"jobType"`
+	JobCount       int64   `json:"jobCount"`
+	AmountCharged  int64   `json:"amountCharged"`
+	ComputeSeconds int64   `json:"computeSeconds"`
+}
+
+// Usage is read from the API. Fields it does not send are zero.
+type Usage struct {
+	TotalJobs int64 `json:"totalJobs"`
+	// Total charged in nanodollars
+	TotalAmountCharged int64 `json:"totalAmountCharged"`
+	// Total formatted as dollars
+	TotalAmountFormatted string                         `json:"totalAmountFormatted"`
+	TotalComputeSeconds  int64                          `json:"totalComputeSeconds"`
+	ByJobType            map[string]UsageByJobTypeValue `json:"byJobType"`
+	Daily                []UsageDailyItem               `json:"daily"`
+}
+
+// ClientUsage is read from the API. Fields it does not send are zero.
+type ClientUsage struct {
+	// Originating client: dashboard|sdk|cli|mcp|n8n|api|<custom>
+	Client   string `json:"client"`
+	JobCount int64  `json:"jobCount"`
+	// Nanodollars charged for this client's jobs
+	AmountCharged   int64  `json:"amountCharged"`
+	AmountFormatted string `json:"amountFormatted"`
+}
+
+// Transaction is read from the API. Fields it does not send are zero.
+type Transaction struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	// Amount in dollars (positive = credit, negative = debit)
+	Amount float64 `json:"amount"`
+	// Real money paid in dollars
+	PaidAmount float64 `json:"paidAmount"`
+	// Bonus credits in dollars
+	BonusAmount float64 `json:"bonusAmount"`
+	JobID       string  `json:"jobId"`
+	// Job type for job-linked rows (e.g. 'ffmpeg'); null otherwise
+	JobType JobType `json:"jobType"`
+	// Balance after transaction in dollars
+	BalanceAfter float64 `json:"balanceAfter"`
+	// Unix timestamp in milliseconds
+	CreatedAt UnixMillis `json:"createdAt"`
+}
+
+// Invoice is read from the API. Fields it does not send are zero.
+type Invoice struct {
+	ID string `json:"id"`
+	// Amount in dollars
+	Amount      float64 `json:"amount"`
+	Currency    string  `json:"currency"`
+	Status      string  `json:"status"`
+	ProductName string  `json:"productName"`
+	// ISO 8601 creation date
+	CreatedAt string `json:"createdAt"`
+}
+
+// Checkout is read from the API. Fields it does not send are zero.
+type Checkout struct {
+	CheckoutURL string `json:"checkoutUrl"`
+	CheckoutID  string `json:"checkoutId"`
+}
+
+// PaymentMethod is read from the API. Fields it does not send are zero.
+type PaymentMethod struct {
+	ID string `json:"id"`
+	// Payment method type (e.g., 'card')
+	Type string `json:"type"`
+	// Card brand (e.g., 'visa', 'mastercard')
+	Brand string `json:"brand"`
+	// Last 4 digits of card number
+	Last4 string `json:"last4"`
+	// Card expiration month
+	ExpMonth *int64 `json:"expMonth"`
+	// Card expiration year
+	ExpYear *int64 `json:"expYear"`
+	// Wallet type if applicable (e.g., 'apple_pay')
+	Wallet string `json:"wallet"`
+	// Whether this is the default payment method
+	IsDefault bool `json:"isDefault"`
+}
+
+// NotificationSeverity is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type NotificationSeverity string
+
+// The NotificationSeverity values this SDK knows.
+const (
+	NotificationSeverityInfo    NotificationSeverity = "info"
+	NotificationSeveritySuccess NotificationSeverity = "success"
+	NotificationSeverityWarning NotificationSeverity = "warning"
+	NotificationSeverityError   NotificationSeverity = "error"
+)
+
+// Notification is read from the API. Fields it does not send are zero.
+type Notification struct {
+	ID       string               `json:"id"`
+	Severity NotificationSeverity `json:"severity"`
+	Title    string               `json:"title"`
+	Body     string               `json:"body"`
+	// Dashboard path this notification links to
+	Href string `json:"href"`
+	// Button text for the linked action, e.g. "Update payment"; null when there is nothing to do
+	ActionLabel string `json:"actionLabel"`
+	// Shown once in a modal until read
+	RequiresAck bool `json:"requiresAck"`
+	// Whether the calling user has read it
+	Read bool `json:"read"`
+	// Unix ms
+	CreatedAt UnixMillis `json:"createdAt"`
+}
+
+// NotificationsRead is read from the API. Fields it does not send are zero.
+type NotificationsRead struct {
+	Read int64 `json:"read"`
+}
+
+// Org is read from the API. Fields it does not send are zero.
+type Org struct {
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Slug      string     `json:"slug"`
+	Role      MemberRole `json:"role"`
+	CreatedAt UnixMillis `json:"createdAt"`
+}
+
+// CurrentOrgDetails is read from the API. Fields it does not send are zero.
+type CurrentOrgDetails struct {
+	// Organization ID
+	ID string `json:"id"`
+	// Organization name
+	Name string `json:"name"`
+	// Organization slug (URL-friendly)
+	Slug string `json:"slug"`
+	// Creation timestamp (Unix ms)
+	CreatedAt UnixMillis `json:"createdAt"`
+	// Current user's role in this org (owner|admin|member). For an API key, its creator's role: a key's own access is its scopes.
+	MemberRole MemberRole `json:"memberRole"`
+	// True for the shared marketplace-reviewer account, whose content resets daily
+	IsDemo bool `json:"isDemo"`
+}
+
+// CurrentOrgSubscription is read from the API. Fields it does not send are zero.
+type CurrentOrgSubscription struct {
+	// Current plan ID (free|pro|studio)
+	PlanID string `json:"planId"`
+	// Subscription status (active|cancelled|past_due|trialing)
+	Status string `json:"status"`
+	// Payment provider (polar|manual)
+	AdapterID string `json:"adapterId"`
+	// Period start (Unix ms)
+	CurrentPeriodStart UnixMillis `json:"currentPeriodStart"`
+	// Period end (Unix ms)
+	CurrentPeriodEnd UnixMillis `json:"currentPeriodEnd"`
+}
+
+// CurrentOrgPlanLimits is read from the API. Fields it does not send are zero.
+type CurrentOrgPlanLimits struct {
+	ConcurrentJobs       int64 `json:"concurrentJobs"`
+	APIRequestsPerMinute int64 `json:"apiRequestsPerMinute"`
+	MaxJobTimeout        int64 `json:"maxJobTimeout"`
+	MaxInputFileSize     int64 `json:"maxInputFileSize"`
+}
+
+// CurrentOrgPlanFeatures is read from the API. Fields it does not send are zero.
+type CurrentOrgPlanFeatures struct {
+	RawFfmpeg     bool `json:"rawFfmpeg"`
+	Mcp           bool `json:"mcp"`
+	Webhooks      bool `json:"webhooks"`
+	PriorityQueue bool `json:"priorityQueue"`
+	CustomRunners bool `json:"customRunners"`
+	GPU           bool `json:"gpu"`
+}
+
+// CurrentOrgPlan is read from the API. Fields it does not send are zero.
+type CurrentOrgPlan struct {
+	ID       string                  `json:"id"`
+	Name     string                  `json:"name"`
+	Limits   *CurrentOrgPlanLimits   `json:"limits"`
+	Features *CurrentOrgPlanFeatures `json:"features"`
+}
+
+// CurrentOrgBalance is read from the API. Fields it does not send are zero.
+type CurrentOrgBalance struct {
+	// Current balance (nanodollars)
+	Balance int64 `json:"balance"`
+	// Human-readable balance (e.g., '$12.50')
+	BalanceFormatted string `json:"balanceFormatted"`
+}
+
+// CurrentOrg is read from the API. Fields it does not send are zero.
+type CurrentOrg struct {
+	Org          *CurrentOrgDetails      `json:"org"`
+	Subscription *CurrentOrgSubscription `json:"subscription"`
+	Plan         *CurrentOrgPlan         `json:"plan"`
+	Balance      *CurrentOrgBalance      `json:"balance"`
+}
+
+// OrgSettings is read from the API. Fields it does not send are zero.
+type OrgSettings struct {
+	// Whether billing notification emails are enabled for this org
+	BillingEmailsEnabled bool `json:"billingEmailsEnabled"`
+	// Preferred execution region, or 'auto' for platform default
+	DefaultRegion Region `json:"defaultRegion"`
+	// When true, jobs MUST run in defaultRegion (residency); no cross-region failover
+	RegionPinned bool `json:"regionPinned"`
+	// Whether Rendobar may use this org's usage data for product analytics. Off stops analytics events, signup-source attribution and dashboard browser analytics; jobs, billing and security logs are unaffected
+	ProductAnalyticsEnabled bool `json:"productAnalyticsEnabled"`
+}
+
+// Invitation is read from the API. Fields it does not send are zero.
+type Invitation struct {
+	ID        string     `json:"id"`
+	Email     string     `json:"email"`
+	Role      MemberRole `json:"role"`
+	ExpiresAt UnixMillis `json:"expiresAt"`
+}
+
+// Asset is read from the API. Fields it does not send are zero.
+type Asset struct {
+	// Asset ID (e.g., asset_abc123def456)
+	ID string `json:"id"`
+	// Stable content URL — pass this as a job input; resolves to a presigned GET at dispatch
+	URL string `json:"url"`
+	// Organization ID that owns this asset
+	OrgID string `json:"orgId"`
+	// User ID that created the asset
+	CreatedBy string `json:"createdBy"`
+	// ephemeral | persisted
+	Lifecycle AssetLifecycle `json:"lifecycle"`
+	// pending | uploading | ready | failed | expired
+	Status AssetStatus `json:"status"`
+	// upload | url | job_output
+	Source string `json:"source"`
+	// media | psd_template | font | other
+	Kind AssetKind `json:"kind"`
+	// org | system
+	Scope AssetScope `json:"scope"`
+	// auto | eu
+	Region string `json:"region"`
+	// R2 etag recorded at finalize
+	Etag string `json:"etag"`
+	// Client-declared sha256
+	Checksum string `json:"checksum"`
+	// Client-declared size at init
+	DeclaredSize *int64 `json:"declaredSize"`
+	// Measured size at finalize
+	SizeBytes *int64 `json:"sizeBytes"`
+	// MIME content type
+	ContentType string `json:"contentType"`
+	// video | image | audio | font | other
+	MediaType string `json:"mediaType"`
+	// Sanitized display filename
+	Filename string `json:"filename"`
+	// Ephemeral TTL (Unix ms)
+	ExpiresAt UnixMillis `json:"expiresAt"`
+	// JSON probe results
+	Metadata string `json:"metadata"`
+	// Creation timestamp (Unix ms)
+	CreatedAt UnixMillis `json:"createdAt"`
+	// Last update timestamp (Unix ms)
+	UpdatedAt UnixMillis `json:"updatedAt"`
+}
+
+// AssetDownload is read from the API. Fields it does not send are zero.
+type AssetDownload struct {
+	// Presigned GET URL
+	URL string `json:"url"`
+	// Expiry timestamp (Unix ms)
+	ExpiresAt UnixMillis `json:"expiresAt"`
+}
+
+// StorageCheckName is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type StorageCheckName string
+
+// The StorageCheckName values this SDK knows.
+const (
+	StorageCheckNameWrite  StorageCheckName = "write"
+	StorageCheckNameRead   StorageCheckName = "read"
+	StorageCheckNameDelete StorageCheckName = "delete"
+	StorageCheckNameList   StorageCheckName = "list"
+)
+
+// StorageCheckStatus is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type StorageCheckStatus string
+
+// The StorageCheckStatus values this SDK knows.
+const (
+	StorageCheckStatusPassed  StorageCheckStatus = "passed"
+	StorageCheckStatusFailed  StorageCheckStatus = "failed"
+	StorageCheckStatusSkipped StorageCheckStatus = "skipped"
+)
+
+// StorageDeliveryReason is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type StorageDeliveryReason string
+
+// The StorageDeliveryReason values this SDK knows.
+const (
+	StorageDeliveryReasonDestinationDenied      StorageDeliveryReason = "destination_denied"
+	StorageDeliveryReasonSignatureMismatch      StorageDeliveryReason = "signature_mismatch"
+	StorageDeliveryReasonBucketNotFound         StorageDeliveryReason = "bucket_not_found"
+	StorageDeliveryReasonObjectTooLarge         StorageDeliveryReason = "object_too_large"
+	StorageDeliveryReasonAlreadyExists          StorageDeliveryReason = "already_exists"
+	StorageDeliveryReasonDestinationUnavailable StorageDeliveryReason = "destination_unavailable"
+	StorageDeliveryReasonNotDeliverable         StorageDeliveryReason = "not_deliverable"
+)
+
+// StorageCheck is read from the API. Fields it does not send are zero.
+type StorageCheck struct {
+	Name    StorageCheckName      `json:"name"`
+	Status  StorageCheckStatus    `json:"status"`
+	Reason  StorageDeliveryReason `json:"reason"`
+	Message string                `json:"message"`
+}
+
+// StorageAuth is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type StorageAuth string
+
+// The StorageAuth values this SDK knows.
+const (
+	StorageAuthRole StorageAuth = "role"
+)
+
+// StorageConnectionProblem is read from the API. Fields it does not send are zero.
+type StorageConnectionProblem struct {
+	At      int64  `json:"at"`
+	Message string `json:"message"`
+}
+
+// StorageDeliveryStatus is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type StorageDeliveryStatus string
+
+// The StorageDeliveryStatus values this SDK knows.
+const (
+	StorageDeliveryStatusDelivered StorageDeliveryStatus = "delivered"
+	StorageDeliveryStatusFailed    StorageDeliveryStatus = "failed"
+)
+
+// StorageConnectionDeliverySummary is read from the API. Fields it does not send are zero.
+type StorageConnectionDeliverySummary struct {
+	JobsLast30d  int64                  `json:"jobsLast30d"`
+	BytesLast30d int64                  `json:"bytesLast30d"`
+	LastAt       UnixMillis             `json:"lastAt"`
+	LastStatus   *StorageDeliveryStatus `json:"lastStatus"`
+	LastReason   *StorageDeliveryReason `json:"lastReason"`
+}
+
+// StorageConnection is read from the API. Fields it does not send are zero.
+type StorageConnection struct {
+	Bucket             string                            `json:"bucket"`
+	PublicBaseURL      string                            `json:"publicBaseUrl"`
+	Endpoint           string                            `json:"endpoint"`
+	Region             string                            `json:"region"`
+	PathStyle          bool                              `json:"pathStyle"`
+	AccountID          string                            `json:"accountId"`
+	Jurisdiction       R2Jurisdiction                    `json:"jurisdiction"`
+	ProjectRef         string                            `json:"projectRef"`
+	ExpiresOn          int64                             `json:"expiresOn"`
+	Pending            bool                              `json:"pending"`
+	Auth               StorageAuth                       `json:"auth"`
+	Access             StorageAccess                     `json:"access"`
+	Problem            *StorageConnectionProblem         `json:"problem"`
+	PathTemplate       string                            `json:"pathTemplate"`
+	OnConflict         StorageOnConflict                 `json:"onConflict"`
+	DefaultDestination bool                              `json:"defaultDestination"`
+	ConditionalWrites  bool                              `json:"conditionalWrites"`
+	ID                 string                            `json:"id"`
+	Provider           StorageProvider                   `json:"provider"`
+	CreatedAt          UnixMillis                        `json:"createdAt"`
+	UpdatedAt          UnixMillis                        `json:"updatedAt"`
+	DeliverySummary    *StorageConnectionDeliverySummary `json:"deliverySummary"`
+	Checks             []StorageCheck                    `json:"checks"`
+}
+
+// PreparedAWSStorage is read from the API. Fields it does not send are zero.
+type PreparedAWSStorage struct {
+	Bucket             string                            `json:"bucket"`
+	PublicBaseURL      string                            `json:"publicBaseUrl"`
+	Endpoint           string                            `json:"endpoint"`
+	Region             string                            `json:"region"`
+	PathStyle          bool                              `json:"pathStyle"`
+	AccountID          string                            `json:"accountId"`
+	Jurisdiction       R2Jurisdiction                    `json:"jurisdiction"`
+	ProjectRef         string                            `json:"projectRef"`
+	ExpiresOn          int64                             `json:"expiresOn"`
+	Pending            bool                              `json:"pending"`
+	Auth               StorageAuth                       `json:"auth"`
+	Access             StorageAccess                     `json:"access"`
+	Problem            *StorageConnectionProblem         `json:"problem"`
+	PathTemplate       string                            `json:"pathTemplate"`
+	OnConflict         StorageOnConflict                 `json:"onConflict"`
+	DefaultDestination bool                              `json:"defaultDestination"`
+	ConditionalWrites  bool                              `json:"conditionalWrites"`
+	ID                 string                            `json:"id"`
+	Provider           StorageProvider                   `json:"provider"`
+	CreatedAt          UnixMillis                        `json:"createdAt"`
+	UpdatedAt          UnixMillis                        `json:"updatedAt"`
+	DeliverySummary    *StorageConnectionDeliverySummary `json:"deliverySummary"`
+	Checks             []StorageCheck                    `json:"checks"`
+	Subject            string                            `json:"subject"`
+	Issuer             string                            `json:"issuer"`
+	Audience           string                            `json:"audience"`
+	QuickCreateURL     string                            `json:"quickCreateUrl"`
+	TrustPolicy        string                            `json:"trustPolicy"`
+	Terraform          string                            `json:"terraform"`
+}
+
+// StorageTestResult is read from the API. Fields it does not send are zero.
+type StorageTestResult struct {
+	OK     bool           `json:"ok"`
+	Checks []StorageCheck `json:"checks"`
+}
+
+// StorageStatsDeliveriesDailyItem is read from the API. Fields it does not send are zero.
+type StorageStatsDeliveriesDailyItem struct {
+	Date      string                 `json:"date"`
+	Delivered int64                  `json:"delivered"`
+	Failed    int64                  `json:"failed"`
+	Reason    *StorageDeliveryReason `json:"reason"`
+}
+
+// StorageStatsDeliveries is read from the API. Fields it does not send are zero.
+type StorageStatsDeliveries struct {
+	Delivered int64                             `json:"delivered"`
+	Failed    int64                             `json:"failed"`
+	Pending   int64                             `json:"pending"`
+	Daily     []StorageStatsDeliveriesDailyItem `json:"daily"`
+}
+
+// StorageStatsThroughput is read from the API. Fields it does not send are zero.
+type StorageStatsThroughput struct {
+	MedianBytesPerSec int64 `json:"medianBytesPerSec"`
+	MinBytesPerSec    int64 `json:"minBytesPerSec"`
+	MaxBytesPerSec    int64 `json:"maxBytesPerSec"`
+	Samples           int64 `json:"samples"`
+}
+
+// StorageStatsWritten is read from the API. Fields it does not send are zero.
+type StorageStatsWritten struct {
+	Bytes int64 `json:"bytes"`
+	Files int64 `json:"files"`
+}
+
+// StorageStats is read from the API. Fields it does not send are zero.
+type StorageStats struct {
+	WindowDays   int64                   `json:"windowDays"`
+	Deliveries   *StorageStatsDeliveries `json:"deliveries"`
+	Throughput   *StorageStatsThroughput `json:"throughput"`
+	Written      *StorageStatsWritten    `json:"written"`
+	RoundTripMs  *int64                  `json:"roundTripMs"`
+	MeasuredFrom string                  `json:"measuredFrom"`
+}
+
+// StorageObject is read from the API. Fields it does not send are zero.
+type StorageObject struct {
+	Key          string     `json:"key"`
+	Size         int64      `json:"size"`
+	LastModified UnixMillis `json:"lastModified"`
+}
+
+// StorageObjects is read from the API. Fields it does not send are zero.
+type StorageObjects struct {
+	Folders []string        `json:"folders"`
+	Objects []StorageObject `json:"objects"`
+	Cursor  string          `json:"cursor"`
+}
+
+// S3BucketLookupState is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type S3BucketLookupState string
+
+// The S3BucketLookupState values this SDK knows.
+const (
+	S3BucketLookupStateFound   S3BucketLookupState = "found"
+	S3BucketLookupStateFree    S3BucketLookupState = "free"
+	S3BucketLookupStateUnknown S3BucketLookupState = "unknown"
+)
+
+// S3BucketLookup is read from the API. Fields it does not send are zero.
+type S3BucketLookup struct {
+	State  S3BucketLookupState `json:"state"`
+	Region string              `json:"region"`
+}
+
+// SupabaseSignIn is read from the API. Fields it does not send are zero.
+type SupabaseSignIn struct {
+	URL   string `json:"url"`
+	State string `json:"state"`
+}
+
+// SupabaseProject is read from the API. Fields it does not send are zero.
+type SupabaseProject struct {
+	Ref    string `json:"ref"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+}
+
+// SupabaseProjects is read from the API. Fields it does not send are zero.
+type SupabaseProjects struct {
+	State    string            `json:"state"`
+	Projects []SupabaseProject `json:"projects"`
+}
+
+// SupabaseBucket is read from the API. Fields it does not send are zero.
+type SupabaseBucket struct {
+	Name   string `json:"name"`
+	Public bool   `json:"public"`
+}
+
+// SupabaseBuckets is read from the API. Fields it does not send are zero.
+type SupabaseBuckets struct {
+	State      string           `json:"state"`
+	ProjectRef string           `json:"projectRef"`
+	Buckets    []SupabaseBucket `json:"buckets"`
+}
+
+// number, a hex colour, one of `values`, a length (pixels as a number, or a percent of the frame as a string like "50%"), or a file: the URL of one, like a clip's src.
+//
+// The API may add values, so keep a default branch.
+type ComposeParamKind string
+
+// The ComposeParamKind values this SDK knows.
+const (
+	ComposeParamKindNumber ComposeParamKind = "number"
+	ComposeParamKindColor  ComposeParamKind = "color"
+	ComposeParamKindEnum   ComposeParamKind = "enum"
+	ComposeParamKindLength ComposeParamKind = "length"
+	ComposeParamKindFile   ComposeParamKind = "file"
+)
+
+// Lengths only: the side of the frame a percent is a share of.
+//
+// The API may add values, so keep a default branch.
+type ComposeMeasuredAgainst string
+
+// The ComposeMeasuredAgainst values this SDK knows.
+const (
+	ComposeMeasuredAgainstWidth  ComposeMeasuredAgainst = "width"
+	ComposeMeasuredAgainstHeight ComposeMeasuredAgainst = "height"
+)
+
+// ComposeEffectParam is read from the API. Fields it does not send are zero.
+type ComposeEffectParam struct {
+	// number, a hex colour, one of `values`, a length (pixels as a number, or a percent of the frame as a string like "50%"), or a file: the URL of one, like a clip's src.
+	Kind        ComposeParamKind `json:"kind"`
+	Description string           `json:"description"`
+	Min         float64          `json:"min"`
+	Max         float64          `json:"max"`
+	// Used when the parameter is left out. A parameter with no default and not in `required` changes nothing when left out.
+	Default json.RawMessage `json:"default"`
+	// px, deg, K, dB, Hz, s, LUFS or semitones. Absent for a plain ratio.
+	Unit string `json:"unit"`
+	// True when the parameter also takes a keyframe list, [{time, value, easing}].
+	Keyframes bool `json:"keyframes"`
+	// Colours only: also takes "#RRGGBBAA".
+	Alpha bool `json:"alpha"`
+	// Enums only: the accepted words.
+	Values []string `json:"values"`
+	// Lengths only: the side of the frame a percent is a share of.
+	MeasuredAgainst ComposeMeasuredAgainst `json:"measuredAgainst"`
+	// Files only: the file's extension, like ".cube".
+	Format string `json:"format"`
+}
+
+// ComposeEffectGroup is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type ComposeEffectGroup string
+
+// The ComposeEffectGroup values this SDK knows.
+const (
+	ComposeEffectGroupColor   ComposeEffectGroup = "color"
+	ComposeEffectGroupStylize ComposeEffectGroup = "stylize"
+	ComposeEffectGroupLayers  ComposeEffectGroup = "layers"
+	ComposeEffectGroupSound   ComposeEffectGroup = "sound"
+)
+
+// What it changes.
+//
+// The API may add values, so keep a default branch.
+type ComposeEffectMedium string
+
+// The ComposeEffectMedium values this SDK knows.
+const (
+	ComposeEffectMediumPicture ComposeEffectMedium = "picture"
+	ComposeEffectMediumSound   ComposeEffectMedium = "sound"
+)
+
+// ComposeEffect is read from the API. Fields it does not send are zero.
+type ComposeEffect struct {
+	// What goes in the entry's "type".
+	Type  string             `json:"type"`
+	Group ComposeEffectGroup `json:"group"`
+	// What it changes.
+	Medium  ComposeEffectMedium           `json:"medium"`
+	Summary string                        `json:"summary"`
+	Params  map[string]ComposeEffectParam `json:"params"`
+	// Parameters the entry must give.
+	Required []string `json:"required"`
+	// At least one of these must be given, for an effect that does nothing when empty.
+	NeedsOneOf []string `json:"needsOneOf"`
+}
+
+// ComposeEffects is read from the API. Fields it does not send are zero.
+type ComposeEffects struct {
+	Effects []ComposeEffect `json:"effects"`
+}
+
+// number, true or false, one of `values`, a hex colour, a rect "x y w h", a size "1280x720", or flag names joined by "+".
+//
+// The API may add values, so keep a default branch.
+type EngineParamKind string
+
+// The EngineParamKind values this SDK knows.
+const (
+	EngineParamKindNumber EngineParamKind = "number"
+	EngineParamKindSwitch EngineParamKind = "switch"
+	EngineParamKindEnum   EngineParamKind = "enum"
+	EngineParamKindColor  EngineParamKind = "color"
+	EngineParamKindRect   EngineParamKind = "rect"
+	EngineParamKindSize   EngineParamKind = "size"
+	EngineParamKindFlags  EngineParamKind = "flags"
+)
+
+// EngineEffectParam is read from the API. Fields it does not send are zero.
+type EngineEffectParam struct {
+	// number, true or false, one of `values`, a hex colour, a rect "x y w h", a size "1280x720", or flag names joined by "+".
+	Kind   EngineParamKind `json:"kind"`
+	Min    float64         `json:"min"`
+	Max    float64         `json:"max"`
+	Values []string        `json:"values"`
+}
+
+// What the engine's render check found. proven: its parameters visibly change the output. unproven: it renders, and the check could not show a parameter doing anything. nondeterministic: it renders differently every time, by design (noise, glitches).
+//
+// The API may add values, so keep a default branch.
+type EngineCheck string
+
+// The EngineCheck values this SDK knows.
+const (
+	EngineCheckProven           EngineCheck = "proven"
+	EngineCheckUnproven         EngineCheck = "unproven"
+	EngineCheckNondeterministic EngineCheck = "nondeterministic"
+)
+
+// EngineFilter is read from the API. Fields it does not send are zero.
+type EngineFilter struct {
+	// What goes in the entry's "filter".
+	Filter string `json:"filter"`
+	// What the engine's render check found. proven: its parameters visibly change the output. unproven: it renders, and the check could not show a parameter doing anything. nondeterministic: it renders differently every time, by design (noise, glitches).
+	Checked EngineCheck `json:"checked"`
+	// What goes in "params", by parameter name.
+	Params map[string]EngineEffectParam `json:"params"`
+}
+
+// ComposeEngineEffects is read from the API. Fields it does not send are zero.
+type ComposeEngineEffects struct {
+	Filters []EngineFilter `json:"filters"`
+}
+
+// JobLogEntry is read from the API. Fields it does not send are zero.
+type JobLogEntry struct {
+	Timestamp  UnixMillis      `json:"timestamp"`
+	Level      string          `json:"level"`
+	Step       string          `json:"step"`
+	Event      string          `json:"event"`
+	Message    string          `json:"message"`
+	DurationMs int64           `json:"durationMs"`
+	Meta       json.RawMessage `json:"meta"`
+}
+
+// JobTimings is read from the API. Fields it does not send are zero.
+type JobTimings struct {
+	JobID           string `json:"jobId"`
+	APITotalMs      *int64 `json:"apiTotalMs"`
+	APIPrechecksMs  *int64 `json:"apiPrechecksMs"`
+	APIValidationMs *int64 `json:"apiValidationMs"`
+	APIDbInsertMs   *int64 `json:"apiDbInsertMs"`
+	APIDispatchMs   *int64 `json:"apiDispatchMs"`
+	ExecDownloadMs  *int64 `json:"execDownloadMs"`
+	ExecExecuteMs   *int64 `json:"execExecuteMs"`
+	ExecUploadMs    *int64 `json:"execUploadMs"`
+	ExecTotalMs     *int64 `json:"execTotalMs"`
+	QueueWaitMs     *int64 `json:"queueWaitMs"`
+	ConsumerTotalMs *int64 `json:"consumerTotalMs"`
+}
+
+// JobActivity is read from the API. Fields it does not send are zero.
+type JobActivity struct {
+	BucketStart UnixMillis `json:"bucketStart"`
+	Succeeded   int64      `json:"succeeded"`
+	Failed      int64      `json:"failed"`
+	Other       int64      `json:"other"`
+}
+
+// JobStatsWindow is read from the API. Fields it does not send are zero.
+type JobStatsWindow struct {
+	From UnixMillis `json:"from"`
+	To   UnixMillis `json:"to"`
+}
+
+// JobStatsTotals is read from the API. Fields it does not send are zero.
+type JobStatsTotals struct {
+	Jobs      int64 `json:"jobs"`
+	Succeeded int64 `json:"succeeded"`
+	Failed    int64 `json:"failed"`
+	Cancelled int64 `json:"cancelled"`
+	Running   int64 `json:"running"`
+}
+
+// JobStatsSpend is read from the API. Fields it does not send are zero.
+type JobStatsSpend struct {
+	Amount    int64  `json:"amount"`
+	Formatted string `json:"formatted"`
+}
+
+// JobStats is read from the API. Fields it does not send are zero.
+type JobStats struct {
+	Window        *JobStatsWindow `json:"window"`
+	Totals        *JobStatsTotals `json:"totals"`
+	SuccessRate   *float64        `json:"successRate"`
+	AvgDurationMs *int64          `json:"avgDurationMs"`
+	Spend         *JobStatsSpend  `json:"spend"`
+	Activity      []JobActivity   `json:"activity"`
+}
+
+// JobShare is read from the API. Fields it does not send are zero.
+type JobShare struct {
+	ShareID   string     `json:"shareId"`
+	ShareURL  string     `json:"shareUrl"`
+	CreatedAt UnixMillis `json:"createdAt"`
+}
+
+// DeliveriesRetried is read from the API. Fields it does not send are zero.
+type DeliveriesRetried struct {
+	Retried int64 `json:"retried"`
 }

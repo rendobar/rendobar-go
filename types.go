@@ -256,3 +256,8 @@ func convert[T any](in any) (*T, error) {
 	}
 	return out, nil
 }
+
+// WebhookEvent names a webhook event, such as "job.completed". The constants
+// are in package webhooks, generated from the API's spec: webhooks.JobCompleted
+// and the rest. The API may add events, so keep a default branch.
+type WebhookEvent string

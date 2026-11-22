@@ -14,17 +14,17 @@ var _ = rendobar.UnixMillis(0) // the data types below may not name the root pac
 // The events this SDK knows. The API may add events: an unknown one still
 // parses, with its own Type, so keep a default branch.
 const (
-	JobCreated           EventType = "job.created"            // A job was accepted
-	JobStarted           EventType = "job.started"            // A job started running
-	JobCompleted         EventType = "job.completed"          // A job completed. `data.output` is the output, as GET /jobs/{id} returns it
-	JobFailed            EventType = "job.failed"             // A job failed. `data.error` says why
-	JobCancelled         EventType = "job.cancelled"          // A job was cancelled
-	JobDeliverySucceeded EventType = "job.delivery_succeeded" // One destination of a job received its output
-	JobDeliveryFailed    EventType = "job.delivery_failed"    // One destination of a job will not receive its output
-	JobDeliveriesSettled EventType = "job.deliveries_settled" // Every destination of a job has resolved
-	BalanceLow           EventType = "balance.low"            // The balance fell below the low-balance threshold
-	BalanceDepleted      EventType = "balance.depleted"       // The balance ran out
-	Test                 EventType = "test"                   // A test delivery sent from the dashboard or POST /webhooks/{id}/test
+	JobCreated           rendobar.WebhookEvent = "job.created"            // A job was accepted
+	JobStarted           rendobar.WebhookEvent = "job.started"            // A job started running
+	JobCompleted         rendobar.WebhookEvent = "job.completed"          // A job completed. `data.output` is the output, as GET /jobs/{id} returns it
+	JobFailed            rendobar.WebhookEvent = "job.failed"             // A job failed. `data.error` says why
+	JobCancelled         rendobar.WebhookEvent = "job.cancelled"          // A job was cancelled
+	JobDeliverySucceeded rendobar.WebhookEvent = "job.delivery_succeeded" // One destination of a job received its output
+	JobDeliveryFailed    rendobar.WebhookEvent = "job.delivery_failed"    // One destination of a job will not receive its output
+	JobDeliveriesSettled rendobar.WebhookEvent = "job.deliveries_settled" // Every destination of a job has resolved
+	BalanceLow           rendobar.WebhookEvent = "balance.low"            // The balance fell below the low-balance threshold
+	BalanceDepleted      rendobar.WebhookEvent = "balance.depleted"       // The balance ran out
+	Test                 rendobar.WebhookEvent = "test"                   // A test delivery sent from the dashboard or POST /webhooks/{id}/test
 )
 
 func (*JobCreatedData) isPayload() {}

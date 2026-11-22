@@ -59,18 +59,29 @@ type DeprecationNotice struct {
 
 // Client is the Rendobar API client. Make one and reuse it: it is safe for concurrent use.
 type Client struct {
-	Jobs    *Jobs
-	Account *Account
-	core    *apiclient.Client
-	keyErr  error // why a call that needs a key cannot be sent, or nil
+	Jobs          *Jobs
+	Billing       *Billing
+	Uploads       *Uploads
+	Webhooks      *Webhooks
+	Storage       *Storage
+	APIKeys       *APIKeys
+	Orgs          *Orgs
+	Account       *Account
+	Compose       *Compose
+	Assets        *Assets
+	Notifications *Notifications
+
+	core   *apiclient.Client
+	keyErr error // why a call that needs a key cannot be sent, or nil
 
 	// Job and account reads and the streaming download bypass the core (see
 	// rawjson.go and download.go).
 	baseURL string
-	header  http.Header // X-Rendobar-Client and Authorization
-	api     *retrier    // the core's own client: Timeout bounds each attempt, body included
-	stream  *retrier    // no Timeout: a header timeout bounds each attempt instead
-	confErr error       // a bad option, returned by every call
+	header  http.Header  // X-Rendobar-Client and Authorization
+	api     *retrier     // the core's own client: Timeout bounds each attempt, body included
+	stream  *retrier     // no Timeout: a header timeout bounds each attempt instead
+	upload  *http.Client // presigned uploads: no Rendobar headers, no Timeout (see uploads.go)
+	confErr error        // a bad option, returned by every call
 }
 
 // needKey fails a call that needs an API key, before it sends anything, when
@@ -208,10 +219,20 @@ func New(opts ...Option) *Client {
 		header:  streamHeader,
 		api:     api,
 		stream:  &retrier{client: &stream, maxRetries: cfg.maxRetries},
+		upload:  &http.Client{Transport: hc.Transport, CheckRedirect: hc.CheckRedirect, Jar: hc.Jar},
 		confErr: confErr,
 	}
 	c.Jobs = &Jobs{client: c}
+	c.Billing = &Billing{client: c}
+	c.Uploads = &Uploads{client: c}
+	c.Webhooks = &Webhooks{client: c}
+	c.Storage = &Storage{client: c}
+	c.APIKeys = &APIKeys{client: c}
+	c.Orgs = &Orgs{client: c, Members: &Members{client: c}, Invitations: &Invitations{client: c}}
 	c.Account = &Account{client: c}
+	c.Compose = &Compose{client: c}
+	c.Assets = &Assets{client: c}
+	c.Notifications = &Notifications{client: c}
 	return c
 }
 

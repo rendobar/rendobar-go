@@ -28,6 +28,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rendobar/rendobar-go"
 )
 
 // DefaultTolerance is how far a delivery's timestamp may be from now, either
@@ -113,10 +115,6 @@ func matches(signed []byte, signature, secret string) bool {
 	return hmac.Equal(expected, mac.Sum(nil)) // constant time
 }
 
-// EventType names a webhook event. The constants, generated from the API's
-// spec, are the events this SDK knows.
-type EventType string
-
 // Payload is the data of one event: a *<Event>Data type such as
 // *JobCompletedData, or *UnknownPayload for an event newer than this SDK.
 // Read it with a type switch that keeps a default branch.
@@ -124,7 +122,7 @@ type Payload interface{ isPayload() }
 
 // UnknownPayload is the data of an event this SDK does not know yet.
 type UnknownPayload struct {
-	Type EventType
+	Type rendobar.WebhookEvent
 	Data json.RawMessage
 }
 
@@ -136,7 +134,7 @@ type Event struct {
 	// Version is the envelope version, "1" today. A newer version still
 	// parses as far as the fields below go.
 	Version string
-	Type    EventType
+	Type    rendobar.WebhookEvent
 	// ID is the delivery id. A retried delivery keeps it, so use it to ignore
 	// a repeat.
 	ID     string
@@ -170,7 +168,7 @@ func ParseWith(body []byte, header http.Header, secret string, o Options) (*Even
 	if w.Event == "" {
 		return nil, fmt.Errorf("%w: no event name", ErrPayload)
 	}
-	e := &Event{Version: w.Version, Type: EventType(w.Event), ID: w.DeliveryID, OrgID: w.OrgID, Data: w.Data}
+	e := &Event{Version: w.Version, Type: rendobar.WebhookEvent(w.Event), ID: w.DeliveryID, OrgID: w.OrgID, Data: w.Data}
 	if w.Timestamp != nil {
 		e.SentAt = time.UnixMilli(int64(*w.Timestamp))
 	}

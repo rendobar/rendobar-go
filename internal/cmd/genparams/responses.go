@@ -18,7 +18,9 @@ type resp struct {
 	aliases map[string]string // enum names that are a type the SDK already has
 	fields  map[string]string // "Type.prop" or "prop" to a Go type the SDK already has, for a field the spec leaves a plain string
 	done    map[string]bool
-	order   []string // emitted type names, so a name is never written twice
+	order   []string          // emitted type names, so a name is never written twice
+	renames map[string]string // an enum name to the shared name it is written as, once
+	shapes  map[string]string // the JSON of an object already written, to its type
 }
 
 func (r *resp) p(format string, args ...any) { fmt.Fprintf(&r.out, format, args...) }
@@ -33,12 +35,20 @@ func (r *resp) enumType(name string, n *node, values []string) string {
 	if t, ok := r.aliases[name]; ok {
 		return t
 	}
+	if t, ok := r.renames[name]; ok {
+		if r.done[t] {
+			return t
+		}
+		name = t
+	}
 	if r.done[name] {
 		log.Fatalf("genparams: enum %s would be written twice", name)
 	}
 	r.done[name] = true
 	if c := comment("", n); c != "" {
 		r.p("%s//\n", c)
+	} else if r.renames != nil {
+		r.p("// %s is a value the API sends.\n//\n", name)
 	}
 	r.p("// The API may add values, so keep a default branch.\ntype %s string\n\n// The %s values this SDK knows.\nconst (\n", name, name)
 	for _, v := range values {
@@ -172,7 +182,13 @@ func (r *resp) named(name string, n *node) string {
 		r.done[name] = true
 		r.union(name, n)
 	case isObject(n):
+		if t, ok := r.shapes[canon(n)]; ok && r.shapes != nil {
+			return t // the same fields as a type already written
+		}
 		r.done[name] = true
+		if r.shapes != nil {
+			r.shapes[canon(n)] = name
+		}
 		r.object(name, n)
 	default:
 		return strings.TrimPrefix(r.typ(name, "", n, false), "*")
