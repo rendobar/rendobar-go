@@ -1,6 +1,6 @@
 # Rendobar Go SDK
 
-The Go client for [Rendobar](https://rendobar.com). Run FFmpeg commands, render timeline videos, burn captions and generate images through one API, and get back a hosted URL.
+The Go client for [Rendobar](https://rendobar.com). Run FFmpeg commands, render timeline videos, burn captions and generate images through one API, and get back a hosted URL. It covers the whole API: jobs, uploads and assets, webhooks, storage, billing, API keys, workspaces and notifications.
 
 ```bash
 go get github.com/rendobar/rendobar-go
@@ -124,6 +124,8 @@ for job, err := range rb.Jobs.All(ctx, rendobar.ListParams{Status: rendobar.Stat
 
 `Jobs.Types` lists every live job type, and `Jobs.Schema` returns one type's params.
 
+`Jobs.Logs` returns a job's log entries, `Jobs.Timings` how long each stage took, and `Jobs.Stats` the workspace's job counts, success rate and spend over a `StatsWindow`. `Jobs.RetryDeliveries` sends a completed job's output again to the destinations that missed it. `Jobs.CreateShare`, `Jobs.GetShare` and `Jobs.DeleteShare` manage a public link to the output.
+
 ### Downloads
 
 `Jobs.Download` streams a job's output file. Close the body when you are done:
@@ -160,6 +162,76 @@ fmt.Println(job.Complete.Output.File.URL)
 
 A retried submit never creates a second job. Each `Jobs.Create` call sends one idempotency key on every retry. Pass `IdempotencyKey` yourself, or one from `rendobar.GenerateIdempotencyKey`, to make separate calls safe to repeat. Repeating a key with the same params returns the job it created, with `Created.Replayed` set. Reusing a key with different params returns a 409 error with code `CONFLICT`.
 
+## Uploads and assets
+
+`Uploads.Create` sends a local file and returns the ready `*rendobar.Asset`. It takes an `io.ReaderAt` and the size, so an `*os.File` works. A large file goes up in parts, five at a time by default, and each part is retried up to 3 times:
+
+```go
+f, err := os.Open("clip.mp4")
+if err != nil {
+	log.Fatal(err)
+}
+defer f.Close()
+info, err := f.Stat()
+if err != nil {
+	log.Fatal(err)
+}
+asset, err := rb.Uploads.Create(ctx, f, info.Size(), rendobar.UploadParams{
+	Filename:   "clip.mp4",
+	OnProgress: func(p rendobar.UploadProgress) { fmt.Println(p.Loaded, "of", p.Total) },
+})
+if err != nil {
+	log.Fatal(err)
+}
+job, err := rb.Jobs.Run(ctx, rendobar.CreateParams{
+	Params: rendobar.FfmpegParams{Command: "ffmpeg -i clip.mp4 -t 1 out.mp4"},
+	Inputs: map[string]rendobar.Input{"clip.mp4": rendobar.URL("asset://" + asset.ID)},
+}, nil)
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println(job.Complete.Output.File.URL)
+```
+
+An upload expires after 24 hours unless `UploadParams.Persist` is set. `ctx` bounds the whole upload. `WithTimeout` does not apply to the file transfer: each attempt gets a budget that grows with the file size. `Assets.List`, `Assets.Get`, `Assets.Delete` and `Assets.Templates` manage what the workspace holds, and `Assets.Download` returns a short-lived download URL.
+
+## The rest of the API
+
+Every resource of the API has its own field on the client, under the names `@rendobar/sdk` uses:
+
+| Field | Calls |
+|---|---|
+| `Billing` | `State`, `Usage`, `UsageByClient`, `Transactions`, `History`, `CheckoutCredits`, `CheckoutPlan`, `CancelSubscription`, `ReactivateSubscription`, `CancelCreditSchedule`, `PaymentMethods`, `DeletePaymentMethod`, `SetDefaultPaymentMethod`, `PortalURL` |
+| `Webhooks` | `Create`, `List`, `Get`, `Update`, `Delete`, `RotateSecret`, `Test`, `ListDeliveries`, `RetryDelivery` |
+| `Storage` | `Create`, `List`, `Get`, `Update`, `Delete`, `Test`, `Stats`, `ListObjects`, `PrepareAWS`, `ListAccountBuckets`, `LookUpS3Bucket`, `StartSupabase`, `ListSupabaseProjects`, `ListSupabaseBuckets`, `FinishSupabase` |
+| `APIKeys` | `Create`, `List`, `Update`, `Revoke` |
+| `Orgs` | `List`, `Current`, `Create`, `Update`, `Delete`, `GetSettings`, `UpdateSettings`; `Orgs.Members`: `Invite`, `ChangeRole`, `Remove`; `Orgs.Invitations`: `Revoke` |
+| `Account` | `Capabilities` |
+| `Compose` | `Effects`, `EngineEffects`, `Validate` |
+| `Notifications` | `List`, `MarkRead` |
+
+Every call takes a `ctx`. A call that sends a body takes a params struct, such as `CreateWebhookParams`, generated from the API's spec with the same rules as job params. The SDK checks it before sending and refuses a missing field or a value outside a fixed list with an `INVALID_ARGUMENT` `*Error`, one `Problem` each. In an update, a field you leave zero stays as it is:
+
+```go
+endpoint, err := rb.Webhooks.Create(ctx, rendobar.CreateWebhookParams{
+	Name:             "orders",
+	URL:              "https://example.com/rendobar-webhook",
+	SubscribedEvents: []rendobar.WebhookEvent{webhooks.JobCompleted, webhooks.JobFailed},
+})
+if err != nil {
+	log.Fatal(err)
+}
+fmt.Println(endpoint.SigningSecret) // shown in full here and by RotateSecret only
+
+_, err = rb.Webhooks.Update(ctx, endpoint.ID, rendobar.UpdateWebhookParams{Active: rendobar.Ptr(false)})
+```
+
+`Storage.Create` takes one of `CreateStorageS3Params`, `CreateStorageR2Params`, `CreateStorageS3CompatibleParams` or `CreateStorageSupabaseParams`, and its credentials are one of `StorageKeys`, `StorageAWSRole`, `StorageCloudflareToken` or `StorageSupabaseSession`, whichever the provider takes.
+
+Responses are their own types, such as `*rendobar.BillingState` or `*rendobar.WebhookDelivery`, also generated from the spec. A field with a fixed set of values has its own type and constants, such as `WebhookDeliveryStatusFailed`. The API may add values, so keep a default branch. Integers are `int64` and numbers `float64`, as the spec types them. A field's doc gives its unit where the spec states one, such as nanodollars or dollars. Timestamps are `rendobar.UnixMillis`. A list comes back as a page with its total, such as `*rendobar.AssetPage` with `Assets` and `Meta`.
+
+Some calls need more than an API key. An API key cannot create API keys, and a key holds only the scopes it was created with, so a call outside them returns a 403 `*Error` with code `INSUFFICIENT_SCOPE`.
+
 ## Errors
 
 Check an error with `errors.As` and compare its `Code` with the `rendobar.Code...` constants:
@@ -184,7 +256,7 @@ Some calls fail before anything is sent, with `StatusCode` 0:
 
 - `CodeMissingAPIKey`: the client has no key. Set `RENDOBAR_API_KEY` or pass `rendobar.WithAPIKey`. `Jobs.Types` and `Jobs.Schema` need no key.
 - `CodeInvalidAPIKey`: the key does not start with `rb_`.
-- `CodeInvalidArgument`: params that fail their schema, a malformed job ID or job type, or a negative `Limit` or `Offset`.
+- `CodeInvalidArgument`: params or a request body that fail their schema, a malformed ID or job type, or a negative `Limit`, `Offset` or `Page`.
 
 ### Failed submits
 
@@ -205,7 +277,7 @@ When your `ctx` is cancelled or its deadline passes after the submit, `Jobs.Run`
 
 ### Retries
 
-429, 500, 502, 503 and 504 responses and connection errors are retried twice, with backoff from half a second and a `Retry-After` of up to 60 seconds honoured. Nothing else is retried. A 408, a 409, a 501 or any other 4xx fails at once, and so does an attempt that ran out its timeout. When `Retry-After` is longer than 60 seconds, or the wait would outlast your `ctx` deadline, the client returns the error at once with `Error.RetryAfter` set. `rendobar.WithMaxRetries(0)` sends each request once.
+A 429 is retried twice on every call, because the API did nothing with the request. A 500, 502, 503 or 504 and a connection error are retried twice on a read (GET) and on a job submit, which carries its idempotency key. A create, update or delete that fails that way returns the error at once, because the API may have acted on it: read the state back before you send it again. Retries back off from half a second and honour a `Retry-After` of up to 60 seconds. Nothing else is retried. A 408, a 409, a 501 or any other 4xx fails at once, and so does an attempt that ran out its timeout. When `Retry-After` is longer than 60 seconds, or the wait would outlast your `ctx` deadline, the client returns the error at once with `Error.RetryAfter` set. `rendobar.WithMaxRetries(0)` sends each request once.
 
 ## Webhooks
 
@@ -241,7 +313,7 @@ Every delivery is a JSON envelope:
 {"version": "1", "event": "job.completed", "deliveryId": "whd_...", "timestamp": 1763700000000, "orgId": "org_...", "data": {}}
 ```
 
-An envelope whose `version` is not `"1"` gives `*UnknownPayload`, because its data may have another shape. `Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. `event.Payload()` reads `Data` as the type the spec defines for the event, such as `*JobCompletedData` or `*BalanceLowData`, one per event the `webhooks.Job...`, `webhooks.Balance...` and `webhooks.Test` constants name. An event newer than this SDK gives `*UnknownPayload` with its `Type` and raw `Data`. Timestamps in event data are `rendobar.UnixMillis`, and `.Time()` turns one into a `time.Time`.
+An envelope whose `version` is not `"1"` gives `*UnknownPayload`, because its data may have another shape. `Event` carries `Version`, `Type`, `ID` (the delivery ID, the same on every retry of one delivery), `OrgID`, `SentAt` and the raw `Data`. `Type` is a `rendobar.WebhookEvent`, the type `CreateWebhookParams.SubscribedEvents` takes. `event.Payload()` reads `Data` as the type the spec defines for the event, such as `*JobCompletedData` or `*BalanceLowData`, one per event the `webhooks.Job...`, `webhooks.Balance...` and `webhooks.Test` constants name. An event newer than this SDK gives `*UnknownPayload` with its `Type` and raw `Data`. Timestamps in event data are `rendobar.UnixMillis`, and `.Time()` turns one into a `time.Time`.
 
 Each delivery carries two headers:
 
@@ -270,8 +342,9 @@ rb := rendobar.New(
 
 ## Examples
 
-[`examples/`](examples) has small programs that use the SDK the way your code would: a quickstart, a
-trim and download, a batch worker, a webhook receiver and an account read.
+[`examples/`](examples) has small programs that use the SDK the way your code would: a quickstart, an
+upload, trim and download, a batch worker, a webhook receiver that manages its own endpoint, and an
+account admin.
 
 ## Support policy
 
