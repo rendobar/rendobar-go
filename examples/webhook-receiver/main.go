@@ -298,7 +298,7 @@ func manage(ctx context.Context, rb *rendobar.Client, endpoint *rendobar.Webhook
 	}
 	code := "no answer"
 	if result.StatusCode != nil {
-		code = strconv.Itoa(int(*result.StatusCode))
+		code = strconv.FormatInt(*result.StatusCode, 10)
 	}
 	fmt.Printf("test delivery: delivered %v, status %s, %d ms\n", result.Delivered, code, result.ResponseTimeMs)
 

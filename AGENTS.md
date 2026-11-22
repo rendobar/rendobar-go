@@ -36,9 +36,10 @@ For coding agents changing this SDK. Users of the SDK want the README.
   `probe.go`, `download.go`, `types.go`, `errors.go`, `retry.go`, `rawjson.go`, one file per resource such
   as `billing.go` or `uploads.go`, the tests) and `webhooks/`. A resource method checks its ids with
   `segment`, its paging with `paging` and its body with `valid` before it sends anything.
-- `Uploads.Create` follows `POST /assets` itself: the spec leaves the `upload` object untyped, so
-  `uploads.go` reads it by hand (presigned, multipart or deduplicated). Presigned PUTs go through
-  `Client.upload`, a client with no Rendobar headers.
+- `Uploads.Create` follows `POST /assets` itself. Its 200 (deduplicated) and 201 (presigned or
+  multipart) responses are one discriminated union, generated unexported as `uploadStart` from the
+  `responseUnions` table, so `uploads.go` switches on `Status` and reads the typed variant. Presigned
+  PUTs go through `Client.upload`, a client with no Rendobar headers.
 - Retries belong to `retry.go`, not the core (the core runs with `option.WithoutRetries`): 429, 500, 502,
   503, 504 and connection errors only, honouring `Retry-After` up to 60 s. The core's own retrier would also retry 408.
   A 429 retries on every method. A 5xx or connection error retries only a GET, a HEAD or a request whose

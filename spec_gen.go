@@ -3861,9 +3861,9 @@ type WebhookEndpoint struct {
 
 // WebhookTestResult is read from the API. Fields it does not send are zero.
 type WebhookTestResult struct {
-	Delivered      bool     `json:"delivered"`
-	StatusCode     *float64 `json:"statusCode"`
-	ResponseTimeMs int64    `json:"responseTimeMs"`
+	Delivered      bool   `json:"delivered"`
+	StatusCode     *int64 `json:"statusCode"`
+	ResponseTimeMs int64  `json:"responseTimeMs"`
 }
 
 // WebhookDeliveryStatus is a value the API sends.
@@ -3915,16 +3915,27 @@ type OffsetMeta struct {
 
 // PageMeta is read from the API. Fields it does not send are zero.
 type PageMeta struct {
+	// Total number of items
 	Total int64 `json:"total"`
-	Page  int64 `json:"page"`
+	// Current page number (1-indexed)
+	Page int64 `json:"page"`
+	// Items per page
 	Limit int64 `json:"limit"`
+	// Total number of pages
+	Pages int64 `json:"pages"`
 }
 
 // DeliveryPageMeta is read from the API. Fields it does not send are zero.
 type DeliveryPageMeta struct {
-	Total  int64   `json:"total"`
-	Limit  int64   `json:"limit"`
-	Offset float64 `json:"offset"`
+	// Total number of items
+	Total int64 `json:"total"`
+	// Current page number (1-indexed)
+	Page int64 `json:"page"`
+	// Items per page
+	Limit int64 `json:"limit"`
+	// Total number of pages
+	Pages  int64 `json:"pages"`
+	Offset int64 `json:"offset"`
 }
 
 // BillingStateBalance is read from the API. Fields it does not send are zero.
@@ -4791,4 +4802,96 @@ type JobShare struct {
 // DeliveriesRetried is read from the API. Fields it does not send are zero.
 type DeliveriesRetried struct {
 	Retried int64 `json:"retried"`
+}
+
+// uploadStartStatus is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type uploadStartStatus string
+
+// The uploadStartStatus values this SDK knows.
+const (
+	uploadStartStatusPresigned    uploadStartStatus = "presigned"
+	uploadStartStatusMultipart    uploadStartStatus = "multipart"
+	uploadStartStatusDeduplicated uploadStartStatus = "deduplicated"
+)
+
+// uploadStartPresignedUploadMethod is a value the API sends.
+//
+// The API may add values, so keep a default branch.
+type uploadStartPresignedUploadMethod string
+
+// The uploadStartPresignedUploadMethod values this SDK knows.
+const (
+	uploadStartPresignedUploadMethodPUT uploadStartPresignedUploadMethod = "PUT"
+)
+
+// uploadStartPresignedUpload is read from the API. Fields it does not send are zero.
+type uploadStartPresignedUpload struct {
+	Method    uploadStartPresignedUploadMethod `json:"method"`
+	URL       string                           `json:"url"`
+	ExpiresAt UnixMillis                       `json:"expiresAt"`
+}
+
+// uploadStartPresigned is read from the API. Fields it does not send are zero.
+type uploadStartPresigned struct {
+	Data   *Asset                      `json:"data"`
+	Upload *uploadStartPresignedUpload `json:"upload"`
+}
+
+// uploadStartMultipartUploadPartsItem is read from the API. Fields it does not send are zero.
+type uploadStartMultipartUploadPartsItem struct {
+	PartNumber int64  `json:"partNumber"`
+	URL        string `json:"url"`
+}
+
+// uploadStartMultipartUpload is read from the API. Fields it does not send are zero.
+type uploadStartMultipartUpload struct {
+	UploadID  string                                `json:"uploadId"`
+	PartSize  int64                                 `json:"partSize"`
+	Parts     []uploadStartMultipartUploadPartsItem `json:"parts"`
+	ExpiresAt UnixMillis                            `json:"expiresAt"`
+}
+
+// uploadStartMultipart is read from the API. Fields it does not send are zero.
+type uploadStartMultipart struct {
+	Data   *Asset                      `json:"data"`
+	Upload *uploadStartMultipartUpload `json:"upload"`
+}
+
+// uploadStartDeduplicated is read from the API. Fields it does not send are zero.
+type uploadStartDeduplicated struct {
+	Data *Asset `json:"data"`
+}
+
+// uploadStart holds one variant, matching Status. A status newer than this SDK sets
+// Status and leaves every variant nil.
+type uploadStart struct {
+	Status       uploadStartStatus
+	Presigned    *uploadStartPresigned
+	Multipart    *uploadStartMultipart
+	Deduplicated *uploadStartDeduplicated
+}
+
+// UnmarshalJSON reads the variant status names.
+func (u *uploadStart) UnmarshalJSON(b []byte) error {
+	var d struct {
+		V uploadStartStatus `json:"status"`
+	}
+	if err := json.Unmarshal(b, &d); err != nil {
+		return err
+	}
+	*u = uploadStart{Status: d.V}
+	switch d.V {
+	case "presigned":
+		u.Presigned = new(uploadStartPresigned)
+		return json.Unmarshal(b, u.Presigned)
+	case "multipart":
+		u.Multipart = new(uploadStartMultipart)
+		return json.Unmarshal(b, u.Multipart)
+	case "deduplicated":
+		u.Deduplicated = new(uploadStartDeduplicated)
+		return json.Unmarshal(b, u.Deduplicated)
+	}
+	return nil
 }

@@ -37,27 +37,6 @@ type UploadProgress struct {
 	Total  int64 // the file's size
 }
 
-// The statuses of an upload's start, from POST /assets.
-const (
-	uploadPresigned    = "presigned"    // one PUT of the whole file
-	uploadMultipart    = "multipart"    // one PUT per part, then complete with the parts
-	uploadDeduplicated = "deduplicated" // the workspace already has this file: nothing to send
-)
-
-// uploadStart is the response of POST /assets: top-level, not in a data envelope.
-type uploadStart struct {
-	Status string `json:"status"`
-	Data   *Asset `json:"data"`
-	Upload struct {
-		URL      string `json:"url"`
-		PartSize int64  `json:"partSize"`
-		Parts    []struct {
-			PartNumber int64  `json:"partNumber"`
-			URL        string `json:"url"`
-		} `json:"parts"`
-	} `json:"upload"`
-}
-
 type uploadedPart struct {
 	PartNumber int64  `json:"partNumber"`
 	ETag       string `json:"etag"`
@@ -96,36 +75,55 @@ func (u *Uploads) Create(ctx context.Context, file io.ReaderAt, size int64, p Up
 		Checksum    string         `json:"checksum,omitempty"`
 		Lifecycle   AssetLifecycle `json:"lifecycle"`
 	}{p.Filename, size, p.ContentType, p.Checksum, lifecycle}
+	// uploadStart (spec_gen.go) is the response of POST /assets: top-level, not in a data envelope.
 	var start uploadStart
 	if err := c.doJSON(ctx, http.MethodPost, "/assets", nil, body, &start); err != nil {
 		return nil, err
 	}
-	if start.Data == nil || start.Data.ID == "" {
-		return nil, fmt.Errorf("rendobar: the upload start has no asset")
-	}
 	progress := newProgress(size, p.OnProgress)
-	var parts []uploadedPart
+	var (
+		asset *Asset
+		parts []uploadedPart
+	)
 	switch start.Status {
-	case uploadDeduplicated:
-		progress.add(size)
-		return start.Data, nil
-	case uploadPresigned:
-		if start.Upload.URL == "" {
-			return nil, fmt.Errorf("rendobar: the upload start has no URL")
-		}
-		if _, err := c.putPart(ctx, start.Upload.URL, file, 0, size); err != nil {
+	case uploadStartStatusDeduplicated:
+		// The workspace already has this file: nothing to send.
+		if err := hasAsset(start.Deduplicated.Data); err != nil {
 			return nil, err
 		}
 		progress.add(size)
-	case uploadMultipart:
+		return start.Deduplicated.Data, nil
+	case uploadStartStatusPresigned:
+		// One PUT of the whole file.
+		asset = start.Presigned.Data
+		if err := hasAsset(asset); err != nil {
+			return nil, err
+		}
+		up := start.Presigned.Upload
+		switch {
+		case up == nil || up.URL == "":
+			return nil, fmt.Errorf("rendobar: the upload start has no URL")
+		case up.Method != uploadStartPresignedUploadMethodPUT:
+			return nil, fmt.Errorf("rendobar: the upload start asks for a %q, which this SDK cannot send: upgrade it", up.Method)
+		}
+		if _, err := c.putPart(ctx, up.URL, file, 0, size); err != nil {
+			return nil, err
+		}
+		progress.add(size)
+	case uploadStartStatusMultipart:
+		// One PUT per part, then complete with the parts.
+		asset = start.Multipart.Data
+		if err := hasAsset(asset); err != nil {
+			return nil, err
+		}
 		var err error
-		if parts, err = c.putParts(ctx, file, size, start, p.Concurrency, progress); err != nil {
+		if parts, err = c.putParts(ctx, file, size, start.Multipart.Upload, p.Concurrency, progress); err != nil {
 			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("rendobar: the upload start is %q, which this SDK cannot follow: upgrade it", start.Status)
 	}
-	seg, err := segment("asset id", start.Data.ID)
+	seg, err := segment("asset id", asset.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -135,11 +133,18 @@ func (u *Uploads) Create(ctx context.Context, file io.ReaderAt, size int64, p Up
 	return call[Asset](ctx, c, http.MethodPost, "/assets/"+seg+"/complete", nil, complete)
 }
 
+// hasAsset checks that an upload start names the asset it creates.
+func hasAsset(a *Asset) error {
+	if a == nil || a.ID == "" {
+		return fmt.Errorf("rendobar: the upload start has no asset")
+	}
+	return nil
+}
+
 // putParts uploads every part of a multipart upload, at most concurrency at
 // a time. The first part that fails stops the rest.
-func (c *Client) putParts(ctx context.Context, file io.ReaderAt, size int64, start uploadStart, concurrency int, progress *progress) ([]uploadedPart, error) {
-	partSize := start.Upload.PartSize
-	if partSize <= 0 || len(start.Upload.Parts) == 0 {
+func (c *Client) putParts(ctx context.Context, file io.ReaderAt, size int64, up *uploadStartMultipartUpload, concurrency int, progress *progress) ([]uploadedPart, error) {
+	if up == nil || up.PartSize <= 0 || len(up.Parts) == 0 {
 		return nil, fmt.Errorf("rendobar: the multipart upload start has no parts")
 	}
 	if concurrency == 0 {
@@ -153,18 +158,18 @@ func (c *Client) putParts(ctx context.Context, file io.ReaderAt, size int64, sta
 		wg   sync.WaitGroup
 		jobs = make(chan int)
 	)
-	for range min(concurrency, len(start.Upload.Parts)) {
+	for range min(concurrency, len(up.Parts)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				part := start.Upload.Parts[i]
-				offset := (part.PartNumber - 1) * partSize
+				part := up.Parts[i]
+				offset := (part.PartNumber - 1) * up.PartSize
 				if part.PartNumber < 1 || offset >= size {
 					cancel(fmt.Errorf("rendobar: upload part %d is outside the file", part.PartNumber))
 					continue
 				}
-				n := min(partSize, size-offset)
+				n := min(up.PartSize, size-offset)
 				etag, err := c.putPart(ctx, part.URL, file, offset, n)
 				if err == nil && etag == "" {
 					// The storage took the part but did not expose its ETag, which completing needs.
@@ -182,7 +187,7 @@ func (c *Client) putParts(ctx context.Context, file io.ReaderAt, size int64, sta
 			}
 		}()
 	}
-	for i := range start.Upload.Parts {
+	for i := range up.Parts {
 		if ctx.Err() != nil {
 			break
 		}

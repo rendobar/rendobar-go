@@ -112,7 +112,7 @@ func run(mode string) (err error) {
 // upload sends the fixture and returns the job input that reads it.
 func upload(ctx context.Context, rb *rendobar.Client, mock bool) (rendobar.Input, string, error) {
 	if mock {
-		fmt.Println("SKIP (mock: POST /assets answers without an upload URL) upload the clip, so the input is a public URL")
+		fmt.Println("SKIP (mock: POST /assets answers a placeholder deduplicated asset, so nothing uploads) upload the clip, so the input is a public URL")
 		return rendobar.URL(sampleURL), "", nil
 	}
 	f, err := os.Open(fixture)

@@ -130,6 +130,14 @@ var responses = []struct {
 	{"DeliveriesRetried", []string{"POST /jobs/{id}/deliveries/retry data"}},
 }
 
+// responseUnions are operations whose 2xx responses together are one
+// discriminated union, written as one type: POST /assets answers 200 with a
+// deduplicated asset and 201 with a presigned or multipart upload. An
+// unexported name keeps the union and its variants out of the public API.
+var responseUnions = []struct{ name, op string }{
+	{"uploadStart", "POST /assets"},
+}
+
 // responseRenames writes an enum under a shared name: one type for one set of values.
 var responseRenames = map[string]string{
 	"APIKeyCreatedByRole":                        "MemberRole",
@@ -242,6 +250,9 @@ func (g *gen) resources(spec, schemas *node) {
 		}
 		r.named(rs.name, n)
 	}
+	for _, u := range responseUnions {
+		r.named(u.name, joinedUnion(spec, schemas, u.op))
+	}
 	g.out.Write(r.out.Bytes())
 }
 
@@ -300,6 +311,61 @@ func (g *gen) arrayChecks(f field, elem, ref, path string) {
 			g.p("\tfor i, e := range %s {\n\t\tif e == \"\" {\n\t\t\tc.fail(%s, \"is empty\")\n\t\t}\n\t}\n", ref, item)
 		}
 	}
+}
+
+// joinedUnion reads the 2xx responses of op as one discriminated union: a
+// response that is itself a discriminated union adds its mapping, and one that
+// is a single component adds it under its one-value discriminator.
+func joinedUnion(spec, schemas *node, op string) *node {
+	responses := operation(spec, op).fields["responses"]
+	var disc string
+	var single []*node
+	mapping := &node{isObj: true, fields: map[string]*node{}}
+	add := func(key string, ref *node) {
+		if _, ok := mapping.fields[key]; ok {
+			log.Fatalf("genparams: %s: two responses are %s", op, key)
+		}
+		mapping.keys = append(mapping.keys, key)
+		mapping.fields[key] = ref
+	}
+	for _, code := range responses.keys {
+		if !strings.HasPrefix(code, "2") {
+			continue
+		}
+		s := responses.get(code, "content", "application/json", "schema")
+		switch {
+		case s == nil:
+			log.Fatalf("genparams: %s %s has no JSON response", op, code)
+		case s.has("discriminator"):
+			if disc = s.get("discriminator").str("propertyName"); disc == "" {
+				log.Fatalf("genparams: %s %s has a discriminator without a property", op, code)
+			}
+			m := s.get("discriminator", "mapping")
+			for _, k := range m.keys {
+				add(k, m.fields[k])
+			}
+		case refName(s) != "":
+			single = append(single, s)
+		default:
+			log.Fatalf("genparams: %s %s is neither a discriminated union nor a component", op, code)
+		}
+	}
+	if disc == "" {
+		log.Fatalf("genparams: %s has no discriminated response", op)
+	}
+	for _, s := range single {
+		values := deref(schemas, s).get("properties", disc).strings("enum")
+		if len(values) != 1 {
+			log.Fatalf("genparams: %s: %s has no one-value %s", op, refName(s), disc)
+		}
+		add(values[0], &node{value: s.str("$ref")})
+	}
+	oneOf := &node{isArr: true}
+	for _, k := range mapping.keys {
+		oneOf.items = append(oneOf.items, &node{isObj: true, keys: []string{"$ref"}, fields: map[string]*node{"$ref": mapping.fields[k]}})
+	}
+	d := &node{isObj: true, keys: []string{"propertyName", "mapping"}, fields: map[string]*node{"propertyName": {value: disc}, "mapping": mapping}}
+	return &node{isObj: true, keys: []string{"oneOf", "discriminator"}, fields: map[string]*node{"oneOf": oneOf, "discriminator": d}}
 }
 
 // operation returns the operation "METHOD /path" names.

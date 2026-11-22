@@ -167,6 +167,8 @@ func scalarBranches(bs []*node) string {
 	return ""
 }
 
+func unexported(name string) bool { return name != "" && name[0] >= 'a' && name[0] <= 'z' }
+
 func isObject(n *node) bool {
 	t, _ := n.schemaType()
 	return t == "object" || n.has("properties")
@@ -239,7 +241,11 @@ func (r *resp) union(name string, n *node) {
 	var vs []variant
 	for _, k := range mapping.keys {
 		ref := strings.TrimPrefix(mapping.fields[k].value.(string), "#/components/schemas/")
-		vs = append(vs, variant{k, pascal(k), r.named(ref, r.schemas.fields[ref])})
+		vname := ref
+		if unexported(name) {
+			vname = name + pascal(k) // an unexported union's variants stay unexported too
+		}
+		vs = append(vs, variant{k, pascal(k), r.named(vname, r.schemas.fields[ref])})
 	}
 	if c := comment("", n); c != "" {
 		r.p("%s//\n", c)

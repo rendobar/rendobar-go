@@ -127,7 +127,7 @@ func TestUploadInParts(t *testing.T) {
 func TestUploadRetriesAFailedPut(t *testing.T) {
 	putBackoff = time.Millisecond
 	t.Cleanup(func() { putBackoff = 200 * time.Millisecond })
-	u := newUploadServer(t, `{"status":"presigned","data":{"id":"asset_1"},"upload":{"url":"%s/put/whole"}}`)
+	u := newUploadServer(t, `{"status":"presigned","data":{"id":"asset_1"},"upload":{"method":"PUT","url":"%s/put/whole","expiresAt":1}}`)
 	u.put = func(w http.ResponseWriter, _ *http.Request, n int32) {
 		if n < 3 {
 			w.WriteHeader(503)
@@ -144,7 +144,7 @@ func TestUploadRetriesAFailedPut(t *testing.T) {
 func TestUploadGivesUpAfterThreePuts(t *testing.T) {
 	putBackoff = time.Millisecond
 	t.Cleanup(func() { putBackoff = 200 * time.Millisecond })
-	u := newUploadServer(t, `{"status":"presigned","data":{"id":"asset_1"},"upload":{"url":"%s/put/whole"}}`)
+	u := newUploadServer(t, `{"status":"presigned","data":{"id":"asset_1"},"upload":{"method":"PUT","url":"%s/put/whole","expiresAt":1}}`)
 	u.put = func(w http.ResponseWriter, _ *http.Request, _ int32) { w.WriteHeader(403) }
 	_, err := u.client().Uploads.Create(context.Background(), strings.NewReader("abc"), 3, UploadParams{Filename: "a"})
 	if codeOf(err) != CodeUploadFailed || statusOf(err) != 403 || u.putHits.Load() != 3 {
@@ -177,6 +177,14 @@ func TestUploadRefusesAStartItCannotFollow(t *testing.T) {
 	_, err := u.client().Uploads.Create(context.Background(), strings.NewReader("abc"), 3, UploadParams{Filename: "a"})
 	if err == nil || !strings.Contains(err.Error(), `"resumable"`) {
 		t.Fatalf("got %v", err)
+	}
+}
+
+func TestUploadRefusesAMethodItCannotSend(t *testing.T) {
+	u := newUploadServer(t, `{"status":"presigned","data":{"id":"asset_1"},"upload":{"method":"POST","url":"%s/put/whole","expiresAt":1}}`)
+	_, err := u.client().Uploads.Create(context.Background(), strings.NewReader("abc"), 3, UploadParams{Filename: "a"})
+	if err == nil || !strings.Contains(err.Error(), `"POST"`) || u.putHits.Load() != 0 {
+		t.Fatalf("got %v, %d PUTs", err, u.putHits.Load())
 	}
 }
 
